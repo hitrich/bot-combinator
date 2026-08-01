@@ -125,8 +125,8 @@ try {
   );
   assert.equal(
     desktopManifest.desktopName,
-    'outreachr',
-    'Linux packages must declare a filesystem-safe desktopName',
+    'outreachr.desktop',
+    'Linux packages must declare the installed desktop-entry filename',
   );
   const electronBuilderConfig = await fs.readFile(
     path.join(repoRoot, 'apps', 'desktop', 'electron-builder.yml'),

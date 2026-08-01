@@ -83,7 +83,7 @@ async function smokeDistribution(distribution, timeout) {
     );
   } finally {
     if (child?.pid) await terminateTree(child.pid);
-    await fs.rm(profile, { recursive: true, force: true });
+    await removeTree(profile);
   }
 }
 
@@ -122,7 +122,7 @@ async function stageDistributions(root, requestedKind) {
           });
           await run('hdiutil', ['detach', mountpoint, '-force']);
           mounted = false;
-          await fs.rm(mountpoint, { recursive: true, force: true });
+          await removeTree(mountpoint);
           const installedExecutable = await uniqueAppExecutable(installRoot, 'DMG installation');
           await verifyMacAppBundle(installedExecutable, 'DMG installation');
           staged.push({
@@ -130,15 +130,15 @@ async function stageDistributions(root, requestedKind) {
             executable: installedExecutable,
             environment: {},
             async cleanup() {
-              await fs.rm(installRoot, { recursive: true, force: true });
+              await removeTree(installRoot);
             },
           });
         } catch (error) {
           if (mounted) {
             await run('hdiutil', ['detach', mountpoint, '-force'], { allowFailure: true });
           }
-          await fs.rm(mountpoint, { recursive: true, force: true });
-          await fs.rm(installRoot, { recursive: true, force: true });
+          await removeTree(mountpoint);
+          await removeTree(installRoot);
           throw error;
         }
       }
@@ -157,11 +157,11 @@ async function stageDistributions(root, requestedKind) {
             executable: zippedExecutable,
             environment: {},
             async cleanup() {
-              await fs.rm(zipRoot, { recursive: true, force: true });
+              await removeTree(zipRoot);
             },
           });
         } catch (error) {
-          await fs.rm(zipRoot, { recursive: true, force: true });
+          await removeTree(zipRoot);
           throw error;
         }
       }
@@ -227,7 +227,7 @@ async function stageDistributions(root, requestedKind) {
         throw new Error(`Invalid deb package name: ${packageName}`);
       }
       try {
-        await run('sudo', ['dpkg', '--install', debs[0]], {
+        await run('sudo', ['apt-get', 'install', '--yes', '--no-install-recommends', debs[0]], {
           capture: false,
           timeoutMs: 120_000,
         });
@@ -290,7 +290,16 @@ async function cleanupNsis(installRoot) {
   for (const uninstaller of uninstallers) {
     await run(uninstaller, ['/S'], { allowFailure: true, timeoutMs: 60_000 });
   }
-  await fs.rm(installRoot, { recursive: true, force: true });
+  await removeTree(installRoot);
+}
+
+async function removeTree(target) {
+  await fs.rm(target, {
+    recursive: true,
+    force: true,
+    maxRetries: process.platform === 'win32' ? 20 : 4,
+    retryDelay: 250,
+  });
 }
 
 async function cleanupDeb(packageName) {

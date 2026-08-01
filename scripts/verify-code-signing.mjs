@@ -145,12 +145,19 @@ async function verifyUntrustedMacDistribution(app, releaseFiles) {
 }
 
 async function verifyUnsignedWindowsDistribution(executables) {
+  const script =
+    'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
+    '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
+    'if ($signature.Status -eq \'Valid\') { throw "Unsigned mode unexpectedly contains a valid embedded or catalog Authenticode signature: $($signature.SignerCertificate.Subject)" }';
   for (const executable of executables) {
     if (await peAuthenticodeCertificate(executable)) {
       throw new Error(
         `Unsigned mode unexpectedly contains an Authenticode signature: ${executable}`,
       );
     }
+    await runWindowsPowerShell(script, {
+      OUTREACHR_VERIFY_EXECUTABLE: executable,
+    });
   }
   console.log(
     `Verified explicit unsigned Windows status for ${executables.length} executables; SmartScreen warning is expected and must be disclosed.`,
