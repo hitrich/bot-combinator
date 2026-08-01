@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+
+autoInstallPeers: true
+strictPeerDependencies: false
+sharedWorkspaceLockfile: true
+confirmModulesPurge: false
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 43200
+
+allowBuilds:
+  electron: true
+  electron-builder: true
+  electron-winstaller: true
+  esbuild: true
+  msw: true

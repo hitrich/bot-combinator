@@ -1,0 +1,41 @@
+{
+  "name": "@outreachr/connectors",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Provider-neutral email, calendar, and desktop OAuth connectors for Outreachr",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; for (const path of ['dist', 'coverage']) rmSync(path, { recursive: true, force: true })\"",
+    "test": "vitest run",
+    "test:unit": "vitest run test/safety.test.ts test/validation.test.ts",
+    "test:integration": "vitest run test/google.test.ts test/microsoft.test.ts test/oauth.test.ts",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "msw": "2.15.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

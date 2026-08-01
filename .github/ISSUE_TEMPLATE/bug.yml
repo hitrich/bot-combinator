@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible Outreachr defect without including private fundraising data.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove names, email addresses, message content, calendar details, credentials, and private investor activity before submitting.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS arm64
+        - macOS x64
+        - Windows arm64
+        - Windows x64
+        - Linux arm64
+        - Linux x64
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Outreachr version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include the expected result and a minimal, privacy-safe reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Privacy-safe diagnostics
+      description: Include only redacted errors or logs. Never include tokens or message/calendar content.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed credentials and private fundraising information.
+          required: true
+        - label: This report does not describe an undisclosed security vulnerability.
+          required: true

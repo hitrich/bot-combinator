@@ -1,0 +1,514 @@
+name: Verified desktop release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-preflight:
+    name: Protected tag and release readiness
+    runs-on: ubuntu-24.04
+    environment: production-release
+    timeout-minutes: 20
+    outputs:
+      mac_signing: ${{ steps.signing-readiness.outputs.mac_signing }}
+      windows_signing: ${{ steps.signing-readiness.outputs.windows_signing }}
+      tag_verification: ${{ steps.tag-preflight.outputs.tag_verification }}
+      tag_verification_reason: ${{ steps.tag-preflight.outputs.tag_verification_reason }}
+    permissions:
+      checks: read
+      contents: read
+    steps:
+      - name: Check out the complete annotated-tag history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require protected annotated tag at current main
+        id: tag-preflight
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          OUTREACHR_REF_PROTECTED: ${{ github.ref_protected }}
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            if (!/^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(tag)) {
+              core.setFailed(`Ref ${context.ref} is not a semantic v* release tag`);
+              return;
+            }
+            const ref = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `tags/${tag}`,
+            });
+            if (ref.data.object.type !== 'tag') {
+              core.setFailed(`${tag} is lightweight; an annotated tag is required`);
+              return;
+            }
+            const tagObject = await github.rest.git.getTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_sha: ref.data.object.sha,
+            });
+            const verification = tagObject.data.verification;
+            if (process.env.OUTREACHR_REF_PROTECTED !== 'true') {
+              core.setFailed(`${tag} is not protected by a GitHub tag rule or ruleset`);
+              return;
+            }
+            const tagVerification = verification?.verified
+              ? 'github-verified'
+              : verification?.reason === 'unsigned'
+                ? 'unsigned'
+                : 'unverified';
+            core.setOutput('tag_verification', tagVerification);
+            core.setOutput('tag_verification_reason', verification?.reason ?? 'unknown');
+            core.notice(
+              verification?.verified
+                ? `${tag} has a GitHub-verified signature.`
+                : `${tag} is annotated and protected but its signature is not GitHub-verified (${verification?.reason ?? 'unknown'}). Artifact identity will rely on the protected ref and GitHub OIDC attestations.`,
+            );
+            if (tagObject.data.object.type !== 'commit') {
+              core.setFailed(`${tag} must directly reference a commit`);
+              return;
+            }
+            const main = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'heads/main',
+            });
+            if (tagObject.data.object.sha !== main.data.object.sha) {
+              core.setFailed(`${tag} must reference the current protected main commit ${main.data.object.sha}`);
+              return;
+            }
+            const mainBranch = await github.rest.repos.getBranch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: 'main',
+            });
+            if (!mainBranch.data.protected) {
+              core.setFailed('main is not protected by a GitHub branch rule or ruleset');
+              return;
+            }
+            const checkRuns = await github.paginate(github.rest.checks.listForRef, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: main.data.object.sha,
+              filter: 'latest',
+              per_page: 100,
+            });
+            for (const requiredCheck of ['All native targets', 'JavaScript and TypeScript']) {
+              const passed = checkRuns.some(
+                (run) =>
+                  run.name === requiredCheck &&
+                  run.conclusion === 'success' &&
+                  run.app?.slug === 'github-actions',
+              );
+              if (!passed) {
+                core.setFailed(
+                  `Current protected main is missing a successful GitHub Actions check: ${requiredCheck}`,
+                );
+                return;
+              }
+            }
+            const repository = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            if (repository.data.private) {
+              core.setFailed('The zero-cost attestation release path requires a public open-source repository');
+              return;
+            }
+            try {
+              await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              });
+              core.setFailed(`A GitHub release for ${tag} already exists; release assets are immutable`);
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          package-manager-cache: false
+
+      - name: Activate pinned pnpm with Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.18.0 --activate
+          pnpm config set store-dir "${{ runner.temp }}/pnpm-store"
+
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate release notices
+        run: |
+          pnpm run licenses
+          node scripts/validate-legal-notices.mjs
+
+      - name: Verify tag, version, and release files
+        run: node scripts/verify-release.mjs --allow-unverified-tag
+
+      - name: Assess optional signing and notarization upgrades
+        id: signing-readiness
+        run: node scripts/validate-release-secrets.mjs --policy optional
+        env:
+          OUTREACHR_MAC_CERTIFICATE_BASE64: ${{ secrets.OUTREACHR_MAC_CERTIFICATE_BASE64 }}
+          OUTREACHR_MAC_CERTIFICATE_PASSWORD: ${{ secrets.OUTREACHR_MAC_CERTIFICATE_PASSWORD }}
+          OUTREACHR_MAC_EXPECTED_TEAM_ID: ${{ secrets.OUTREACHR_MAC_EXPECTED_TEAM_ID }}
+          OUTREACHR_WINDOWS_CERTIFICATE_BASE64: ${{ secrets.OUTREACHR_WINDOWS_CERTIFICATE_BASE64 }}
+          OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD }}
+          OUTREACHR_WINDOWS_EXPECTED_PUBLISHER: ${{ secrets.OUTREACHR_WINDOWS_EXPECTED_PUBLISHER }}
+          OUTREACHR_APPLE_API_KEY_BASE64: ${{ secrets.OUTREACHR_APPLE_API_KEY_BASE64 }}
+          OUTREACHR_APPLE_API_KEY_ID: ${{ secrets.OUTREACHR_APPLE_API_KEY_ID }}
+          OUTREACHR_APPLE_API_ISSUER: ${{ secrets.OUTREACHR_APPLE_API_ISSUER }}
+          OUTREACHR_APPLE_ID: ${{ secrets.OUTREACHR_APPLE_ID }}
+          OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD }}
+          OUTREACHR_APPLE_TEAM_ID: ${{ secrets.OUTREACHR_APPLE_TEAM_ID }}
+
+  native-release:
+    name: ${{ matrix.target }} verified package
+    needs: release-preflight
+    runs-on: ${{ matrix.runner }}
+    environment: production-release
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-x64
+            runner: macos-15-intel
+            platform: darwin
+            arch: x64
+          - target: macos-arm64
+            runner: macos-15
+            platform: darwin
+            arch: arm64
+          - target: windows-x64
+            runner: windows-2025
+            platform: win32
+            arch: x64
+          - target: windows-arm64
+            runner: windows-11-arm
+            platform: win32
+            arch: arm64
+          - target: linux-x64
+            runner: ubuntu-24.04
+            platform: linux
+            arch: x64
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+    steps:
+      - name: Check out protected release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up native Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          architecture: ${{ matrix.arch }}
+          package-manager-cache: false
+
+      - name: Activate pinned pnpm with Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.18.0 --activate
+          pnpm config set store-dir "${{ runner.temp }}/pnpm-store"
+
+      - name: Assert runner architecture
+        run: node scripts/assert-architecture.mjs --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Self-test release utilities
+        run: node scripts/self-test.mjs
+
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+
+      - name: Run full verification gate
+        run: pnpm verify
+
+      - name: Run Electron end-to-end tests
+        if: runner.os != 'Linux'
+        run: pnpm test:e2e
+
+      - name: Run Electron end-to-end tests under Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm test:e2e
+
+      - name: Generate and validate third-party notices
+        run: |
+          pnpm run licenses
+          node scripts/validate-legal-notices.mjs
+
+      - name: Build signed and notarized macOS release package
+        if: runner.os == 'macOS' && needs.release-preflight.outputs.mac_signing == 'signed'
+        run: node scripts/package-signed-target.mjs --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+        env:
+          OUTREACHR_MAC_CERTIFICATE_BASE64: ${{ secrets.OUTREACHR_MAC_CERTIFICATE_BASE64 }}
+          OUTREACHR_MAC_CERTIFICATE_PASSWORD: ${{ secrets.OUTREACHR_MAC_CERTIFICATE_PASSWORD }}
+          OUTREACHR_APPLE_API_KEY_BASE64: ${{ secrets.OUTREACHR_APPLE_API_KEY_BASE64 }}
+          OUTREACHR_APPLE_API_KEY_ID: ${{ secrets.OUTREACHR_APPLE_API_KEY_ID }}
+          OUTREACHR_APPLE_API_ISSUER: ${{ secrets.OUTREACHR_APPLE_API_ISSUER }}
+          OUTREACHR_APPLE_ID: ${{ secrets.OUTREACHR_APPLE_ID }}
+          OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD }}
+          OUTREACHR_APPLE_TEAM_ID: ${{ secrets.OUTREACHR_APPLE_TEAM_ID }}
+
+      - name: Build explicitly unsigned and unnotarized macOS package
+        if: runner.os == 'macOS' && needs.release-preflight.outputs.mac_signing == 'unsigned'
+        run: node scripts/package-target.mjs --unsigned --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Build signed Windows release package
+        if: runner.os == 'Windows' && needs.release-preflight.outputs.windows_signing == 'signed'
+        run: node scripts/package-signed-target.mjs --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+        env:
+          OUTREACHR_WINDOWS_CERTIFICATE_BASE64: ${{ secrets.OUTREACHR_WINDOWS_CERTIFICATE_BASE64 }}
+          OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD }}
+
+      - name: Build explicitly unsigned Windows package
+        if: runner.os == 'Windows' && needs.release-preflight.outputs.windows_signing == 'unsigned'
+        run: node scripts/package-target.mjs --unsigned --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Build Linux release package
+        if: runner.os == 'Linux'
+        run: node scripts/package-target.mjs --release --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Verify packaged seed, notices, and agent sidecars
+        run: node scripts/verify-packaged-resources.mjs --release-dir apps/desktop/release
+
+      - name: Verify hardened Electron fuses
+        run: node scripts/verify-electron-fuses.mjs --release-dir apps/desktop/release
+
+      - name: Verify macOS signer, Gatekeeper, and notarization
+        if: runner.os == 'macOS' && needs.release-preflight.outputs.mac_signing == 'signed'
+        run: node scripts/verify-code-signing.mjs --expect signed --release-dir apps/desktop/release
+        env:
+          OUTREACHR_MAC_EXPECTED_TEAM_ID: ${{ secrets.OUTREACHR_MAC_EXPECTED_TEAM_ID }}
+
+      - name: Verify Windows publisher and timestamped Authenticode signatures
+        if: runner.os == 'Windows' && needs.release-preflight.outputs.windows_signing == 'signed'
+        run: node scripts/verify-code-signing.mjs --expect signed --release-dir apps/desktop/release
+        env:
+          OUTREACHR_WINDOWS_EXPECTED_PUBLISHER: ${{ secrets.OUTREACHR_WINDOWS_EXPECTED_PUBLISHER }}
+
+      - name: Verify explicit unsigned and unnotarized macOS status
+        if: runner.os == 'macOS' && needs.release-preflight.outputs.mac_signing == 'unsigned'
+        run: node scripts/verify-code-signing.mjs --expect unsigned --release-dir apps/desktop/release
+
+      - name: Verify explicit unsigned Windows status
+        if: runner.os == 'Windows' && needs.release-preflight.outputs.windows_signing == 'unsigned'
+        run: node scripts/verify-code-signing.mjs --expect unsigned --release-dir apps/desktop/release
+
+      - name: Record Linux authenticity controls
+        if: runner.os == 'Linux'
+        run: node scripts/verify-code-signing.mjs --expect checksum-attested --release-dir apps/desktop/release
+
+      - name: Smoke packaged app
+        if: runner.os != 'Linux'
+        run: node scripts/smoke-packaged-app.mjs --release-dir apps/desktop/release
+
+      - name: Smoke packaged app under Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum node scripts/smoke-packaged-app.mjs --release-dir apps/desktop/release
+
+      - name: Collect macOS distributable artifacts
+        if: runner.os == 'macOS'
+        run: node scripts/collect-release-artifacts.mjs --release-dir apps/desktop/release
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ needs.release-preflight.outputs.mac_signing }}
+
+      - name: Collect Windows distributable artifacts
+        if: runner.os == 'Windows'
+        run: node scripts/collect-release-artifacts.mjs --release-dir apps/desktop/release
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ needs.release-preflight.outputs.windows_signing }}
+
+      - name: Collect Linux distributable artifacts
+        if: runner.os == 'Linux'
+        run: node scripts/collect-release-artifacts.mjs --release-dir apps/desktop/release
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: checksum-attested
+
+      - name: Write macOS package trust disclosure
+        if: runner.os == 'macOS'
+        run: node scripts/write-signing-status.mjs
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ needs.release-preflight.outputs.mac_signing }}
+          OUTREACHR_TAG_VERIFICATION: ${{ needs.release-preflight.outputs.tag_verification }}
+          OUTREACHR_TAG_VERIFICATION_REASON: ${{ needs.release-preflight.outputs.tag_verification_reason }}
+
+      - name: Write Windows package trust disclosure
+        if: runner.os == 'Windows'
+        run: node scripts/write-signing-status.mjs
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ needs.release-preflight.outputs.windows_signing }}
+          OUTREACHR_TAG_VERIFICATION: ${{ needs.release-preflight.outputs.tag_verification }}
+          OUTREACHR_TAG_VERIFICATION_REASON: ${{ needs.release-preflight.outputs.tag_verification_reason }}
+
+      - name: Write Linux package trust disclosure
+        if: runner.os == 'Linux'
+        run: node scripts/write-signing-status.mjs
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: checksum-attested
+          OUTREACHR_TAG_VERIFICATION: ${{ needs.release-preflight.outputs.tag_verification }}
+          OUTREACHR_TAG_VERIFICATION_REASON: ${{ needs.release-preflight.outputs.tag_verification_reason }}
+
+      - name: Generate CycloneDX SBOM
+        run: node scripts/generate-sbom.mjs --target ${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.cdx.json
+
+      - name: Generate local SLSA-format provenance
+        run: node scripts/generate-provenance.mjs --target ${{ matrix.target }} --artifact-dir artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.provenance.json
+
+      - name: Optionally GPG-sign Linux packages
+        if: runner.os == 'Linux'
+        run: node scripts/sign-linux-artifacts.mjs --directory artifacts/${{ matrix.target }}
+        env:
+          OUTREACHR_LINUX_GPG_PRIVATE_KEY: ${{ secrets.OUTREACHR_LINUX_GPG_PRIVATE_KEY }}
+          OUTREACHR_LINUX_GPG_PASSPHRASE: ${{ secrets.OUTREACHR_LINUX_GPG_PASSPHRASE }}
+
+      - name: Generate and verify SHA-256 manifest
+        run: |
+          node scripts/generate-checksums.mjs --directory artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/SHA256SUMS-${{ matrix.target }}
+          node scripts/verify-checksums.mjs --manifest artifacts/${{ matrix.target }}/SHA256SUMS-${{ matrix.target }}
+
+      - name: Create GitHub OIDC build attestation
+        id: attestation
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-path: artifacts/${{ matrix.target }}/*
+
+      - name: Preserve attestation bundle and checksum
+        run: node scripts/copy-attestation.mjs --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl
+        env:
+          ATTESTATION_BUNDLE: ${{ steps.attestation.outputs.bundle-path }}
+
+      - name: Upload verified native release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: outreachr-${{ matrix.target }}
+          path: artifacts/${{ matrix.target }}/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-release:
+    name: Publish GitHub release
+    needs: native-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      attestations: read
+
+    steps:
+      - name: Check out release metadata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          package-manager-cache: false
+
+      - name: Download all six native bundles
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: outreachr-*
+          path: release-assets
+
+      - name: Verify all release bundles and checksums
+        run: node scripts/verify-release-bundle.mjs --directory release-assets
+
+      - name: Verify GitHub/Sigstore provenance for every release subject
+        run: node scripts/verify-attestations.mjs --directory release-assets --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF" --source-digest "$GITHUB_SHA"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Stage collision-free GitHub release assets
+        run: node scripts/stage-publish-assets.mjs --input release-assets --output publish-assets
+
+      - name: Upload immutable assets to a private draft release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Outreachr ${{ github.ref_name }}
+          body_path: publish-assets/RELEASE-TRUST.md
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          draft: true
+          fail_on_unmatched_files: true
+          overwrite_files: false
+          files: publish-assets/*
+
+      - name: Download the draft release assets for independent comparison
+        run: gh release download "$GITHUB_REF_NAME" --dir downloaded-publish-assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Verify every uploaded draft asset byte-for-byte
+        run: node scripts/verify-published-assets.mjs --expected publish-assets --actual downloaded-publish-assets
+
+      - name: Publish verified stable release
+        if: ${{ !contains(github.ref_name, '-') }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Publish verified prerelease
+        if: ${{ contains(github.ref_name, '-') }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Confirm the public release is immutable
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const release = await github.request(
+              'GET /repos/{owner}/{repo}/releases/tags/{tag}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: context.ref.replace('refs/tags/', ''),
+                headers: { 'X-GitHub-Api-Version': '2026-03-10' },
+              },
+            );
+            if (release.data.draft || release.data.immutable !== true) {
+              core.setFailed('The published release is not public and immutable');
+            }
+
+      - name: Download the immutable public release assets
+        run: gh release download "$GITHUB_REF_NAME" --dir downloaded-public-assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Verify every immutable public asset byte-for-byte
+        run: node scripts/verify-published-assets.mjs --expected publish-assets --actual downloaded-public-assets

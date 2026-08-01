@@ -1,0 +1,57 @@
+{
+  "name": "outreachr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local-first, evidence-backed fundraising operating system for founders.",
+  "author": "Outreachr contributors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lalalune/outreachr.git"
+  },
+  "homepage": "https://github.com/lalalune/outreachr#readme",
+  "bugs": {
+    "url": "https://github.com/lalune/outreachr/issues"
+  },
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @outreachr/desktop dev",
+    "build": "pnpm -r --if-present build",
+    "pretypecheck": "pnpm -r --filter './packages/**' --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "pnpm -r --if-present test",
+    "test:unit": "pnpm -r --if-present test:unit",
+    "test:integration": "pnpm -r --if-present test:integration",
+    "test:coverage": "pnpm -r --if-present test:coverage",
+    "test:e2e": "pnpm --filter @outreachr/desktop test:e2e",
+    "test:e2e:headed": "pnpm --filter @outreachr/desktop test:e2e:headed",
+    "smoke:codex": "pnpm prepare:live-agents && pnpm --filter @outreachr/desktop build && pnpm --filter @outreachr/desktop exec node scripts/smoke-codex-subscription.mjs",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "prepare:runtime": "node scripts/prepare-runtime-resources.mjs",
+    "prepare:live-agents": "node scripts/prepare-live-agent-resources.mjs",
+    "prepare:resources": "node scripts/prepare-resources.mjs",
+    "package": "pnpm prepare:resources && pnpm --filter @outreachr/desktop package",
+    "package:mac": "pnpm prepare:resources && pnpm --filter @outreachr/desktop package:mac",
+    "package:win": "pnpm prepare:resources && pnpm --filter @outreachr/desktop package:win",
+    "package:linux": "pnpm prepare:resources && pnpm --filter @outreachr/desktop package:linux",
+    "release:verify": "node scripts/verify-release.mjs",
+    "licenses": "node scripts/generate-third-party-notices.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "eslint": "10.8.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "globals": "17.8.0",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "artifact": "Outreachr_Investor_Seed.sqlite",
+  "fileSha256": "b120aeb6a71f201e6a4a3198e0b9a7eef45ff24b2c0b224b8e763fbea2caee23",
+  "logicalDigestSha256": "e91f834c59b9d7fc0a679174513c9b44b228cc6925c3654443f1b534d1643899",
+  "signatureStatus": "UNSIGNED_RESEARCH_ARTIFACT",
+  "rights": "mixed/source-specific",
+  "productionNotice": "Every entity retains row-level source evidence; portfolio and named-partner fields are not individually cited. Redistribution and contribution export remain restricted by per-source rights metadata."
+}

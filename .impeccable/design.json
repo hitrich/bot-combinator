@@ -1,0 +1,327 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-31T19:41:08Z",
+  "title": "Design System: Outreachr",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Briefing Paper",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": ["oklch(1 0 0)", "oklch(0.975 0.006 230)", "oklch(0.945 0.012 230)"]
+      },
+      "fog": {
+        "role": "neutral",
+        "displayName": "Working Fog",
+        "canonical": "oklch(0.975 0.006 230)",
+        "tonalRamp": ["oklch(0.975 0.006 230)", "oklch(0.945 0.012 230)", "oklch(0.875 0.014 230)"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Founder Ink",
+        "canonical": "oklch(0.18 0.026 235)",
+        "tonalRamp": [
+          "oklch(0.55 0.025 235)",
+          "oklch(0.43 0.035 235)",
+          "oklch(0.18 0.026 235)",
+          "oklch(0.12 0.018 235)"
+        ]
+      },
+      "marine": {
+        "role": "primary",
+        "displayName": "Action Marine",
+        "canonical": "oklch(0.50 0.11 230)",
+        "tonalRamp": [
+          "oklch(0.92 0.055 230)",
+          "oklch(0.78 0.09 225)",
+          "oklch(0.75 0.1 225)",
+          "oklch(0.69 0.11 225)",
+          "oklch(0.50 0.11 230)",
+          "oklch(0.43 0.115 230)",
+          "oklch(0.36 0.09 230)"
+        ]
+      },
+      "mint-signal": {
+        "role": "secondary",
+        "displayName": "Acknowledgement Mint",
+        "canonical": "oklch(0.86 0.09 165)",
+        "tonalRamp": ["oklch(0.94 0.035 155)", "oklch(0.86 0.09 165)", "oklch(0.48 0.13 155)"]
+      },
+      "on-marine": {
+        "role": "on-primary",
+        "displayName": "Panel White",
+        "canonical": "oklch(1 0 0)"
+      },
+      "on-marine-muted": {
+        "role": "on-primary",
+        "displayName": "Panel Mist",
+        "canonical": "oklch(0.94 0.02 230)",
+        "tonalRamp": [
+          "oklch(0.94 0.02 230)",
+          "oklch(0.9 0.025 230)",
+          "oklch(0.9 0.02 230)",
+          "oklch(0.82 0.03 230)"
+        ]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "Verified Green",
+        "canonical": "oklch(0.48 0.13 155)",
+        "tonalRamp": [
+          "oklch(0.94 0.035 155)",
+          "oklch(0.86 0.08 155)",
+          "oklch(0.69 0.13 155)",
+          "oklch(0.48 0.13 155)",
+          "oklch(0.29 0.09 155)",
+          "oklch(0.25 0.055 155)"
+        ]
+      },
+      "success-ink": {
+        "role": "semantic-ink",
+        "displayName": "Verified Ink",
+        "canonical": "oklch(0.29 0.09 155)"
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Review Amber",
+        "canonical": "oklch(0.57 0.13 75)",
+        "tonalRamp": [
+          "oklch(0.95 0.045 80)",
+          "oklch(0.89 0.08 75)",
+          "oklch(0.76 0.13 75)",
+          "oklch(0.57 0.13 75)",
+          "oklch(0.33 0.095 75)",
+          "oklch(0.27 0.05 75)"
+        ]
+      },
+      "warning-ink": {
+        "role": "semantic-ink",
+        "displayName": "Review Ink",
+        "canonical": "oklch(0.33 0.095 75)"
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Consequence Red",
+        "canonical": "oklch(0.51 0.19 28)",
+        "tonalRamp": [
+          "oklch(0.95 0.035 28)",
+          "oklch(0.88 0.09 28)",
+          "oklch(0.7 0.17 28)",
+          "oklch(0.51 0.19 28)",
+          "oklch(0.34 0.13 28)",
+          "oklch(0.27 0.06 28)"
+        ]
+      },
+      "danger-ink": {
+        "role": "semantic-ink",
+        "displayName": "Consequence Ink",
+        "canonical": "oklch(0.34 0.13 28)"
+      },
+      "info": {
+        "role": "semantic",
+        "displayName": "Evidence Blue",
+        "canonical": "oklch(0.52 0.11 250)",
+        "tonalRamp": [
+          "oklch(0.95 0.025 250)",
+          "oklch(0.88 0.06 250)",
+          "oklch(0.72 0.1 250)",
+          "oklch(0.52 0.11 250)",
+          "oklch(0.34 0.09 250)",
+          "oklch(0.26 0.045 250)"
+        ]
+      },
+      "info-ink": {
+        "role": "semantic-ink",
+        "displayName": "Evidence Ink",
+        "canonical": "oklch(0.34 0.09 250)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Page Display",
+        "purpose": "Rare application-level titles, never control copy."
+      },
+      "headline": {
+        "displayName": "Page Headline",
+        "purpose": "Primary page and onboarding headings."
+      },
+      "title": {
+        "displayName": "Section Title",
+        "purpose": "Sections, dialogs, and record headings."
+      },
+      "body": { "displayName": "Product Body", "purpose": "Explanations and record content." },
+      "label": {
+        "displayName": "Control Label",
+        "purpose": "Buttons, navigation, field labels, and compact metadata."
+      },
+      "data": {
+        "displayName": "Record Data",
+        "purpose": "Money, dates, identifiers, counts, and checksums only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent)",
+        "purpose": "Visible keyboard and field focus in both themes."
+      },
+      {
+        "name": "dialog-structural",
+        "value": "0 8px 8px oklch(0.1 0.02 230 / 0.18)",
+        "purpose": "Separates consequential modal work from the workspace."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-fast",
+        "value": "140ms",
+        "purpose": "Hover, focus, and compact state feedback."
+      },
+      {
+        "name": "state-standard",
+        "value": "200ms",
+        "purpose": "Dialog and workspace state transitions."
+      },
+      {
+        "name": "settle-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Subtle one-pixel press and positional feedback."
+      }
+    ],
+    "breakpoints": [
+      { "name": "desktop-minimum", "value": "720px" },
+      { "name": "compact-workspace", "value": "980px" },
+      { "name": "wide-workspace", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Commits the single dominant action in a region.",
+      "html": "<button class=\"ds-btn-primary\">Approve draft</button>",
+      "css": ".ds-btn-primary { min-height: 36px; padding: 7px 12px; color: #fff; background: var(--primary, #006d95); border: 1px solid var(--primary, #006d95); border-radius: var(--radius-sm, 6px); font: 630 0.8125rem/1.4 Inter, system-ui, sans-serif; cursor: pointer; transition: background 140ms, border-color 140ms, transform 140ms cubic-bezier(.22,1,.36,1); } .ds-btn-primary:hover { background: var(--primary-hover, #005982); border-color: var(--primary-hover, #005982); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A reversible or supporting action beside the dominant commit.",
+      "html": "<button class=\"ds-btn-secondary\">View evidence</button>",
+      "css": ".ds-btn-secondary { min-height: 36px; padding: 7px 12px; color: var(--ink, #06131b); background: var(--bg, #fff); border: 1px solid var(--border-strong, #95afbd); border-radius: var(--radius-sm, 6px); font: 630 0.8125rem/1.4 Inter, system-ui, sans-serif; cursor: pointer; transition: background 140ms, border-color 140ms, transform 140ms cubic-bezier(.22,1,.36,1); } .ds-btn-secondary:hover { background: var(--surface, #f3f8fa); border-color: var(--primary, #006d95); } .ds-btn-secondary:active { transform: translateY(1px); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Founder-entered record data with persistent labeling.",
+      "html": "<label class=\"ds-field\"><span>Target check</span><input value=\"$750,000\" /></label>",
+      "css": ".ds-field { display: grid; gap: 5px; color: var(--ink, #06131b); font: 630 0.8125rem/1.4 Inter, system-ui, sans-serif; } .ds-field input { width: 260px; min-height: 40px; padding: 8px 10px; color: var(--ink-strong, #02070b); background: var(--bg, #fff); border: 1px solid var(--border-strong, #95afbd); border-radius: var(--radius-sm, 6px); font: 400 .875rem/1.5 Inter, system-ui, sans-serif; outline: none; } .ds-field input:hover { border-color: var(--primary, #006d95); } .ds-field input:focus-visible { border-color: var(--primary, #006d95); box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    },
+    {
+      "name": "Active Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-active",
+      "description": "Marks the current workspace destination with redundant tone and weight.",
+      "html": "<a class=\"ds-nav-active\" href=\"#\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75\"/></svg><span>Investors</span></a>",
+      "css": ".ds-nav-active { display: flex; width: 190px; min-height: 34px; align-items: center; gap: 10px; padding: 6px 9px; color: var(--ink-strong, #02070b); background: var(--surface-selected, #d1edfb); border-radius: var(--radius-sm, 6px); font: 650 .8125rem/1.4 Inter, system-ui, sans-serif; text-decoration: none; } .ds-nav-active svg { width: 17px; height: 17px; color: var(--primary-hover, #005982); stroke-width: 1.8; } .ds-nav-active:hover { filter: brightness(.98); } .ds-nav-active:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    },
+    {
+      "name": "Evidence Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Names a sourced, safety, or workflow state without relying on color.",
+      "html": "<span class=\"ds-badge\">Verified source</span>",
+      "css": ".ds-badge { display: inline-flex; min-height: 22px; align-items: center; padding: 2px 7px; color: #002519; background: #97e4c2; border-radius: 999px; font: 620 .6875rem/1.25 Inter, system-ui, sans-serif; white-space: nowrap; }"
+    },
+    {
+      "name": "Pipeline Record",
+      "kind": "card",
+      "refersTo": "pipeline-card",
+      "description": "A compact draggable investor target with economics and next action.",
+      "html": "<article class=\"ds-pipeline-card\"><strong>Harbor Ventures</strong><p>Early-stage AI infrastructure</p><code>$500k expected</code><small><b>Next</b> Request partner intro</small></article>",
+      "css": ".ds-pipeline-card { display: grid; width: 230px; gap: 6px; padding: 10px; color: var(--ink, #06131b); background: var(--bg, #fff); border: 1px solid var(--border, #cdd8dd); border-radius: var(--radius-sm, 6px); font: 400 .8125rem/1.4 Inter, system-ui, sans-serif; } .ds-pipeline-card strong { color: var(--ink-strong, #02070b); font-weight: 650; } .ds-pipeline-card p { margin: 0; color: var(--muted, #3d5360); font-size: .75rem; } .ds-pipeline-card code { color: var(--ink, #06131b); font: 500 .75rem/1.4 'IBM Plex Mono', monospace; } .ds-pipeline-card small { padding-top: 8px; color: var(--muted, #3d5360); border-top: 1px solid var(--border, #cdd8dd); } .ds-pipeline-card b { color: var(--primary-hover, #005982); } .ds-pipeline-card:hover { border-color: var(--border-strong, #95afbd); } .ds-pipeline-card:focus-within { box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    },
+    {
+      "name": "Review Dialog",
+      "kind": "custom",
+      "description": "Contains consequential review with fixed context and ordered actions.",
+      "html": "<section class=\"ds-dialog\" role=\"dialog\" aria-label=\"Review outreach\"><header><h2>Review outreach</h2><p>Nothing sends until you approve this exact message.</p></header><div><b>To</b> partner@example.com</div><footer><button>Cancel</button><button class=\"ds-dialog-approve\">Approve exact draft</button></footer></section>",
+      "css": ".ds-dialog { width: 500px; color: var(--ink, #06131b); background: var(--bg, #fff); border-radius: var(--radius-lg, 14px); box-shadow: 0 8px 8px rgba(2,10,15,.18); overflow: hidden; font: 400 .875rem/1.5 Inter, system-ui, sans-serif; } .ds-dialog header { padding: 20px 24px; border-bottom: 1px solid var(--border, #cdd8dd); } .ds-dialog h2, .ds-dialog p { margin: 0; } .ds-dialog p { margin-top: 4px; color: var(--muted, #3d5360); } .ds-dialog > div { padding: 24px; } .ds-dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; background: var(--surface, #f3f8fa); border-top: 1px solid var(--border, #cdd8dd); } .ds-dialog button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border-strong, #95afbd); border-radius: 6px; background: #fff; font-weight: 630; } .ds-dialog .ds-dialog-approve { color: #fff; background: var(--primary, #006d95); border-color: var(--primary, #006d95); } .ds-dialog button:hover { border-color: var(--primary, #006d95); } .ds-dialog button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,109,149,.24); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Morning Brief",
+    "overview": "A founder opens Outreachr before the day’s first investor call and finds a prepared briefing desk: clear, exact, calm, and already arranged around the decisions that matter. The interface is a working instrument, not a performance of productivity.",
+    "keyCharacteristics": [
+      "Bright paper and cool fog surfaces anchored by marine blue.",
+      "Compact records with generous reading rhythm and stable information architecture.",
+      "Evidence, freshness, privacy, and safety states visible at the point of action.",
+      "State transitions that are responsive, never choreographed.",
+      "A complete light theme, dark theme, and system-following theme with identical hierarchy."
+    ],
+    "rules": [
+      {
+        "name": "The Decision-First Rule",
+        "body": "Each page exposes the next safe action while keeping the evidence, uncertainty, and consequence in view.",
+        "section": "overview"
+      },
+      {
+        "name": "The Compact Rhythm Rule",
+        "body": "The product is information-dense without becoming cramped.",
+        "section": "overview"
+      },
+      {
+        "name": "The Restrained Signal Rule",
+        "body": "Paper, fog, ink, and dividers carry almost the entire product.",
+        "section": "colors"
+      },
+      {
+        "name": "The Evidence Has No Glow Rule",
+        "body": "Sourced facts and uncertainty are separated through labels, hierarchy, and metadata—not decorative gradients or luminous effects.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Authority Rule",
+        "body": "Inter Variable is the single product voice.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Are Records Rule",
+        "body": "IBM Plex Mono is reserved for money, dates, counts, identifiers, checksums, shortcuts, and similarly scan-sensitive values.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-by-Default Rule",
+        "body": "Structure comes from tonal layers, one-pixel dividers, and space.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Consequence Floats Rule",
+        "body": "Shadows belong only to dialogs, command surfaces, menus, toasts, and active drag states.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Exact Approval Rule",
+        "body": "Any external send review must show the frozen recipient, subject, body, attachments, connector, suppression state, and approval boundary together.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do keep the founder’s next safe action visible without hiding evidence or context.",
+      "Do distinguish sourced facts, founder-entered facts, inferences, unknowns, and stale claims.",
+      "Do make send approval, suppression, connector access, agent disclosure, and local-storage status unmistakable.",
+      "Do preserve semantic HTML, keyboard completion, visible focus, reduced-motion behavior, and WCAG 2.2 AA contrast.",
+      "Do use stable spatial structure and progressive disclosure for dense investor records."
+    ],
+    "donts": [
+      "Don't reproduce generic CRM dashboards that turn every fact into a card and every workflow into configuration.",
+      "Don't use AI-purple gradients, neon accents, glassmorphism, decorative agent theater, or chat-first interfaces that hide records.",
+      "Don't use finance-terminal cosplay, navy-and-gold prestige styling, or dark-mode-only density.",
+      "Don't borrow growth-hacking or bulk-email patterns that reward volume, vanity metrics, or unattended sequences.",
+      "Don't make consequential outreach feel casual through consumer-playful styling.",
+      "Don't use color alone, hover-only controls, placeholder-only labels, inaccessible drag-only actions, or invisible focus."
+    ]
+  }
+}

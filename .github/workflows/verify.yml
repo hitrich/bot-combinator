@@ -1,0 +1,263 @@
+name: Verify native desktop builds
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  native-verify:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-x64
+            runner: macos-15-intel
+            platform: darwin
+            arch: x64
+          - target: macos-arm64
+            runner: macos-15
+            platform: darwin
+            arch: arm64
+          - target: windows-x64
+            runner: windows-2025
+            platform: win32
+            arch: x64
+          - target: windows-arm64
+            runner: windows-11-arm
+            platform: win32
+            arch: arm64
+          - target: linux-x64
+            runner: ubuntu-24.04
+            platform: linux
+            arch: x64
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up native Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          architecture: ${{ matrix.arch }}
+
+      - name: Activate pinned pnpm with Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.18.0 --activate
+          pnpm config set store-dir "${{ runner.temp }}/pnpm-store"
+
+      - name: Restore target-native pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ runner.temp }}/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ matrix.arch }}-
+
+      - name: Assert runner architecture
+        run: node scripts/assert-architecture.mjs --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Self-test release utilities
+        run: node scripts/self-test.mjs
+
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+
+      - name: Run full verification gate
+        run: pnpm verify
+
+      - name: Run Electron end-to-end tests
+        if: runner.os != 'Linux'
+        run: pnpm test:e2e
+
+      - name: Run Electron end-to-end tests under Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm test:e2e
+
+      - name: Generate and validate third-party notices
+        run: |
+          pnpm run licenses
+          node scripts/validate-legal-notices.mjs
+
+      - name: Build native unsigned verification packages
+        run: node scripts/package-target.mjs --unsigned --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+
+      - name: Verify packaged seed, notices, and agent sidecars
+        run: node scripts/verify-packaged-resources.mjs --release-dir apps/desktop/release
+
+      - name: Verify hardened Electron fuses
+        run: node scripts/verify-electron-fuses.mjs --release-dir apps/desktop/release
+
+      - name: Verify explicit unsigned macOS or Windows status
+        if: runner.os != 'Linux'
+        run: node scripts/verify-code-signing.mjs --expect unsigned --release-dir apps/desktop/release
+
+      - name: Record Linux checksum-and-attestation trust mode
+        if: runner.os == 'Linux'
+        run: node scripts/verify-code-signing.mjs --expect checksum-attested --release-dir apps/desktop/release
+
+      - name: Smoke packaged app
+        if: runner.os != 'Linux'
+        run: node scripts/smoke-packaged-app.mjs --release-dir apps/desktop/release
+
+      - name: Smoke packaged app under Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum node scripts/smoke-packaged-app.mjs --release-dir apps/desktop/release
+
+      - name: Collect distributable artifacts
+        run: node scripts/collect-release-artifacts.mjs --release-dir apps/desktop/release
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-attested' || 'unsigned' }}
+
+      - name: Write machine-readable package trust disclosure
+        run: node scripts/write-signing-status.mjs
+        env:
+          OUTREACHR_TARGET: ${{ matrix.target }}
+          OUTREACHR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-attested' || 'unsigned' }}
+          OUTREACHR_TAG_VERIFICATION: not-applicable
+
+      - name: Generate CycloneDX SBOM
+        run: node scripts/generate-sbom.mjs --target ${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.cdx.json
+
+      - name: Generate local SLSA-format provenance
+        run: node scripts/generate-provenance.mjs --target ${{ matrix.target }} --artifact-dir artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.provenance.json
+
+      - name: Generate SHA-256 manifest
+        run: node scripts/generate-checksums.mjs --directory artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/SHA256SUMS-${{ matrix.target }}
+
+      - name: Verify SHA-256 manifest
+        run: node scripts/verify-checksums.mjs --manifest artifacts/${{ matrix.target }}/SHA256SUMS-${{ matrix.target }}
+
+      - name: Upload native verification bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: outreachr-${{ matrix.target }}
+          path: artifacts/${{ matrix.target }}/*
+          if-no-files-found: error
+          retention-days: 14
+
+  quality-security:
+    name: Quality and security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+
+      - name: Activate pinned pnpm with Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.18.0 --activate
+          pnpm config set store-dir "${{ runner.temp }}/pnpm-store"
+
+      - name: Restore Linux pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ runner.temp }}/pnpm-store
+          key: pnpm-quality-linux-x64-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-quality-linux-x64-
+
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release utility self-test
+        run: node scripts/self-test.mjs
+
+      - name: Enforce test coverage thresholds
+        run: pnpm test:coverage
+
+      - name: Block moderate-or-higher dependency advisories
+        run: pnpm audit --audit-level=moderate
+
+      - name: Generate and validate dependency licenses and data rights
+        run: |
+          pnpm run licenses
+          node scripts/validate-legal-notices.mjs
+
+  verify-complete:
+    name: All native targets
+    needs: [native-verify, quality-security, attest-verified-builds]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every native matrix entry
+        if: needs.native-verify.result != 'success' || needs.quality-security.result != 'success' || (github.event_name != 'pull_request' && needs.attest-verified-builds.result != 'success')
+        run: exit 1
+
+      - name: Confirm complete native verification
+        if: needs.native-verify.result == 'success' && needs.quality-security.result == 'success' && (github.event_name == 'pull_request' || needs.attest-verified-builds.result == 'success')
+        run: echo 'All six target-native verification jobs, the quality/security gate, and every required push attestation passed.'
+
+  attest-verified-builds:
+    name: Attest ${{ matrix.target }}
+    needs: native-verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [macos-x64, macos-arm64, windows-x64, windows-arm64, linux-x64, linux-arm64]
+    steps:
+      - name: Check out release utilities only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download verified native bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: outreachr-${{ matrix.target }}
+          path: artifacts/${{ matrix.target }}
+
+      - name: Create GitHub build attestation
+        id: attestation
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-path: artifacts/${{ matrix.target }}/*
+
+      - name: Preserve attestation bundle and checksum
+        run: node scripts/copy-attestation.mjs --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl
+        env:
+          ATTESTATION_BUNDLE: ${{ steps.attestation.outputs.bundle-path }}
+
+      - name: Upload attestation bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: outreachr-${{ matrix.target }}-attestation
+          path: |
+            artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl
+            artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl.sha256
+          if-no-files-found: error
+          retention-days: 14
