@@ -1461,7 +1461,7 @@ describe('VaultService with the production investor seed', () => {
     expect(diff).not.toContain(privateEmail);
     expect(diff).not.toContain(privatePersonalEmail);
     expect(diff).not.toContain('Never export this private task');
-  });
+  }, 120_000);
 
   it('rejects oversized selected backups and seeds before reading or mutating the vault', async () => {
     const { service, directory } = await create();

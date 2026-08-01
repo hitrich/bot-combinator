@@ -1,5 +1,6 @@
 {
   "name": "@outreachr/desktop",
+  "desktopName": "outreachr",
   "version": "0.1.0",
   "private": true,
   "description": "Outreachr local-first Electron desktop application",

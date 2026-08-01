@@ -121,6 +121,88 @@ export async function normalizeCodeSignature(target, platform = process.platform
   return false;
 }
 
+/**
+ * Read the PE security directory without invoking PowerShell. This keeps the
+ * unsigned Windows release check deterministic on hosted x64 and arm64 runners,
+ * where the legacy Microsoft.PowerShell.Security module is not always loadable.
+ */
+export async function peAuthenticodeCertificate(target) {
+  const handle = await fs.open(target, 'r');
+  try {
+    const stat = await handle.stat();
+    const dos = Buffer.alloc(64);
+    if ((await handle.read(dos, 0, dos.length, 0)).bytesRead !== dos.length) {
+      throw new Error(`Truncated PE executable: ${target}`);
+    }
+    if (dos[0] !== 0x4d || dos[1] !== 0x5a) {
+      throw new Error(`Missing DOS signature in ${target}`);
+    }
+    const peOffset = dos.readUInt32LE(0x3c);
+    const peHeader = Buffer.alloc(24);
+    if ((await handle.read(peHeader, 0, peHeader.length, peOffset)).bytesRead !== peHeader.length) {
+      throw new Error(`Invalid PE header offset in ${target}`);
+    }
+    if (!peHeader.subarray(0, 4).equals(Buffer.from([0x50, 0x45, 0, 0]))) {
+      throw new Error(`Missing PE signature in ${target}`);
+    }
+    const optionalSize = peHeader.readUInt16LE(20);
+    const optionalOffset = peOffset + 24;
+    const optional = Buffer.alloc(optionalSize);
+    if (
+      optionalSize < 128 ||
+      (await handle.read(optional, 0, optional.length, optionalOffset)).bytesRead !==
+        optional.length
+    ) {
+      throw new Error(`Truncated PE optional header in ${target}`);
+    }
+    const magic = optional.readUInt16LE(0);
+    const dataDirectoriesOffset = magic === 0x10b ? 96 : magic === 0x20b ? 112 : null;
+    if (dataDirectoriesOffset === null || dataDirectoriesOffset + 40 > optional.length) {
+      throw new Error(`Unsupported PE optional header in ${target}`);
+    }
+    const offset = optional.readUInt32LE(dataDirectoriesOffset + 32);
+    const size = optional.readUInt32LE(dataDirectoriesOffset + 36);
+    if (offset === 0 && size === 0) return null;
+    if (offset === 0 || size < 8 || offset + size > stat.size) {
+      throw new Error(`Unsafe Authenticode certificate table in ${target}`);
+    }
+    const header = Buffer.alloc(8);
+    if ((await handle.read(header, 0, header.length, offset)).bytesRead !== header.length) {
+      throw new Error(`Truncated Authenticode certificate table in ${target}`);
+    }
+    const length = header.readUInt32LE(0);
+    const revision = header.readUInt16LE(4);
+    const certificateType = header.readUInt16LE(6);
+    if (length < 8 || length > size || revision !== 0x0200 || certificateType !== 0x0002) {
+      throw new Error(`Invalid Authenticode WIN_CERTIFICATE header in ${target}`);
+    }
+    return { offset, size, length, revision, certificateType };
+  } finally {
+    await handle.close();
+  }
+}
+
+export async function runWindowsPowerShell(script, environment = {}) {
+  const failures = [];
+  for (const command of ['pwsh.exe', 'powershell.exe']) {
+    try {
+      const result = await run(
+        command,
+        ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
+        {
+          allowFailure: true,
+          env: { ...process.env, ...environment },
+        },
+      );
+      if (result.code === 0) return;
+      failures.push(`${command}: ${result.stderr || result.stdout || `exit ${result.code}`}`);
+    } catch (error) {
+      failures.push(`${command}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  throw new Error(`Windows PowerShell signature verification failed:\n${failures.join('\n')}`);
+}
+
 export async function normalizeSignableTree(root, platform = process.platform) {
   let normalized = 0;
   for (const file of await walkFiles(root)) {

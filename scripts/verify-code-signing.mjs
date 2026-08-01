@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { parseArgs, repoRoot, run, walkFiles } from './_lib.mjs';
+import {
+  parseArgs,
+  peAuthenticodeCertificate,
+  repoRoot,
+  run,
+  runWindowsPowerShell,
+  walkFiles,
+} from './_lib.mjs';
 
 const args = parseArgs();
 const releaseDir = path.resolve(
@@ -66,18 +73,18 @@ if (process.platform === 'darwin') {
   const expectedPublisher = process.env.OUTREACHR_WINDOWS_EXPECTED_PUBLISHER;
   if (!expectedPublisher) throw new Error('OUTREACHR_WINDOWS_EXPECTED_PUBLISHER is not configured');
   for (const executable of executables) {
+    if (!(await peAuthenticodeCertificate(executable))) {
+      throw new Error(`Missing Authenticode certificate table: ${executable}`);
+    }
     const script =
+      'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
       '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
       'if ($signature.Status -ne \'Valid\') { throw "Invalid Authenticode signature: $($signature.Status)" }; ' +
       'if ($null -eq $signature.SignerCertificate -or $signature.SignerCertificate.Subject.IndexOf($env:OUTREACHR_VERIFY_PUBLISHER, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Unexpected Authenticode publisher: $($signature.SignerCertificate.Subject)" }; ' +
       'if ($null -eq $signature.TimeStamperCertificate) { throw "Authenticode signature is not timestamped" }';
-    await run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
-      capture: false,
-      env: {
-        ...process.env,
-        OUTREACHR_VERIFY_EXECUTABLE: executable,
-        OUTREACHR_VERIFY_PUBLISHER: expectedPublisher,
-      },
+    await runWindowsPowerShell(script, {
+      OUTREACHR_VERIFY_EXECUTABLE: executable,
+      OUTREACHR_VERIFY_PUBLISHER: expectedPublisher,
     });
   }
   console.log(`Verified ${executables.length} Authenticode signatures.`);
@@ -138,14 +145,12 @@ async function verifyUntrustedMacDistribution(app, releaseFiles) {
 }
 
 async function verifyUnsignedWindowsDistribution(executables) {
-  const script =
-    '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
-    'if ($signature.Status -eq \'Valid\') { throw "Unsigned mode unexpectedly contains a valid Authenticode signature: $($signature.SignerCertificate.Subject)" }';
   for (const executable of executables) {
-    await run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
-      capture: false,
-      env: { ...process.env, OUTREACHR_VERIFY_EXECUTABLE: executable },
-    });
+    if (await peAuthenticodeCertificate(executable)) {
+      throw new Error(
+        `Unsigned mode unexpectedly contains an Authenticode signature: ${executable}`,
+      );
+    }
   }
   console.log(
     `Verified explicit unsigned Windows status for ${executables.length} executables; SmartScreen warning is expected and must be disclosed.`,

@@ -55,6 +55,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
 linux:
+  executableName: outreachr
+  syncDesktopName: true
   icon: build/icons
   category: Office
   synopsis: Local-first fundraising operating system

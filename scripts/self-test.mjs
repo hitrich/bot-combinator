@@ -8,6 +8,7 @@ import {
   copyTree,
   normalizeCodeSignature,
   parseArgs,
+  peAuthenticodeCertificate,
   pnpmInvocation,
   repoRoot,
   run,
@@ -94,7 +95,48 @@ try {
     },
   );
   assert.throws(() => pnpmInvocation(['build & echo unsafe'], 'win32', {}), /Unsafe pnpm argument/);
+  const unsignedPe = Buffer.alloc(528);
+  unsignedPe.write('MZ', 0, 'ascii');
+  unsignedPe.writeUInt32LE(0x80, 0x3c);
+  unsignedPe.write('PE\0\0', 0x80, 'binary');
+  unsignedPe.writeUInt16LE(240, 0x80 + 20);
+  unsignedPe.writeUInt16LE(0x20b, 0x80 + 24);
+  const unsignedPePath = path.join(temporaryRoot, 'unsigned.exe');
+  await fs.writeFile(unsignedPePath, unsignedPe);
+  assert.equal(await peAuthenticodeCertificate(unsignedPePath), null);
+  const signedPe = Buffer.from(unsignedPe);
+  signedPe.writeUInt32LE(512, 0x80 + 24 + 112 + 32);
+  signedPe.writeUInt32LE(16, 0x80 + 24 + 112 + 36);
+  signedPe.writeUInt32LE(16, 512);
+  signedPe.writeUInt16LE(0x0200, 516);
+  signedPe.writeUInt16LE(0x0002, 518);
+  const signedPePath = path.join(temporaryRoot, 'signed.exe');
+  await fs.writeFile(signedPePath, signedPe);
+  assert.deepEqual(await peAuthenticodeCertificate(signedPePath), {
+    offset: 512,
+    size: 16,
+    length: 16,
+    revision: 0x0200,
+    certificateType: 0x0002,
+  });
   const rootManifest = JSON.parse(await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'));
+  const desktopManifest = JSON.parse(
+    await fs.readFile(path.join(repoRoot, 'apps', 'desktop', 'package.json'), 'utf8'),
+  );
+  assert.equal(
+    desktopManifest.desktopName,
+    'outreachr',
+    'Linux packages must declare a filesystem-safe desktopName',
+  );
+  const electronBuilderConfig = await fs.readFile(
+    path.join(repoRoot, 'apps', 'desktop', 'electron-builder.yml'),
+    'utf8',
+  );
+  assert.match(
+    electronBuilderConfig,
+    /^linux:\r?\n\s+executableName: outreachr\r?\n\s+syncDesktopName: true$/m,
+    'Linux packages must use the stable outreachr executable and matching desktop identity',
+  );
   const packageBuildScript = String(rootManifest.scripts?.['build:packages'] ?? '');
   assert.doesNotMatch(
     packageBuildScript,

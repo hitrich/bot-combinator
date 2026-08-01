@@ -10,6 +10,7 @@ import {
   readJson,
   repoRoot,
   run,
+  runWindowsPowerShell,
   sha256File,
   walkFiles,
 } from './_lib.mjs';
@@ -107,10 +108,11 @@ async function verifyEmbeddedSignature(target) {
   }
   if (process.platform === 'win32') {
     const script =
+      'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
       '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
       'if ($signature.Status -ne \'Valid\') { throw "Invalid embedded Authenticode signature: $($signature.Status)" }';
-    await run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
-      env: { ...process.env, OUTREACHR_VERIFY_EXECUTABLE: target },
+    await runWindowsPowerShell(script, {
+      OUTREACHR_VERIFY_EXECUTABLE: target,
     });
   }
 }
