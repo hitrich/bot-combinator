@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { CodexAgentAdapter, sanitizeCodexEnvironment } from '../src/codex.js';
@@ -43,6 +45,7 @@ const installed: CommandRunner = vi.fn(async () => ({
   stdout: 'codex-cli 0.146.0\n',
   stderr: '',
 }));
+const resolvedWorkspaceDirectory = resolve('/tmp/outreachr-agent');
 
 function authenticatedRpc(): FakeRpc {
   const rpc = new FakeRpc();
@@ -201,14 +204,14 @@ describe('CodexAgentAdapter', () => {
     expect(thread).toMatchObject({
       approvalPolicy: 'never',
       sandbox: 'read-only',
-      runtimeWorkspaceRoots: ['/tmp/outreachr-agent'],
+      runtimeWorkspaceRoots: [resolvedWorkspaceDirectory],
       ephemeral: true,
       model: 'gpt-safe',
     });
     const turn = rpc.requests.find(({ method }) => method === 'turn/start')?.params;
     expect(turn).toMatchObject({
       approvalPolicy: 'never',
-      runtimeWorkspaceRoots: ['/tmp/outreachr-agent'],
+      runtimeWorkspaceRoots: [resolvedWorkspaceDirectory],
       sandboxPolicy: {
         type: 'readOnly',
         networkAccess: false,

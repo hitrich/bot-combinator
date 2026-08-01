@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import type { Options, Query, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -42,6 +44,7 @@ const installedWithCliAuth: CommandRunner = vi.fn(async (_command, args) => {
   }
   return { exitCode: 0, stdout: '', stderr: '' };
 });
+const resolvedWorkspaceDirectory = resolve('/tmp/outreachr-agent');
 
 describe('ClaudeAgentAdapter', () => {
   it('detects but does not route an independently authenticated Claude subscription', async () => {
@@ -179,7 +182,7 @@ describe('ClaudeAgentAdapter', () => {
     const result = await adapter.run('run-claude', runRequest('claude'), emit);
     expect(result.proposals[0]).toMatchObject({ kind: 'draft', executable: false });
     expect(captured?.options).toMatchObject({
-      cwd: '/tmp/outreachr-agent',
+      cwd: resolvedWorkspaceDirectory,
       tools: [],
       allowedTools: [],
       permissionMode: 'dontAsk',

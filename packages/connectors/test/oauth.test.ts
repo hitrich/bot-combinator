@@ -57,7 +57,7 @@ describe('desktop OAuth and PKCE', () => {
     expect(PROVIDER_DRAFT_SCOPES.microsoft).toContain('Mail.ReadWrite');
   });
 
-  it('validates callback state and rejects non-loopback redirect URIs', () => {
+  it('validates callback state and rejects non-loopback redirect URIs', async () => {
     expect(
       validateOAuthCallback(
         'http://127.0.0.1:49152/oauth/callback?code=code-1&state=state-1',
@@ -70,7 +70,7 @@ describe('desktop OAuth and PKCE', () => {
         'state-1',
       ),
     ).toThrowError(ConnectorError);
-    expect(() =>
+    await expect(
       prepareDesktopAuthorization({
         provider: 'google',
         clientId: 'client',
