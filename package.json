@@ -21,7 +21,7 @@
     "predev": "pnpm build:packages",
     "dev": "pnpm --filter @outreachr/desktop dev",
     "build": "pnpm -r --if-present build",
-    "build:packages": "pnpm -r --filter './packages/**' --if-present build",
+    "build:packages": "pnpm -r --filter @outreachr/agents --filter @outreachr/connectors --filter @outreachr/core --filter @outreachr/mcp --if-present build",
     "prelint": "pnpm build:packages",
     "pretypecheck": "pnpm build:packages",
     "typecheck": "pnpm -r --if-present typecheck",

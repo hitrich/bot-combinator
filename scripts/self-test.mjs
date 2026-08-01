@@ -94,6 +94,31 @@ try {
     },
   );
   assert.throws(() => pnpmInvocation(['build & echo unsafe'], 'win32', {}), /Unsafe pnpm argument/);
+  const rootManifest = JSON.parse(await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'));
+  const packageBuildScript = String(rootManifest.scripts?.['build:packages'] ?? '');
+  assert.doesNotMatch(
+    packageBuildScript,
+    /packages[\\/]\*\*/,
+    'cold package builds must not use a path-separator-sensitive workspace filter',
+  );
+  for (const packageName of [
+    '@outreachr/agents',
+    '@outreachr/connectors',
+    '@outreachr/core',
+    '@outreachr/mcp',
+  ]) {
+    assert.ok(
+      packageBuildScript.includes(`--filter ${packageName}`),
+      `cold package builds must explicitly include ${packageName}`,
+    );
+  }
+  for (const lifecycle of ['prelint', 'pretypecheck', 'pretest', 'pretest:coverage']) {
+    assert.equal(
+      rootManifest.scripts?.[lifecycle],
+      'pnpm build:packages',
+      `${lifecycle} must prepare workspace exports on a cold checkout`,
+    );
+  }
   const windowsLegalText = path.join(temporaryRoot, 'windows-legal.txt');
   const canonicalLegalText = path.join(temporaryRoot, 'canonical-legal.txt');
   await fs.writeFile(windowsLegalText, 'first line\r\nsecond line\r\n', 'utf8');
