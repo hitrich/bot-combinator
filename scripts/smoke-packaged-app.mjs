@@ -240,6 +240,27 @@ async function stageDistributions(root, requestedKind) {
         if (!installedExecutable || !(await fs.stat(installedExecutable)).isFile()) {
           throw new Error('Installed deb does not contain the Outreachr executable');
         }
+        const desktopEntries = installedFiles.filter(
+          (file) => path.basename(file).toLowerCase() === 'outreachr.desktop',
+        );
+        if (desktopEntries.length !== 1) {
+          throw new Error(
+            `Installed deb contains ${desktopEntries.length} outreachr.desktop entries`,
+          );
+        }
+        const desktopEntry = await fs.readFile(desktopEntries[0], 'utf8');
+        if (!/^StartupWMClass=outreachr$/m.test(desktopEntry)) {
+          throw new Error('Installed desktop entry does not match the Electron app identity');
+        }
+        if (!/^Icon=outreachr$/m.test(desktopEntry)) {
+          throw new Error('Installed desktop entry does not use the packaged Outreachr icon');
+        }
+        const desktopExec = /^Exec=(.+)$/m.exec(desktopEntry)?.[1];
+        if (!desktopExec?.startsWith(installedExecutable)) {
+          throw new Error(
+            'Installed desktop entry does not launch the packaged Outreachr executable',
+          );
+        }
         staged.push({
           kind: 'deb',
           executable: installedExecutable,
