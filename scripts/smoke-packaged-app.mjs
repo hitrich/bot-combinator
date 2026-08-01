@@ -4,7 +4,16 @@ import { promises as fs } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { parseArgs, repoRoot, run, walkFiles } from './_lib.mjs';
+import {
+  collectCleanupErrors,
+  nsisUninstallArgs,
+  parseArgs,
+  repoRoot,
+  run,
+  throwCleanupErrors,
+  throwWithCleanup,
+  walkFiles,
+} from './_lib.mjs';
 
 const args = parseArgs();
 const releaseDir = path.resolve(
@@ -15,20 +24,25 @@ const stageKinds = process.platform === 'darwin' ? ['dmg', 'zip'] : [undefined];
 
 for (const stageKind of stageKinds) {
   const distributions = await stageDistributions(releaseDir, stageKind);
+  let smokeError;
   try {
     for (const distribution of distributions) await smokeDistribution(distribution, timeoutMs);
-  } finally {
-    for (const distribution of [...distributions].reverse()) await distribution.cleanup();
+  } catch (error) {
+    smokeError = error;
   }
+  const cleanupErrors = await cleanupDistributions(distributions);
+  if (smokeError) throwWithCleanup(smokeError, cleanupErrors, 'Packaged application smoke');
+  throwCleanupErrors(cleanupErrors, 'Packaged application smoke');
 }
 
 async function smokeDistribution(distribution, timeout) {
   const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-smoke-profile-'));
-  const debuggingPort = await availablePort();
   let child;
   let stdout = '';
   let stderr = '';
+  let smokeError;
   try {
+    const debuggingPort = await availablePort();
     console.log(`Launching final ${distribution.kind} distribution: ${distribution.executable}`);
     child = spawn(
       distribution.executable,
@@ -76,15 +90,20 @@ async function smokeDistribution(distribution, timeout) {
       `${distribution.kind} renderer ready: ${renderer.title}; ${renderer.workspace}; ${renderer.bodyTextLength} visible text characters.`,
     );
   } catch (error) {
-    throw new Error(
+    smokeError = new Error(
       `${distribution.kind} smoke failed: ${error instanceof Error ? error.message : String(error)}\n` +
         `stdout:\n${stdout}\nstderr:\n${stderr}`,
       { cause: error },
     );
-  } finally {
-    if (child?.pid) await terminateTree(child.pid);
-    await removeTree(profile);
   }
+  const cleanupErrors = await collectCleanupErrors([
+    async () => {
+      if (child?.pid) await terminateTree(child.pid);
+    },
+    () => removeTree(profile),
+  ]);
+  if (smokeError) throwWithCleanup(smokeError, cleanupErrors, `${distribution.kind} smoke`);
+  throwCleanupErrors(cleanupErrors, `${distribution.kind} smoke`);
 }
 
 async function stageDistributions(root, requestedKind) {
@@ -134,12 +153,15 @@ async function stageDistributions(root, requestedKind) {
             },
           });
         } catch (error) {
+          const cleanups = [];
           if (mounted) {
-            await run('hdiutil', ['detach', mountpoint, '-force'], { allowFailure: true });
+            cleanups.push(() => run('hdiutil', ['detach', mountpoint, '-force']));
           }
-          await removeTree(mountpoint);
-          await removeTree(installRoot);
-          throw error;
+          cleanups.push(
+            () => removeTree(mountpoint),
+            () => removeTree(installRoot),
+          );
+          throwWithCleanup(error, await collectCleanupErrors(cleanups), 'DMG distribution staging');
         }
       }
 
@@ -161,8 +183,11 @@ async function stageDistributions(root, requestedKind) {
             },
           });
         } catch (error) {
-          await removeTree(zipRoot);
-          throw error;
+          throwWithCleanup(
+            error,
+            await collectCleanupErrors([() => removeTree(zipRoot)]),
+            'ZIP distribution staging',
+          );
         }
       }
       return staged;
@@ -199,8 +224,11 @@ async function stageDistributions(root, requestedKind) {
           cleanup: () => cleanupNsis(installRoot),
         });
       } catch (error) {
-        await cleanupNsis(installRoot);
-        throw error;
+        throwWithCleanup(
+          error,
+          await collectCleanupErrors([() => cleanupNsis(installRoot)]),
+          'NSIS distribution staging',
+        );
       }
       return staged;
     }
@@ -226,6 +254,15 @@ async function stageDistributions(root, requestedKind) {
       if (!/^[a-z0-9][a-z0-9+.-]+$/.test(packageName)) {
         throw new Error(`Invalid deb package name: ${packageName}`);
       }
+      const priorPackageStatus = await debPackageStatus(packageName);
+      if (priorPackageStatus !== null) {
+        throw new Error(
+          `Refusing to replace an existing ${packageName} package (${priorPackageStatus})`,
+        );
+      }
+      if (await pathEntryExists('/usr/bin/outreachr')) {
+        throw new Error('Refusing to replace an existing /usr/bin/outreachr entry');
+      }
       try {
         await run('sudo', ['apt-get', 'install', '--yes', '--no-install-recommends', debs[0]], {
           capture: false,
@@ -234,21 +271,19 @@ async function stageDistributions(root, requestedKind) {
         const installedFiles = (await run('dpkg', ['--listfiles', packageName])).stdout
           .split(/\r?\n/)
           .filter(Boolean);
-        const installedExecutable = installedFiles.find(
-          (file) => path.basename(file).toLowerCase() === 'outreachr',
-        );
-        if (!installedExecutable || !(await fs.stat(installedExecutable)).isFile()) {
-          throw new Error('Installed deb does not contain the Outreachr executable');
+        const installedExecutable = '/opt/Outreachr/outreachr';
+        if (!installedFiles.includes(installedExecutable)) {
+          throw new Error(`Installed deb does not contain ${installedExecutable}`);
         }
-        const desktopEntries = installedFiles.filter(
-          (file) => path.basename(file).toLowerCase() === 'outreachr.desktop',
-        );
-        if (desktopEntries.length !== 1) {
-          throw new Error(
-            `Installed deb contains ${desktopEntries.length} outreachr.desktop entries`,
-          );
+        const executableStat = await fs.lstat(installedExecutable);
+        if (!executableStat.isFile() || (executableStat.mode & 0o111) === 0) {
+          throw new Error(`Installed deb executable is not runnable: ${installedExecutable}`);
         }
-        const desktopEntry = await fs.readFile(desktopEntries[0], 'utf8');
+        const desktopEntryPath = '/usr/share/applications/outreachr.desktop';
+        if (!installedFiles.includes(desktopEntryPath)) {
+          throw new Error(`Installed deb does not contain ${desktopEntryPath}`);
+        }
+        const desktopEntry = await fs.readFile(desktopEntryPath, 'utf8');
         if (!/^StartupWMClass=outreachr$/m.test(desktopEntry)) {
           throw new Error('Installed desktop entry does not match the Electron app identity');
         }
@@ -256,7 +291,7 @@ async function stageDistributions(root, requestedKind) {
           throw new Error('Installed desktop entry does not use the packaged Outreachr icon');
         }
         const desktopExec = /^Exec=(.+)$/m.exec(desktopEntry)?.[1];
-        if (!desktopExec?.startsWith(installedExecutable)) {
+        if (desktopExec !== `${installedExecutable} %U`) {
           throw new Error(
             'Installed desktop entry does not launch the packaged Outreachr executable',
           );
@@ -268,16 +303,24 @@ async function stageDistributions(root, requestedKind) {
           cleanup: () => cleanupDeb(packageName),
         });
       } catch (error) {
-        await cleanupDeb(packageName);
-        throw error;
+        throwWithCleanup(
+          error,
+          await collectCleanupErrors([() => cleanupDeb(packageName)]),
+          'Debian package staging',
+        );
       }
       return staged;
     }
     throw new Error(`Unsupported smoke-test platform ${process.platform}`);
   } catch (error) {
-    for (const distribution of [...staged].reverse()) await distribution.cleanup();
-    throw error;
+    throwWithCleanup(error, await cleanupDistributions(staged), 'Distribution staging');
   }
+}
+
+async function cleanupDistributions(distributions) {
+  return await collectCleanupErrors(
+    [...distributions].reverse().map((distribution) => () => distribution.cleanup()),
+  );
 }
 
 async function uniqueAppExecutable(root, label) {
@@ -308,10 +351,17 @@ async function cleanupNsis(installRoot) {
   const uninstallers = (await walkFiles(installRoot)).filter((file) =>
     /^uninstall.*\.exe$/i.test(path.basename(file)),
   );
-  for (const uninstaller of uninstallers) {
-    await run(uninstaller, ['/S'], { allowFailure: true, timeoutMs: 60_000 });
-  }
-  await removeTree(installRoot);
+  const cleanupErrors = await collectCleanupErrors([
+    ...uninstallers.map(
+      (uninstaller) => () =>
+        run(uninstaller, nsisUninstallArgs(installRoot), {
+          capture: false,
+          timeoutMs: 60_000,
+        }),
+    ),
+    () => removeTree(installRoot),
+  ]);
+  throwCleanupErrors(cleanupErrors, 'NSIS installation');
 }
 
 async function removeTree(target) {
@@ -324,11 +374,31 @@ async function removeTree(target) {
 }
 
 async function cleanupDeb(packageName) {
-  await run('sudo', ['dpkg', '--remove', packageName], {
-    allowFailure: true,
-    capture: false,
-    timeoutMs: 60_000,
-  });
+  if ((await debPackageStatus(packageName)) === null) return;
+  await run('sudo', ['dpkg', '--remove', packageName], { capture: false, timeoutMs: 60_000 });
+  const status = await debPackageStatus(packageName);
+  if (status !== null && !['config-files', 'not-installed'].includes(status)) {
+    throw new Error(`Debian package cleanup left ${packageName} in state ${status}`);
+  }
+}
+
+async function debPackageStatus(packageName) {
+  const result = await run(
+    'dpkg-query',
+    ['--show', '--showformat=${db:Status-Status}', packageName],
+    { allowFailure: true },
+  );
+  return result.code === 0 ? result.stdout.trim() : null;
+}
+
+async function pathEntryExists(target) {
+  try {
+    await fs.lstat(target);
+    return true;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    throw error;
+  }
 }
 
 async function waitForRendererReadiness(port, timeout) {

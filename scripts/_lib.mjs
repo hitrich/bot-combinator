@@ -211,6 +211,42 @@ export async function normalizeSignableTree(root, platform = process.platform) {
   return normalized;
 }
 
+export async function collectCleanupErrors(cleanups) {
+  const errors = [];
+  for (const cleanup of cleanups) {
+    try {
+      await cleanup();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  return errors;
+}
+
+export function throwWithCleanup(primaryError, cleanupErrors, context) {
+  if (cleanupErrors.length > 0) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      `${context} failed and cleanup also failed`,
+      { cause: primaryError },
+    );
+  }
+  throw primaryError;
+}
+
+export function throwCleanupErrors(cleanupErrors, context) {
+  if (cleanupErrors.length === 0) return;
+  if (cleanupErrors.length === 1) throw cleanupErrors[0];
+  throw new AggregateError(cleanupErrors, `${context} cleanup failed`, {
+    cause: cleanupErrors[0],
+  });
+}
+
+export function nsisUninstallArgs(installRoot) {
+  if (!installRoot) throw new Error('NSIS install root is required');
+  return ['/S', `_?=${installRoot}`];
+}
+
 export async function run(command, args = [], options = {}) {
   const {
     cwd = repoRoot,
@@ -491,24 +527,19 @@ export async function packageMetadataFromPnpmStore(root = repoRoot) {
   const store = path.join(root, 'node_modules', '.pnpm');
   if (!(await exists(store)))
     throw new Error(`pnpm virtual store not found at ${store}; run pnpm install first`);
-  const packages = new Map();
-  const storeEntries = await fs.readdir(store, { withFileTypes: true });
-  for (const storeEntry of storeEntries) {
-    if (!storeEntry.isDirectory() || storeEntry.name.startsWith('.')) continue;
-    const modules = path.join(store, storeEntry.name, 'node_modules');
-    if (!(await exists(modules))) continue;
-    for (const first of await fs.readdir(modules, { withFileTypes: true })) {
-      if (!first.isDirectory()) continue;
-      if (first.name.startsWith('@')) {
-        const scope = path.join(modules, first.name);
-        for (const second of await fs.readdir(scope, { withFileTypes: true })) {
-          if (second.isDirectory()) await addPackage(path.join(scope, second.name));
-        }
-      } else {
-        await addPackage(path.join(modules, first.name));
-      }
-    }
+  const listing = await runPnpm(['list', '--recursive', '--json', '--depth', 'Infinity'], {
+    cwd: root,
+  });
+  let workspaces;
+  try {
+    workspaces = JSON.parse(listing.stdout);
+  } catch (error) {
+    throw new Error('Could not parse the active pnpm dependency graph', { cause: error });
   }
+  const packageDirectories = activePnpmPackageDirectories(workspaces, store);
+
+  const packages = new Map();
+  for (const packageDirectory of packageDirectories) await addPackage(packageDirectory);
   return [...packages.values()].sort(
     (left, right) =>
       left.name.localeCompare(right.name, 'en') || left.version.localeCompare(right.version, 'en'),
@@ -550,5 +581,40 @@ export async function packageMetadataFromPnpmStore(root = repoRoot) {
       manifestPath,
       licenseFiles: licenseFiles.sort(),
     });
+  }
+}
+
+export function activePnpmPackageDirectories(workspaces, store) {
+  if (!Array.isArray(workspaces)) {
+    throw new Error('The active pnpm dependency graph is not a workspace array');
+  }
+  const packageDirectories = new Set();
+  for (const workspace of workspaces) {
+    collectDependencyPaths(workspace.dependencies);
+    collectDependencyPaths(workspace.devDependencies);
+    collectDependencyPaths(workspace.optionalDependencies);
+  }
+  return [...packageDirectories].sort();
+
+  function collectDependencyPaths(dependencies) {
+    if (!dependencies || typeof dependencies !== 'object') return;
+    for (const dependency of Object.values(dependencies)) {
+      if (!dependency || typeof dependency !== 'object') continue;
+      if (typeof dependency.path === 'string') {
+        const candidate = path.resolve(dependency.path);
+        const relative = path.relative(store, candidate);
+        if (
+          relative &&
+          relative !== '..' &&
+          !relative.startsWith(`..${path.sep}`) &&
+          !path.isAbsolute(relative)
+        ) {
+          packageDirectories.add(candidate);
+        }
+      }
+      collectDependencyPaths(dependency.dependencies);
+      collectDependencyPaths(dependency.devDependencies);
+      collectDependencyPaths(dependency.optionalDependencies);
+    }
   }
 }

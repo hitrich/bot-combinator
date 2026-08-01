@@ -4,8 +4,11 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  activePnpmPackageDirectories,
+  collectCleanupErrors,
   copyCanonicalText,
   copyTree,
+  nsisUninstallArgs,
   normalizeCodeSignature,
   parseArgs,
   peAuthenticodeCertificate,
@@ -14,6 +17,8 @@ import {
   run,
   sha256File,
   targetId,
+  throwCleanupErrors,
+  throwWithCleanup,
 } from './_lib.mjs';
 import { assessReleaseSecrets } from './validate-release-secrets.mjs';
 import { verifyFuseBinary } from './verify-electron-fuses.mjs';
@@ -21,6 +26,70 @@ import { signingStatus } from './write-signing-status.mjs';
 
 const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-release-script-test-'));
 try {
+  const virtualStore = path.join(temporaryRoot, 'node_modules', '.pnpm');
+  const activePackage = path.join(virtualStore, 'active@1.0.0', 'node_modules', 'active');
+  const nestedPackage = path.join(virtualStore, 'nested@1.0.0', 'node_modules', 'nested');
+  assert.deepEqual(
+    activePnpmPackageDirectories(
+      [
+        {
+          dependencies: {
+            active: {
+              path: activePackage,
+              dependencies: { nested: { path: nestedPackage } },
+            },
+            outside: { path: path.join(temporaryRoot, 'outside-package') },
+          },
+        },
+      ],
+      virtualStore,
+    ),
+    [activePackage, nestedPackage].sort(),
+    'license and SBOM metadata must follow only active in-store dependencies',
+  );
+  assert.throws(() => activePnpmPackageDirectories({}, virtualStore), /not a workspace array/);
+  const primaryFailure = new Error('primary failure');
+  const cleanupFailure = new Error('cleanup failure');
+  const secondCleanupFailure = new Error('second cleanup failure');
+  const cleanupErrors = await collectCleanupErrors([
+    async () => {},
+    async () => {
+      throw cleanupFailure;
+    },
+    async () => {
+      throw secondCleanupFailure;
+    },
+  ]);
+  assert.deepEqual(cleanupErrors, [cleanupFailure, secondCleanupFailure]);
+  assert.throws(
+    () => throwWithCleanup(primaryFailure, cleanupErrors, 'Test operation'),
+    (error) =>
+      error instanceof AggregateError &&
+      error.cause === primaryFailure &&
+      error.errors[0] === primaryFailure &&
+      error.errors[1] === cleanupFailure,
+    'cleanup failures must not mask the primary failure',
+  );
+  assert.throws(
+    () => throwWithCleanup(primaryFailure, [], 'Test operation'),
+    (error) => error === primaryFailure,
+  );
+  assert.doesNotThrow(() => throwCleanupErrors([], 'Test operation'));
+  assert.throws(
+    () => throwCleanupErrors([cleanupFailure], 'Test operation'),
+    (error) => error === cleanupFailure,
+  );
+  assert.throws(
+    () => throwCleanupErrors(cleanupErrors, 'Test operation'),
+    (error) =>
+      error instanceof AggregateError &&
+      error.cause === cleanupFailure &&
+      error.errors[1] === secondCleanupFailure,
+  );
+  assert.deepEqual(nsisUninstallArgs('C:\\Temp\\Outreachr install'), [
+    '/S',
+    '_?=C:\\Temp\\Outreachr install',
+  ]);
   const payload = path.join(temporaryRoot, 'payload');
   await fs.mkdir(path.join(payload, 'nested'), { recursive: true });
   await fs.writeFile(path.join(payload, 'alpha.txt'), 'alpha\n', 'utf8');
@@ -127,6 +196,18 @@ try {
     desktopManifest.desktopName,
     'outreachr.desktop',
     'Linux packages must declare the installed desktop-entry filename',
+  );
+  const electronBuilderVersion = String(desktopManifest.devDependencies?.['electron-builder']);
+  assert.match(
+    electronBuilderVersion,
+    /^\d+\.\d+\.\d+$/,
+    'electron-builder must be pinned to an exact stable version',
+  );
+  const [builderMajor, builderMinor, builderPatch] = electronBuilderVersion.split('.').map(Number);
+  assert.ok(
+    builderMajor > 26 ||
+      (builderMajor === 26 && (builderMinor > 15 || (builderMinor === 15 && builderPatch >= 6))),
+    'electron-builder 26.15.6+ is required to prevent NSIS from dropping executable files',
   );
   const electronBuilderConfig = await fs.readFile(
     path.join(repoRoot, 'apps', 'desktop', 'electron-builder.yml'),
@@ -452,7 +533,7 @@ try {
   assert.notEqual(collisionResult.code, 0, 'artifact basename collisions must be rejected');
 
   console.log(
-    'Release-script self-test passed: command portability, Electron fuse enforcement, optional/partial signing policy, trust disclosures, pinned seed integrity, checksums, tamper/path safety, all six release bundles, complete attestation coverage, draft-asset comparison, and collision rejection.',
+    'Release-script self-test passed: command portability, cleanup-error preservation, deterministic NSIS uninstall, active dependency metadata, Electron fuse enforcement, optional/partial signing policy, trust disclosures, pinned seed integrity, checksums, tamper/path safety, all six release bundles, complete attestation coverage, draft-asset comparison, and collision rejection.',
   );
 } finally {
   await fs.rm(temporaryRoot, { recursive: true, force: true });

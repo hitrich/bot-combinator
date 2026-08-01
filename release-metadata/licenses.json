@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packageCount": 714,
+  "packageCount": 704,
   "packages": [
     {
       "name": "@adobe/css-tools",
@@ -1257,14 +1257,6 @@
       ]
     },
     {
-      "name": "@remix-run/router",
-      "version": "1.23.3",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
       "name": "@rolldown/pluginutils",
       "version": "1.0.0-rc.3",
       "license": "MIT",
@@ -1689,24 +1681,8 @@
       "licenseTextSha256": ["ff82c90f84945c60601e96b43246009b9bc589f3ebe1cd8a0fd39a3520d8c310"]
     },
     {
-      "name": "@types/react",
-      "version": "19.2.18",
-      "license": "MIT",
-      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react",
-      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
-      "licenseTextSha256": ["ff82c90f84945c60601e96b43246009b9bc589f3ebe1cd8a0fd39a3520d8c310"]
-    },
-    {
       "name": "@types/react-dom",
       "version": "19.2.3",
-      "license": "MIT",
-      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
-      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
-      "licenseTextSha256": ["ff82c90f84945c60601e96b43246009b9bc589f3ebe1cd8a0fd39a3520d8c310"]
-    },
-    {
-      "name": "@types/react-dom",
-      "version": "19.2.4",
       "license": "MIT",
       "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
       "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
@@ -1994,7 +1970,7 @@
     },
     {
       "name": "app-builder-lib",
-      "version": "26.15.3",
+      "version": "26.15.7",
       "license": "MIT",
       "homepage": "https://github.com/electron-userland/electron-builder",
       "repository": "git+https://github.com/electron-userland/electron-builder.git",
@@ -2626,7 +2602,7 @@
     },
     {
       "name": "dmg-builder",
-      "version": "26.15.3",
+      "version": "26.15.7",
       "license": "MIT",
       "homepage": "https://github.com/electron-userland/electron-builder",
       "repository": "git+https://github.com/electron-userland/electron-builder.git",
@@ -2706,7 +2682,7 @@
     },
     {
       "name": "electron-builder",
-      "version": "26.15.3",
+      "version": "26.15.7",
       "license": "MIT",
       "homepage": "https://github.com/electron-userland/electron-builder",
       "repository": "git+https://github.com/electron-userland/electron-builder.git",
@@ -2714,7 +2690,7 @@
     },
     {
       "name": "electron-builder-squirrel-windows",
-      "version": "26.15.3",
+      "version": "26.15.7",
       "license": "MIT",
       "homepage": "https://github.com/electron-userland/electron-builder",
       "repository": "git+https://github.com/electron-userland/electron-builder.git",
@@ -4647,54 +4623,6 @@
       "licenseTextSha256": ["cf9b17822d1fcd4ff32ccbe14183386fb3adf6f2ff92dc184130823f7fc28173"]
     },
     {
-      "name": "react-router",
-      "version": "6.30.4",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
-      "name": "react-router",
-      "version": "7.11.0",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
-      "name": "react-router",
-      "version": "7.18.2",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
-      "name": "react-router-dom",
-      "version": "6.30.4",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
-      "name": "react-router-dom",
-      "version": "7.11.0",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
-      "name": "react-router-dom",
-      "version": "7.18.2",
-      "license": "MIT",
-      "homepage": null,
-      "repository": "https://github.com/remix-run/react-router",
-      "licenseTextSha256": ["9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2"]
-    },
-    {
       "name": "read-binary-file-arch",
       "version": "1.0.6",
       "license": "MIT",
@@ -4917,14 +4845,6 @@
       "homepage": null,
       "repository": "expressjs/serve-static",
       "licenseTextSha256": ["d80ea12109c5d9aea48cb58e6bcad56995640c17c559169474be4002a3e9753a"]
-    },
-    {
-      "name": "set-cookie-parser",
-      "version": "2.7.2",
-      "license": "MIT",
-      "homepage": "https://github.com/nfriedly/set-cookie-parser",
-      "repository": "nfriedly/set-cookie-parser",
-      "licenseTextSha256": ["1798ebfcb7e5db7076851eb61f3101d8117be2dc0408688bd90b842c4f16f3fb"]
     },
     {
       "name": "set-cookie-parser",

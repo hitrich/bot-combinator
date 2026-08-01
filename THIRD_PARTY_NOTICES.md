@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Outreachr is built with the following installed build and runtime dependencies. This file is generated from the frozen pnpm virtual store; package license files remain authoritative.
+Outreachr is built with the following installed build and runtime dependencies. This file is generated from the active dependency graph in the frozen pnpm virtual store; package license files remain authoritative.
 
 | Package                                         | Version              | Declared license          | Source                                                                                               |
 | ----------------------------------------------- | -------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -160,7 +160,6 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | @peculiar/utils                                 | 2.0.3                | MIT                       | https://github.com/PeculiarVentures/pvtsutils#readme                                                 |
 | @peculiar/webcrypto                             | 1.7.1                | MIT                       | https://github.com/PeculiarVentures/webcrypto#readme                                                 |
 | @playwright/test                                | 1.62.1               | Apache-2.0                | https://playwright.dev                                                                               |
-| @remix-run/router                               | 1.23.3               | MIT                       | https://github.com/remix-run/react-router                                                            |
 | @rolldown/pluginutils                           | 1.0.0-rc.3           | MIT                       | https://rolldown.rs/                                                                                 |
 | @rollup/rollup-android-arm-eabi                 | 4.62.3               | MIT                       | https://rollupjs.org/                                                                                |
 | @rollup/rollup-android-arm64                    | 4.62.3               | MIT                       | https://rollupjs.org/                                                                                |
@@ -214,9 +213,7 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | @types/node                                     | 24.1.0               | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node                            |
 | @types/node                                     | 24.13.3              | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node                            |
 | @types/react                                    | 19.2.17              | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react                           |
-| @types/react                                    | 19.2.18              | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react                           |
 | @types/react-dom                                | 19.2.3               | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom                       |
-| @types/react-dom                                | 19.2.4               | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom                       |
 | @types/responselike                             | 1.0.3                | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/responselike                    |
 | @types/set-cookie-parser                        | 2.4.10               | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/set-cookie-parser               |
 | @types/sql.js                                   | 1.4.9                | MIT                       | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/sql.js                          |
@@ -252,7 +249,7 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | ansi-regex                                      | 5.0.1                | MIT                       | chalk/ansi-regex                                                                                     |
 | ansi-styles                                     | 4.3.0                | MIT                       | chalk/ansi-styles                                                                                    |
 | ansi-styles                                     | 5.2.0                | MIT                       | chalk/ansi-styles                                                                                    |
-| app-builder-lib                                 | 26.15.3              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
+| app-builder-lib                                 | 26.15.7              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
 | argparse                                        | 2.0.1                | Python-2.0                | nodeca/argparse                                                                                      |
 | aria-query                                      | 5.3.0                | Apache-2.0                | https://github.com/A11yance/aria-query#readme                                                        |
 | aria-query                                      | 5.3.2                | Apache-2.0                | https://github.com/A11yance/aria-query#readme                                                        |
@@ -331,7 +328,7 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | dequal                                          | 2.0.3                | MIT                       | lukeed/dequal                                                                                        |
 | detect-node                                     | 2.1.0                | MIT                       | https://github.com/iliakan/detect-node                                                               |
 | dir-compare                                     | 4.2.0                | MIT                       | https://github.com/gliviu/dir-compare                                                                |
-| dmg-builder                                     | 26.15.3              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
+| dmg-builder                                     | 26.15.7              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
 | dom-accessibility-api                           | 0.5.16               | MIT                       | https://github.com/eps1lon/dom-accessibility-api.git                                                 |
 | dom-accessibility-api                           | 0.6.3                | MIT                       | https://github.com/eps1lon/dom-accessibility-api.git                                                 |
 | dotenv                                          | 16.6.1               | BSD-2-Clause              | https://github.com/motdotla/dotenv#readme                                                            |
@@ -341,8 +338,8 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | ee-first                                        | 1.1.1                | MIT                       | jonathanong/ee-first                                                                                 |
 | ejs                                             | 3.1.10               | Apache-2.0                | https://github.com/mde/ejs                                                                           |
 | electron                                        | 43.2.0               | MIT                       | https://github.com/electron/electron                                                                 |
-| electron-builder                                | 26.15.3              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
-| electron-builder-squirrel-windows               | 26.15.3              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
+| electron-builder                                | 26.15.7              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
+| electron-builder-squirrel-windows               | 26.15.7              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
 | electron-publish                                | 26.15.3              | MIT                       | https://github.com/electron-userland/electron-builder                                                |
 | electron-to-chromium                            | 1.5.398              | ISC                       | git+https://github.com/Kilian/electron-to-chromium.git                                               |
 | electron-vite                                   | 5.0.0                | MIT                       | https://electron-vite.org                                                                            |
@@ -583,12 +580,6 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | react-dom                                       | 19.2.8               | MIT                       | https://react.dev/                                                                                   |
 | react-is                                        | 17.0.2               | MIT                       | https://reactjs.org/                                                                                 |
 | react-refresh                                   | 0.18.0               | MIT                       | https://react.dev/                                                                                   |
-| react-router                                    | 6.30.4               | MIT                       | https://github.com/remix-run/react-router                                                            |
-| react-router                                    | 7.11.0               | MIT                       | https://github.com/remix-run/react-router                                                            |
-| react-router                                    | 7.18.2               | MIT                       | https://github.com/remix-run/react-router                                                            |
-| react-router-dom                                | 6.30.4               | MIT                       | https://github.com/remix-run/react-router                                                            |
-| react-router-dom                                | 7.11.0               | MIT                       | https://github.com/remix-run/react-router                                                            |
-| react-router-dom                                | 7.18.2               | MIT                       | https://github.com/remix-run/react-router                                                            |
 | read-binary-file-arch                           | 1.0.6                | MIT                       | https://github.com/samuelmaddock/read-binary-file-arch#readme                                        |
 | readable-stream                                 | 2.3.8                | MIT                       | git://github.com/nodejs/readable-stream                                                              |
 | redent                                          | 3.0.0                | MIT                       | sindresorhus/redent                                                                                  |
@@ -617,7 +608,6 @@ Outreachr is built with the following installed build and runtime dependencies. 
 | send                                            | 1.2.1                | MIT                       | pillarjs/send                                                                                        |
 | serialize-error                                 | 7.0.1                | MIT                       | sindresorhus/serialize-error                                                                         |
 | serve-static                                    | 2.2.1                | MIT                       | expressjs/serve-static                                                                               |
-| set-cookie-parser                               | 2.7.2                | MIT                       | https://github.com/nfriedly/set-cookie-parser                                                        |
 | set-cookie-parser                               | 3.1.2                | MIT                       | https://github.com/nfriedly/set-cookie-parser                                                        |
 | setprototypeof                                  | 1.2.0                | ISC                       | https://github.com/wesleytodd/setprototypeof                                                         |
 | shebang-command                                 | 2.0.0                | MIT                       | kevva/shebang-command                                                                                |
@@ -1840,7 +1830,7 @@ THE SOFTWARE.
 
 ### 1798ebfcb7e5db7076851eb61f3101d8117be2dc0408688bd90b842c4f16f3fb
 
-Applies to: set-cookie-parser@2.7.2, set-cookie-parser@3.1.2
+Applies to: set-cookie-parser@3.1.2
 
 ```text
 The MIT License (MIT)
@@ -7334,7 +7324,7 @@ SOFTWARE.
 
 ### 8866342d12c60cb5cea24c32ab47a2a953faf7b436ad68fd95f810b4d4ee9ce7
 
-Applies to: builder-util-runtime@9.7.0, builder-util@26.15.3, electron-builder-squirrel-windows@26.15.3, electron-builder@26.15.3, electron-publish@26.15.3
+Applies to: builder-util-runtime@9.7.0, builder-util@26.15.3, electron-builder-squirrel-windows@26.15.7, electron-builder@26.15.7, electron-publish@26.15.3
 
 ```text
 The MIT License (MIT)
@@ -8970,36 +8960,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-```
-
-### 9bd42e9ab2f84a397e8efd7ba4feedd4956198c0ff6ea6f886fd47fcf8e53df2
-
-Applies to: @remix-run/router@1.23.3, react-router-dom@6.30.4, react-router-dom@7.11.0, react-router-dom@7.18.2, react-router@6.30.4, react-router@7.11.0, react-router@7.18.2
-
-```text
-MIT License
-
-Copyright (c) React Training LLC 2015-2019
-Copyright (c) Remix Software Inc. 2020-2021
-Copyright (c) Shopify Inc. 2022-2023
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 ```
 
 ### 9bd6c6d978b261824534580916090d08a4b8abccb30f480e4abd51854edcd305
@@ -16469,7 +16429,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### ff82c90f84945c60601e96b43246009b9bc589f3ebe1cd8a0fd39a3520d8c310
 
-Applies to: @types/aria-query@5.0.4, @types/babel__core@7.20.5, @types/babel__generator@7.27.0, @types/babel__template@7.4.4, @types/babel__traverse@7.28.0, @types/cacheable-request@6.0.3, @types/chai@5.2.3, @types/debug@4.1.13, @types/deep-eql@4.0.2, @types/emscripten@1.41.5, @types/esrecurse@4.3.1, @types/estree@1.0.9, @types/fs-extra@9.0.13, @types/http-cache-semantics@4.2.0, @types/json-schema@7.0.15, @types/keyv@3.1.4, @types/ms@2.1.0, @types/node@24.1.0, @types/node@24.13.3, @types/react-dom@19.2.3, @types/react-dom@19.2.4, @types/react@19.2.17, @types/react@19.2.18, @types/responselike@1.0.3, @types/set-cookie-parser@2.4.10, @types/sql.js@1.4.9, @types/statuses@2.0.6
+Applies to: @types/aria-query@5.0.4, @types/babel__core@7.20.5, @types/babel__generator@7.27.0, @types/babel__template@7.4.4, @types/babel__traverse@7.28.0, @types/cacheable-request@6.0.3, @types/chai@5.2.3, @types/debug@4.1.13, @types/deep-eql@4.0.2, @types/emscripten@1.41.5, @types/esrecurse@4.3.1, @types/estree@1.0.9, @types/fs-extra@9.0.13, @types/http-cache-semantics@4.2.0, @types/json-schema@7.0.15, @types/keyv@3.1.4, @types/ms@2.1.0, @types/node@24.1.0, @types/node@24.13.3, @types/react-dom@19.2.3, @types/react@19.2.17, @types/responselike@1.0.3, @types/set-cookie-parser@2.4.10, @types/sql.js@1.4.9, @types/statuses@2.0.6
 
 ```text
 MIT License
