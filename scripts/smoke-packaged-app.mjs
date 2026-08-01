@@ -10,6 +10,7 @@ import {
   parseArgs,
   repoRoot,
   run,
+  runExecutable,
   throwCleanupErrors,
   throwWithCleanup,
   walkFiles,
@@ -87,7 +88,13 @@ async function smokeDistribution(distribution, timeout) {
     ]);
     if (child.exitCode !== null) throw new Error('application exited immediately after readiness');
     console.log(
-      `${distribution.kind} renderer ready: ${renderer.title}; ${renderer.workspace}; ${renderer.bodyTextLength} visible text characters.`,
+      JSON.stringify({
+        event: 'renderer-ready',
+        distribution: distribution.kind,
+        title: renderer.title,
+        workspace: renderer.workspace,
+        visibleTextCharacters: renderer.bodyTextLength,
+      }),
     );
   } catch (error) {
     smokeError = new Error(
@@ -207,7 +214,7 @@ async function stageDistributions(root, requestedKind) {
       }
       const installRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-nsis-'));
       try {
-        await run(installers[0], ['/S', `/D=${installRoot}`], {
+        await runExecutable(installers[0], ['/S', `/D=${installRoot}`], {
           capture: false,
           timeoutMs: 120_000,
         });
@@ -354,7 +361,7 @@ async function cleanupNsis(installRoot) {
   const cleanupErrors = await collectCleanupErrors([
     ...uninstallers.map(
       (uninstaller) => () =>
-        run(uninstaller, nsisUninstallArgs(installRoot), {
+        runExecutable(uninstaller, nsisUninstallArgs(installRoot), {
           capture: false,
           timeoutMs: 60_000,
         }),

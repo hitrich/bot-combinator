@@ -248,6 +248,28 @@ export function nsisUninstallArgs(installRoot) {
 }
 
 export async function run(command, args = [], options = {}) {
+  return await runSpawned(command, args, options, (spawnOptions) =>
+    spawnKnownCommand(command, args, spawnOptions),
+  );
+}
+
+/** Execute an already-materialized absolute binary without consulting a shell or PATH. */
+export async function runExecutable(executable, args = [], options = {}) {
+  if (typeof executable !== 'string' || !path.isAbsolute(executable)) {
+    throw new Error(`Executable path must be absolute: ${executable}`);
+  }
+  const command = await fs.realpath(executable);
+  const stat = await fs.stat(command);
+  if (!stat.isFile()) throw new Error(`Executable path is not a file: ${command}`);
+  if (process.platform !== 'win32' && (stat.mode & 0o111) === 0) {
+    throw new Error(`Executable path is not marked executable: ${command}`);
+  }
+  return await runSpawned(command, args, options, (spawnOptions) =>
+    spawn(command, args, spawnOptions),
+  );
+}
+
+async function runSpawned(command, args, options, start) {
   const {
     cwd = repoRoot,
     env = process.env,
@@ -257,11 +279,12 @@ export async function run(command, args = [], options = {}) {
     sensitive = false,
   } = options;
   return await new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = start({
       cwd,
       env,
-      shell: false,
       windowsHide: true,
+      // Native packaging tools such as ditto must retain true inherited handles.
+      // Piping and forwarding output is not equivalent on every hosted macOS runner.
       stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     });
     let stdout = '';
@@ -301,6 +324,45 @@ export async function run(command, args = [], options = {}) {
       }
     });
   });
+}
+
+function spawnKnownCommand(command, args, options) {
+  switch (command) {
+    case 'codesign':
+      return spawn('codesign', args, options);
+    case 'ditto':
+      return spawn('ditto', args, options);
+    case 'dpkg':
+      return spawn('dpkg', args, options);
+    case 'dpkg-deb':
+      return spawn('dpkg-deb', args, options);
+    case 'dpkg-query':
+      return spawn('dpkg-query', args, options);
+    case 'gh':
+      return spawn('gh', args, options);
+    case 'git':
+      return spawn('git', args, options);
+    case 'gpg':
+      return spawn('gpg', args, options);
+    case 'hdiutil':
+      return spawn('hdiutil', args, options);
+    case 'node':
+      return spawn('node', args, options);
+    case 'pnpm':
+      return spawn('pnpm', args, options);
+    case 'powershell.exe':
+      return spawn('powershell.exe', args, options);
+    case 'pwsh.exe':
+      return spawn('pwsh.exe', args, options);
+    case 'spctl':
+      return spawn('spctl', args, options);
+    case 'sudo':
+      return spawn('sudo', args, options);
+    case 'xcrun':
+      return spawn('xcrun', args, options);
+    default:
+      throw new Error(`Unsupported fixed command: ${command}`);
+  }
 }
 
 async function executableKind(target) {
@@ -459,22 +521,39 @@ async function canonicalizeMachOLinkedit(target) {
   }
 }
 
-export function pnpmInvocation(args = [], platform = process.platform, environment = process.env) {
+export function pnpmInvocation(
+  args = [],
+  platform = process.platform,
+  nodeExecutable = process.execPath,
+) {
   if (platform !== 'win32') return { command: 'pnpm', args };
-  for (const argument of args) {
-    if (!/^[A-Za-z0-9@./:_=+-]+$/.test(argument)) {
-      throw new Error(`Unsafe pnpm argument for cmd.exe: ${argument}`);
-    }
+  if (!path.win32.isAbsolute(nodeExecutable)) {
+    throw new Error(`Windows Node.js executable path must be absolute: ${nodeExecutable}`);
   }
   return {
-    command: environment.ComSpec || environment.COMSPEC || 'cmd.exe',
-    args: ['/d', '/s', '/c', ['pnpm.cmd', ...args].join(' ')],
+    command: nodeExecutable,
+    args: [
+      path.win32.join(
+        path.win32.dirname(nodeExecutable),
+        'node_modules',
+        'corepack',
+        'dist',
+        'pnpm.js',
+      ),
+      ...args,
+    ],
   };
 }
 
 export async function runPnpm(args = [], options = {}) {
+  if (process.platform !== 'win32') return await run('pnpm', args, options);
   const invocation = pnpmInvocation(args);
-  return await run(invocation.command, invocation.args, options);
+  if (!(await exists(invocation.args[0]))) {
+    throw new Error(
+      `Corepack's pnpm entry point is missing at ${invocation.args[0]}; install the Node.js Corepack distribution and activate pnpm first`,
+    );
+  }
+  return await runExecutable(invocation.command, invocation.args, options);
 }
 
 export function executableName(baseName) {
@@ -502,6 +581,30 @@ export function targetId(platform = process.platform, arch = process.arch) {
     throw new Error(`Unsupported release target ${platform}-${arch}`);
   }
   return `${platformName}-${arch}`;
+}
+
+export function explicitlyUnsignedEnvironment(
+  environment = process.env,
+  platform = process.platform,
+) {
+  const result = { ...environment, CSC_IDENTITY_AUTO_DISCOVERY: 'false' };
+  for (const name of [
+    'CSC_LINK',
+    'CSC_KEY_PASSWORD',
+    'CSC_NAME',
+    'WIN_CSC_LINK',
+    'WIN_CSC_KEY_PASSWORD',
+  ]) {
+    delete result[name];
+  }
+  if (platform === 'darwin') {
+    // Electron Builder otherwise skips even the credential-free ad-hoc identity (`-`)
+    // for pull requests, leaving Apple Silicon verification bundles unlaunchable.
+    result.CSC_FOR_PULL_REQUEST = 'true';
+  } else {
+    delete result.CSC_FOR_PULL_REQUEST;
+  }
+  return result;
 }
 
 export async function hashManifest(root, options = {}) {
