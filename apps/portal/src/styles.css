@@ -592,16 +592,51 @@ svg {
 .auth-form {
   width: min(420px, 100%);
 }
-.auth-form h2 {
+.auth-form h2,
+.auth-form h3 {
   font-size: 34px;
   letter-spacing: -0.045em;
   margin: 14px 0 12px;
 }
-.auth-form > p {
+.auth-form h3 {
+  font-size: 21px;
+  letter-spacing: -0.035em;
+}
+.auth-form__apply > p,
+.auth-form__signin > p {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
-  margin: 0 0 32px;
+  margin: 0 0 24px;
+}
+.auth-form .button--apply {
+  background: var(--lime);
+  border-color: #bddf54;
+  color: var(--ink);
+  height: 50px;
+  justify-content: space-between;
+  width: 100%;
+}
+.auth-form .button--apply:hover:not(:disabled) {
+  background: #e2ff88;
+  border-color: #a9c84b;
+}
+.auth-form__divider {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-family: var(--mono);
+  font-size: 9px;
+  gap: 12px;
+  margin: 30px 0;
+  text-transform: uppercase;
+}
+.auth-form__divider::before,
+.auth-form__divider::after {
+  background: var(--line);
+  content: '';
+  height: 1px;
+  width: 100%;
 }
 .auth-form .button--primary {
   height: 50px;
@@ -637,6 +672,53 @@ svg {
 .sent-state p {
   color: var(--muted);
   font-size: 13px;
+}
+.application-form .textarea {
+  min-height: 112px;
+}
+.application-honeypot {
+  height: 1px;
+  left: -10000px;
+  overflow: hidden;
+  position: absolute;
+  top: auto;
+  width: 1px;
+}
+.application-success {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  padding: 12px 2px 18px;
+}
+.application-success > span {
+  align-items: center;
+  background: var(--lime);
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 auto;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+.application-success h3 {
+  font-size: 23px;
+  letter-spacing: -0.035em;
+  margin: 2px 0 9px;
+}
+.application-success p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+.application-success code {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 10px;
 }
 .setup-page {
   margin: 0 auto;
@@ -1116,7 +1198,7 @@ svg {
   border-bottom: 1px solid var(--ink);
   border-top: 1px solid var(--ink);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
 }
 .metric-rail article {
   border-right: 1px solid var(--line);
@@ -1146,6 +1228,145 @@ svg {
 .metric-rail .metric--warn strong,
 .metric-rail .metric--warn span {
   color: var(--red);
+}
+.metric-rail .metric--lime strong,
+.metric-rail .metric--lime span {
+  color: var(--lime-dark);
+}
+.application-queue {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  padding: 22px 0 0;
+}
+.application-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+.application-list > article {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px 26px 22px 0;
+}
+.application-list > article:nth-child(even) {
+  border-left: 1px solid var(--line);
+  padding-left: 26px;
+  padding-right: 0;
+}
+.application-list > article > header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+.application-mark {
+  align-items: center;
+  background: var(--lime);
+  border-radius: 8px;
+  display: flex;
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+.application-list > article > header > div {
+  min-width: 0;
+}
+.application-list > article > header > div > span {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+.application-list > article > header strong {
+  font-size: 14px;
+}
+.application-list > article > header small {
+  color: var(--muted);
+  display: block;
+  font-size: 9px;
+  margin-top: 5px;
+}
+.application-list > article > p {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 20px 0;
+}
+.application-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.application-meta > a,
+.application-meta > span {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  text-decoration: none;
+}
+.application-meta svg {
+  color: var(--muted);
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+.application-meta span span,
+.application-meta a span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.application-meta strong {
+  font-size: 9px;
+}
+.application-meta small {
+  color: var(--muted);
+  font-size: 8px;
+  margin-top: 3px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.application-meta a:hover strong {
+  text-decoration: underline;
+}
+.application-goals {
+  background: rgba(255, 255, 255, 0.45);
+  border-left: 2px solid var(--line);
+  margin: 20px 0;
+  padding: 12px 14px;
+}
+.application-goals small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.application-goals p {
+  font-size: 10px;
+  line-height: 1.55;
+  margin: 6px 0 0;
+}
+.application-list > article > footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.application-list > article > footer > span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+}
+.application-list > article > footer > div {
+  display: flex;
+  gap: 8px;
 }
 .dashboard-grid {
   align-items: start;
@@ -3647,6 +3868,15 @@ svg {
   .metric-rail article:nth-child(n + 4) {
     border-top: 1px solid var(--line);
   }
+  .application-list {
+    grid-template-columns: 1fr;
+  }
+  .application-list > article,
+  .application-list > article:nth-child(even) {
+    border-left: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
   .project-progress-hero {
     grid-template-columns: 1fr 2fr;
   }
@@ -3702,6 +3932,10 @@ svg {
   .auth-form-wrap {
     min-height: 48vh;
     padding: 40px 28px;
+  }
+  .application-list > article > footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .setup-steps {
     grid-template-columns: 1fr 1fr;

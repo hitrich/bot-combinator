@@ -26,9 +26,11 @@ import {
   requestMagicLink,
   requestReview as requestReviewRemote,
   requestVisibility as requestVisibilityRemote,
+  reviewProjectApplication as reviewProjectApplicationRemote,
   revokeVisibility as revokeVisibilityRemote,
   signOut as signOutRemote,
   submitProgressUpdate as submitProgressUpdateRemote,
+  submitProjectApplication as submitProjectApplicationRemote,
   updateDeliveryStatus as updateDeliveryStatusRemote,
   updateProjectProfile as updateProjectProfileRemote,
   updateProjectStage as updateProjectStageRemote,
@@ -46,9 +48,11 @@ import type {
   PortalRole,
   PortalWorkspace,
   ProgressUpdateInput,
+  ProjectApplicationInput,
   ProjectProfileInput,
   ProjectStageInput,
   ReviewRequestInput,
+  ReviewApplicationInput,
   ShowcaseInput,
   Visibility,
 } from '../lib/types';
@@ -73,6 +77,7 @@ interface PortalContextValue {
   notify: (toast: Omit<Toast, 'id'>) => void;
   switchDemoRole: (role: PortalRole) => void;
   sendMagicLink: (email: string) => Promise<void>;
+  submitApplication: (input: ProjectApplicationInput) => Promise<string>;
   signOut: () => Promise<void>;
   createProject: (input: CreateProjectInput) => Promise<void>;
   updateProjectProfile: (input: ProjectProfileInput) => Promise<void>;
@@ -112,6 +117,7 @@ interface PortalContextValue {
   requestReview: (input: ReviewRequestInput) => Promise<void>;
   importDesktopSubmission: (projectId: string, file: File) => Promise<void>;
   inviteMember: (input: InviteInput) => Promise<void>;
+  reviewApplication: (input: ReviewApplicationInput) => Promise<void>;
 }
 
 const PortalContext = createContext<PortalContextValue | null>(null);
@@ -797,6 +803,42 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
     [notify, runRemote],
   );
 
+  const reviewApplication = useCallback(
+    async (input: ReviewApplicationInput) => {
+      if (!demoMode) {
+        await runRemote(
+          () => reviewProjectApplicationRemote(input),
+          `Application moved to ${input.status.replaceAll('_', ' ')}`,
+        );
+        return;
+      }
+      setWorkspace((current) =>
+        current
+          ? {
+              ...current,
+              applications: current.applications.map((application) =>
+                application.id === input.applicationId
+                  ? {
+                      ...application,
+                      status: input.status,
+                      reviewerNote: input.reviewerNote || application.reviewerNote,
+                      reviewedAt: new Date().toISOString(),
+                      reviewedByName: current.user.fullName,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : application,
+              ),
+            }
+          : current,
+      );
+      notify({
+        tone: 'success',
+        title: `Application moved to ${input.status.replaceAll('_', ' ')}`,
+      });
+    },
+    [notify, runRemote],
+  );
+
   const value = useMemo<PortalContextValue>(
     () => ({
       workspace,
@@ -811,6 +853,7 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
       notify,
       switchDemoRole: (role) => setWorkspace(createDemoWorkspace(role)),
       sendMagicLink: requestMagicLink,
+      submitApplication: submitProjectApplicationRemote,
       signOut: signOutRemote,
       createProject,
       updateProjectProfile,
@@ -829,6 +872,7 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
       requestReview,
       importDesktopSubmission,
       inviteMember,
+      reviewApplication,
     }),
     [
       addComment,
@@ -848,6 +892,7 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
       refresh,
       requestVisibility,
       requestReview,
+      reviewApplication,
       revokeVisibility,
       session,
       submitProgress,

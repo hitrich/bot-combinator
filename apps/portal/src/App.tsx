@@ -46,7 +46,9 @@ export default function App(): React.JSX.Element {
 
   if (!portal.configured && !portal.demo) return <ConfigurationScreen />;
   if (portal.loading) return <LoadingScreen />;
-  if (!portal.demo && !portal.session) return <SignInScreen onSubmit={portal.sendMagicLink} />;
+  if (!portal.demo && !portal.session) {
+    return <SignInScreen onSubmit={portal.sendMagicLink} onApply={portal.submitApplication} />;
+  }
   if (!portal.workspace) {
     return (
       <main className="fatal-page">

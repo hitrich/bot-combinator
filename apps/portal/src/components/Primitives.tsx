@@ -61,13 +61,18 @@ export function VisibilityBadge({ visibility }: { visibility: Visibility }): Rea
 
 export function StatusBadge({ status }: { status: string }): React.JSX.Element {
   const tone =
-    status === 'ready' || status === 'completed' || status === 'approved'
+    status === 'ready' || status === 'completed' || status === 'approved' || status === 'accepted'
       ? 'success'
-      : status === 'blocked' || status === 'changes_requested'
+      : status === 'blocked' || status === 'changes_requested' || status === 'declined'
         ? 'danger'
-        : status === 'in_progress' || status === 'in_review' || status === 'requested'
-          ? 'warning'
-          : 'neutral';
+        : status === 'interview'
+          ? 'info'
+          : status === 'in_progress' ||
+              status === 'in_review' ||
+              status === 'requested' ||
+              status === 'submitted'
+            ? 'warning'
+            : 'neutral';
   return <Badge tone={tone}>{titleCase(status)}</Badge>;
 }
 

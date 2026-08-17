@@ -495,6 +495,48 @@ const BASE_WORKSPACE: PortalWorkspace = {
       importedAt: '2026-08-15T13:50:00.000Z',
     },
   ],
+  applications: [
+    {
+      id: 'application-lattice-1',
+      projectName: 'Lattice AI',
+      applicantName: 'Nadia Park',
+      applicantEmail: 'nadia@lattice.example',
+      roleTitle: 'Co-founder',
+      websiteUrl: 'https://example.com/lattice',
+      productStage: 'beta',
+      teamSize: 4,
+      productSummary:
+        'Lattice gives autonomous service teams a shared execution layer for assigning work, proving completion, and settling usage-based fees.',
+      programGoals:
+        'We want to harden our product milestones, validate the BOT Chain integration path, and prepare a focused launch with Klineo.',
+      status: 'submitted',
+      reviewerNote: null,
+      submittedAt: '2026-08-17T09:20:00.000Z',
+      updatedAt: '2026-08-17T09:20:00.000Z',
+      reviewedAt: null,
+      reviewedByName: null,
+    },
+    {
+      id: 'application-orbit-1',
+      projectName: 'Orbit Ledger',
+      applicantName: 'Evan Cole',
+      applicantEmail: 'evan@orbit.example',
+      roleTitle: 'Founder',
+      websiteUrl: null,
+      productStage: 'prototype',
+      teamSize: 2,
+      productSummary:
+        'Orbit Ledger creates verifiable spend controls and reconciliation trails for agent-operated business accounts.',
+      programGoals:
+        'We need technical review, partner discovery, and a concrete path from prototype to an integration-ready pilot.',
+      status: 'in_review',
+      reviewerNote: 'Review product demo before the cohort selection call.',
+      submittedAt: '2026-08-14T13:40:00.000Z',
+      updatedAt: '2026-08-15T10:10:00.000Z',
+      reviewedAt: '2026-08-15T10:10:00.000Z',
+      reviewedByName: 'Maya Chen',
+    },
+  ],
   auditEvents: [
     {
       id: 'audit-1',
@@ -625,6 +667,7 @@ export function createDemoWorkspace(role: PortalRole = 'klineo_admin'): PortalWo
     desktopSubmissionImports: BASE_WORKSPACE.desktopSubmissionImports.filter(
       (item) => projectIds.has(item.projectId) && !isBotChainRole(role),
     ),
+    applications: isKlineoRole(role) ? BASE_WORKSPACE.applications : [],
     auditEvents: isKlineoRole(role)
       ? BASE_WORKSPACE.auditEvents
       : BASE_WORKSPACE.auditEvents.filter((event) =>

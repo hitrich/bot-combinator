@@ -11,16 +11,22 @@ import type {
   MilestoneInput,
   PortalWorkspace,
   ProgressUpdateInput,
+  ProjectApplication,
+  ProjectApplicationInput,
   ProjectProfileInput,
   ProjectStageInput,
   PublicShowcaseData,
+  ReviewApplicationInput,
   ReviewRequestInput,
   ShowcaseAsset,
   ShowcaseInput,
   Visibility,
 } from './types';
 
-type CamelWorkspace = PortalWorkspace & { showcaseAssets?: ShowcaseAsset[] };
+type CamelWorkspace = PortalWorkspace & {
+  showcaseAssets?: ShowcaseAsset[];
+  applications?: ProjectApplication[];
+};
 type CamelPublicShowcase = PublicShowcaseData & { showcaseAssets?: ShowcaseAsset[] };
 
 function camelKey(key: string): string {
@@ -45,6 +51,7 @@ function mapWorkspace(value: unknown): PortalWorkspace {
   const assets = normalized.showcaseAssets ?? [];
   return {
     ...normalized,
+    applications: normalized.applications ?? [],
     showcaseItems: normalized.showcaseItems.map((item) => ({
       ...item,
       assets: assets.filter((asset) => asset.showcaseItemId === item.id),
@@ -57,7 +64,10 @@ function jsonInput(value: object): Json {
 }
 
 async function rpc(
-  name: Exclude<keyof Database['public']['Functions'], 'portal_workspace' | 'public_showcase'>,
+  name: Exclude<
+    keyof Database['public']['Functions'],
+    'portal_workspace' | 'public_showcase' | 'list_project_applications'
+  >,
   input: object,
 ): Promise<string> {
   const client = requireSupabase();
@@ -89,9 +99,16 @@ async function hydrateSignedUrls(workspace: PortalWorkspace): Promise<PortalWork
 }
 
 export async function loadPortalWorkspace(): Promise<PortalWorkspace> {
-  const { data, error } = await requireSupabase().rpc('portal_workspace');
-  if (error) throw error;
-  return hydrateSignedUrls(mapWorkspace(data));
+  const client = requireSupabase();
+  const [workspaceResult, applicationResult] = await Promise.all([
+    client.rpc('portal_workspace'),
+    client.rpc('list_project_applications'),
+  ]);
+  if (workspaceResult.error) throw workspaceResult.error;
+  if (applicationResult.error) throw applicationResult.error;
+  const workspace = mapWorkspace(workspaceResult.data);
+  workspace.applications = (camelize(applicationResult.data) as ProjectApplication[]) ?? [];
+  return hydrateSignedUrls(workspace);
 }
 
 export async function loadPublicShowcase(): Promise<PublicShowcaseData> {
@@ -120,6 +137,7 @@ export async function loadPublicShowcase(): Promise<PublicShowcaseData> {
     visibilityApprovals: [],
     cohorts: [],
     desktopSubmissionImports: [],
+    applications: [],
     auditEvents: [],
   };
   const hydrated = await hydrateSignedUrls(workspace);
@@ -136,6 +154,14 @@ export async function requestMagicLink(email: string): Promise<void> {
     },
   });
   if (error) throw error;
+}
+
+export async function submitProjectApplication(input: ProjectApplicationInput): Promise<string> {
+  return rpc('submit_project_application', input);
+}
+
+export async function reviewProjectApplication(input: ReviewApplicationInput): Promise<void> {
+  await rpc('review_project_application', input);
 }
 
 export async function signOut(): Promise<void> {

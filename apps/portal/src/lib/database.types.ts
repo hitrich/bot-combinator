@@ -18,6 +18,12 @@ export interface Database {
         Args: Record<never, never>;
         Returns: Json;
       };
+      list_project_applications: {
+        Args: Record<never, never>;
+        Returns: Json;
+      };
+      submit_project_application: JsonRpc;
+      review_project_application: JsonRpc;
       create_portal_project: JsonRpc;
       update_project_profile: JsonRpc;
       update_project_stage: JsonRpc;

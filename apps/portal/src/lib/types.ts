@@ -34,6 +34,8 @@ export type ProjectStage =
 
 export type ReadinessState = 'not_started' | 'in_progress' | 'ready' | 'blocked';
 export type MilestoneStatus = 'not_started' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+export type ApplicationStatus = 'submitted' | 'in_review' | 'interview' | 'accepted' | 'declined';
+export type ProductStage = 'idea' | 'prototype' | 'beta' | 'live';
 
 export interface PortalUser {
   id: string;
@@ -199,6 +201,25 @@ export interface DesktopSubmissionImport {
   importedAt: string;
 }
 
+export interface ProjectApplication {
+  id: string;
+  projectName: string;
+  applicantName: string;
+  applicantEmail: string;
+  roleTitle: string | null;
+  websiteUrl: string | null;
+  productStage: ProductStage;
+  teamSize: number | null;
+  productSummary: string;
+  programGoals: string;
+  status: ApplicationStatus;
+  reviewerNote: string | null;
+  submittedAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  reviewedByName: string | null;
+}
+
 export interface PortalWorkspace {
   user: PortalUser;
   projects: PortalProject[];
@@ -211,6 +232,7 @@ export interface PortalWorkspace {
   visibilityApprovals: VisibilityApproval[];
   cohorts: Cohort[];
   desktopSubmissionImports: DesktopSubmissionImport[];
+  applications: ProjectApplication[];
   auditEvents: AuditEvent[];
 }
 
@@ -311,4 +333,23 @@ export interface CreateCohortInput {
   name: string;
   startsOn: string | null;
   endsOn: string | null;
+}
+
+export interface ProjectApplicationInput {
+  projectName: string;
+  applicantName: string;
+  applicantEmail: string;
+  roleTitle: string | null;
+  websiteUrl: string | null;
+  productStage: ProductStage;
+  teamSize: number | null;
+  productSummary: string;
+  programGoals: string;
+  middleName: string;
+}
+
+export interface ReviewApplicationInput {
+  applicationId: string;
+  status: Exclude<ApplicationStatus, 'submitted'>;
+  reviewerNote: string;
 }

@@ -6,8 +6,10 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
+  ExternalLink,
   Flag,
   Layers3,
+  Mail,
   MessageSquareText,
   Plus,
   ShieldCheck,
@@ -15,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { PortalProject, PortalWorkspace } from '../lib/types';
 import { isBotChainRole, isKlineoRole } from '../lib/visibility';
+import { usePortal } from '../state/PortalContext';
 import {
   Badge,
   Button,
@@ -83,6 +86,8 @@ function KlineoDashboard({
   onOpenReviews: () => void;
 }): React.JSX.Element {
   const [renderedAt] = useState(() => Date.now());
+  const [busyApplicationId, setBusyApplicationId] = useState<string | null>(null);
+  const { reviewApplication } = usePortal();
   const activeProjects = workspace.projects.filter(
     (project) => !['graduated', 'on_hold'].includes(project.stage),
   );
@@ -105,6 +110,24 @@ function KlineoDashboard({
   const disclosureQueue = workspace.visibilityApprovals.filter(
     (approval) => approval.status === 'requested',
   );
+  const applicationQueue = workspace.applications.filter((application) =>
+    ['submitted', 'in_review', 'interview'].includes(application.status),
+  );
+  const newApplications = workspace.applications.filter(
+    (application) => application.status === 'submitted',
+  );
+
+  const moveApplication = async (
+    applicationId: string,
+    status: 'in_review' | 'interview' | 'accepted' | 'declined',
+  ): Promise<void> => {
+    setBusyApplicationId(applicationId);
+    try {
+      await reviewApplication({ applicationId, status, reviewerNote: '' });
+    } finally {
+      setBusyApplicationId(null);
+    }
+  };
 
   return (
     <div className="view-enter stack stack--section">
@@ -134,6 +157,11 @@ function KlineoDashboard({
           <strong>{activeProjects.length}</strong>
           <span>{workspace.cohorts.filter((c) => c.status === 'active').length} active cohort</span>
         </article>
+        <article className={newApplications.length ? 'metric--lime' : ''}>
+          <small>New applications</small>
+          <strong>{newApplications.length}</strong>
+          <span>{applicationQueue.length} in selection</span>
+        </article>
         <article>
           <small>Average progress</small>
           <strong>{averageProgress}%</strong>
@@ -151,9 +179,128 @@ function KlineoDashboard({
         </article>
         <article>
           <small>Awaiting Klineo</small>
-          <strong>{reviewQueue.length + disclosureQueue.length}</strong>
+          <strong>{reviewQueue.length + disclosureQueue.length + applicationQueue.length}</strong>
           <span>{disclosureQueue.length} sharing decisions</span>
         </article>
+      </section>
+
+      <section className="application-queue">
+        <div className="section-heading">
+          <div>
+            <span className="section-kicker">Cohort intake</span>
+            <h2>Project applications</h2>
+          </div>
+          <span>{applicationQueue.length} active · private to Klineo</span>
+        </div>
+        {workspace.applications.length ? (
+          <div className="application-list">
+            {workspace.applications.map((application) => (
+              <article key={application.id}>
+                <header>
+                  <span className="application-mark">
+                    {application.projectName.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div>
+                    <span>
+                      <strong>{application.projectName}</strong>
+                      <StatusBadge status={application.status} />
+                    </span>
+                    <small>
+                      Submitted {relativeDate(application.submittedAt)} ·{' '}
+                      {titleCase(application.productStage)}
+                    </small>
+                  </div>
+                </header>
+                <p>{application.productSummary}</p>
+                <div className="application-meta">
+                  <a href={`mailto:${application.applicantEmail}`}>
+                    <Mail aria-hidden="true" />
+                    <span>
+                      <strong>{application.applicantName}</strong>
+                      <small>
+                        {application.roleTitle ?? 'Project contact'} · {application.applicantEmail}
+                      </small>
+                    </span>
+                  </a>
+                  <span>
+                    <Layers3 aria-hidden="true" />
+                    <span>
+                      <strong>{application.teamSize ?? '—'}</strong>
+                      <small>{application.teamSize === 1 ? 'team member' : 'team members'}</small>
+                    </span>
+                  </span>
+                  {application.websiteUrl ? (
+                    <a href={application.websiteUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink aria-hidden="true" />
+                      <span>
+                        <strong>Product site</strong>
+                        <small>Open in new tab</small>
+                      </span>
+                    </a>
+                  ) : null}
+                </div>
+                <div className="application-goals">
+                  <small>What they want from Bot Combinator</small>
+                  <p>{application.programGoals}</p>
+                </div>
+                <footer>
+                  <span>
+                    {application.reviewedByName
+                      ? `Last reviewed by ${application.reviewedByName}`
+                      : `Reference BC-${application.id.slice(0, 8).toUpperCase()}`}
+                  </span>
+                  <div>
+                    {application.status === 'submitted' ? (
+                      <Button
+                        size="small"
+                        tone="primary"
+                        disabled={busyApplicationId === application.id}
+                        onClick={() => void moveApplication(application.id, 'in_review')}
+                      >
+                        Start review
+                      </Button>
+                    ) : null}
+                    {application.status === 'in_review' ? (
+                      <Button
+                        size="small"
+                        tone="primary"
+                        disabled={busyApplicationId === application.id}
+                        onClick={() => void moveApplication(application.id, 'interview')}
+                      >
+                        Move to interview
+                      </Button>
+                    ) : null}
+                    {application.status === 'interview' ? (
+                      <Button
+                        size="small"
+                        tone="primary"
+                        disabled={busyApplicationId === application.id}
+                        onClick={() => void moveApplication(application.id, 'accepted')}
+                      >
+                        Accept project
+                      </Button>
+                    ) : null}
+                    {['in_review', 'interview'].includes(application.status) ? (
+                      <Button
+                        size="small"
+                        tone="danger"
+                        disabled={busyApplicationId === application.id}
+                        onClick={() => void moveApplication(application.id, 'declined')}
+                      >
+                        Decline
+                      </Button>
+                    ) : null}
+                  </div>
+                </footer>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No applications yet"
+            detail="New Bot Combinator applications will appear here as soon as they are submitted."
+          />
+        )}
       </section>
 
       <div className="dashboard-grid">

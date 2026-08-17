@@ -34,6 +34,44 @@ select public.create_portal_project(
 ) as project_id \gset
 reset role;
 
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+select public.submit_project_application(jsonb_build_object(
+  'projectName', 'Application Smoke Project',
+  'applicantName', 'Avery Builder',
+  'applicantEmail', 'avery@example.com',
+  'roleTitle', 'Founder',
+  'websiteUrl', 'https://example.com/application',
+  'productStage', 'prototype',
+  'teamSize', 3,
+  'productSummary', 'A product application created through the anonymous validated RPC.',
+  'programGoals', 'Validate the product, prepare the integration, and reach launch readiness.',
+  'middleName', ''
+)) as application_id \gset
+reset role;
+
+select set_config('request.jwt.claim.sub', '30000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+select 1 / case when count(*) = 0 then 1 else 0 end as partner_cannot_see_applications
+from public.project_applications where id = :'application_id';
+select 1 / case when jsonb_array_length(public.list_project_applications()) = 0 then 1 else 0 end
+  as partner_application_queue_is_empty;
+reset role;
+
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+select 1 / case when count(*) = 1 then 1 else 0 end as klineo_sees_application
+from public.project_applications where id = :'application_id';
+select public.review_project_application(jsonb_build_object(
+  'applicationId', :'application_id',
+  'status', 'in_review',
+  'reviewerNote', 'Policy smoke review'
+));
+select 1 / case when count(*) = 1 then 1 else 0 end as klineo_review_is_recorded
+from public.project_applications
+where id = :'application_id' and status = 'in_review' and reviewed_by_name = 'Klineo Admin';
+reset role;
+
 insert into public.project_members(project_id, user_id, role)
 values (:'project_id', '20000000-0000-0000-0000-000000000002', 'project_lead');
 insert into public.memberships(organization_id, user_id, role)
