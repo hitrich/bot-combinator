@@ -49,7 +49,7 @@ async function main() {
     args['release-dir'] ?? path.join(repoRoot, 'apps', 'desktop', 'release'),
   );
   const files = await walkFiles(releaseDir);
-  const candidates = files.filter(isElectronFuseBinary);
+  const candidates = findElectronFuseBinaries(files);
   if (candidates.length !== 1) {
     throw new Error(
       `Expected exactly one packaged Electron fuse binary for ${process.platform}, found ${candidates.length} under ${releaseDir}`,
@@ -60,6 +60,12 @@ async function main() {
   console.log(
     `Verified ${EXPECTED_V1.size} hardened Electron V1 fuses across ${count} binary slice(s) in ${candidates[0]}.`,
   );
+}
+
+export function findElectronFuseBinaries(files, platform = process.platform) {
+  // Do not pass isElectronFuseBinary directly to Array#filter: filter's index
+  // argument would otherwise override the helper's optional platform argument.
+  return files.filter((file) => isElectronFuseBinary(file, platform));
 }
 
 export function isElectronFuseBinary(file, platform = process.platform) {

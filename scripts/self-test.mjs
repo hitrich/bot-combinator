@@ -32,7 +32,11 @@ import {
   selectDeveloperIdIdentity,
 } from './apple-signing.mjs';
 import { assessReleaseSecrets } from './validate-release-secrets.mjs';
-import { isElectronFuseBinary, verifyFuseBinary } from './verify-electron-fuses.mjs';
+import {
+  findElectronFuseBinaries,
+  isElectronFuseBinary,
+  verifyFuseBinary,
+} from './verify-electron-fuses.mjs';
 import { signingStatus } from './write-signing-status.mjs';
 
 const temporaryRoot = await fs.mkdtemp(
@@ -123,6 +127,13 @@ try {
   assert.equal(isWindowsPackagedExecutable('/release/bot-combinator.exe'), false);
   assert.equal(isElectronFuseBinary('/release/win-unpacked/Bot Combinator.exe', 'win32'), true);
   assert.equal(isElectronFuseBinary('/release/win-unpacked/bot-combinator.exe', 'win32'), false);
+  assert.deepEqual(
+    findElectronFuseBinaries(
+      ['/release/win-unpacked/Bot Combinator.exe', '/release/win-unpacked/resources/elevate.exe'],
+      'win32',
+    ),
+    ['/release/win-unpacked/Bot Combinator.exe'],
+  );
   assert.equal(
     linuxDesktopExec('/opt/Bot Combinator/bot-combinator'),
     '"/opt/Bot Combinator/bot-combinator" %U',
