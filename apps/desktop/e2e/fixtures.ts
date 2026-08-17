@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { _electron as electron, expect, test as base } from '@playwright/test';
 import type { ElectronApplication, Page, TestInfo } from '@playwright/test';
 import { startGoogleProviderMock, type GoogleProviderMockState } from './google-provider-mock';
+import { e2eTimingFor } from './timing';
 
 interface DesktopFixtures {
   desktopApp: ElectronApplication;
@@ -18,19 +19,26 @@ interface DesktopFixtures {
 }
 
 const desktopRoot = resolve(import.meta.dirname, '..');
+const timing = e2eTimingFor();
+const cleanupOptions = {
+  recursive: true,
+  force: true,
+  maxRetries: timing.cleanupMaxRetries,
+  retryDelay: timing.cleanupRetryDelay,
+} as const;
 
 export const test = base.extend<DesktopFixtures>({
   dataDirectory: async ({}, provide) => {
     const directory = await mkdtemp(join(tmpdir(), 'bot-combinator-e2e-data-'));
     await provide(directory);
-    await rm(directory, { recursive: true, force: true, maxRetries: 3 });
+    await rm(directory, cleanupOptions);
   },
 
   exportDirectory: async ({}, provide) => {
     const directory = await mkdtemp(join(tmpdir(), 'bot-combinator-e2e-export-'));
     await mkdir(directory, { recursive: true });
     await provide(directory);
-    await rm(directory, { recursive: true, force: true, maxRetries: 3 });
+    await rm(directory, cleanupOptions);
   },
 
   startupLogs: async ({}, provide) => {
@@ -62,7 +70,7 @@ export const test = base.extend<DesktopFixtures>({
         BOT_COMBINATOR_STARTUP_DIAGNOSTICS: '1',
         ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
       },
-      timeout: 60_000,
+      timeout: timing.applicationLaunchTimeout,
     });
     application.process().stdout?.on('data', (chunk: Buffer) => startupLogs.push(chunk.toString()));
     application.process().stderr?.on('data', (chunk: Buffer) => startupLogs.push(chunk.toString()));
@@ -76,7 +84,7 @@ export const test = base.extend<DesktopFixtures>({
           () => false,
         ),
         new Promise<boolean>((resolveTimeout) => {
-          closeTimer = setTimeout(() => resolveTimeout(false), 5_000);
+          closeTimer = setTimeout(() => resolveTimeout(false), timing.applicationCloseTimeout);
         }),
       ]);
       if (closeTimer) clearTimeout(closeTimer);

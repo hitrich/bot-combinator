@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+import { e2eTimingFor } from './e2e/timing';
+
+const timing = e2eTimingFor();
 
 export default defineConfig({
   testDir: './e2e',
@@ -7,8 +10,8 @@ export default defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  timeout: 120_000,
-  expect: { timeout: 15_000 },
+  timeout: timing.testTimeout,
+  expect: { timeout: timing.expectTimeout },
   reporter: process.env.CI
     ? [
         ['line'],
@@ -20,6 +23,6 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15_000,
+    actionTimeout: timing.actionTimeout,
   },
 });
