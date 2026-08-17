@@ -9,6 +9,8 @@ import {
   copyCanonicalText,
   copyTree,
   explicitlyUnsignedEnvironment,
+  isWindowsPackagedExecutable,
+  linuxDesktopExec,
   nsisUninstallArgs,
   normalizeCodeSignature,
   parseArgs,
@@ -30,7 +32,7 @@ import {
   selectDeveloperIdIdentity,
 } from './apple-signing.mjs';
 import { assessReleaseSecrets } from './validate-release-secrets.mjs';
-import { verifyFuseBinary } from './verify-electron-fuses.mjs';
+import { isElectronFuseBinary, verifyFuseBinary } from './verify-electron-fuses.mjs';
 import { signingStatus } from './write-signing-status.mjs';
 
 const temporaryRoot = await fs.mkdtemp(
@@ -117,6 +119,14 @@ try {
   assert.equal(targetId('darwin', 'x64'), 'macos-x64');
   assert.equal(targetId('win32', 'arm64'), 'windows-arm64');
   assert.equal(targetId('linux', 'arm64'), 'linux-arm64');
+  assert.equal(isWindowsPackagedExecutable('/release/Bot Combinator.exe'), true);
+  assert.equal(isWindowsPackagedExecutable('/release/bot-combinator.exe'), false);
+  assert.equal(isElectronFuseBinary('/release/win-unpacked/Bot Combinator.exe', 'win32'), true);
+  assert.equal(isElectronFuseBinary('/release/win-unpacked/bot-combinator.exe', 'win32'), false);
+  assert.equal(
+    linuxDesktopExec('/opt/Bot Combinator/bot-combinator'),
+    '"/opt/Bot Combinator/bot-combinator" %U',
+  );
   const localSigningInput = {
     BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY:
       'Developer ID Application: Example Maintainer (ABCDE12345)',

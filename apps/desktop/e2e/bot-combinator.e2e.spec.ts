@@ -413,6 +413,7 @@ test.describe('Bot Combinator built Electron application', () => {
       const window = BrowserWindow.getAllWindows()[0];
       if (!window) throw new Error('Bot Combinator window is unavailable');
       window.webContents.setZoomFactor(2);
+      return true;
     });
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Up next', exact: true })).toBeVisible();
@@ -437,6 +438,7 @@ test.describe('Bot Combinator built Electron application', () => {
       const window = BrowserWindow.getAllWindows()[0];
       if (!window) throw new Error('Bot Combinator window is unavailable');
       window.setContentSize(1280, 768);
+      return true;
     });
     await completeOnboarding(page);
 

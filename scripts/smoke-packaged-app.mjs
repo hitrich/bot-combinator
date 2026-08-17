@@ -6,6 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   collectCleanupErrors,
+  isWindowsPackagedExecutable,
+  linuxDesktopExec,
   nsisUninstallArgs,
   parseArgs,
   repoRoot,
@@ -218,9 +220,7 @@ async function stageDistributions(root, requestedKind) {
           capture: false,
           timeoutMs: 120_000,
         });
-        const installed = (await walkFiles(installRoot)).filter(
-          (file) => path.basename(file).toLowerCase() === 'bot-combinator.exe',
-        );
+        const installed = (await walkFiles(installRoot)).filter(isWindowsPackagedExecutable);
         if (installed.length !== 1) {
           throw new Error(`NSIS install produced ${installed.length} Bot Combinator executables`);
         }
@@ -298,7 +298,8 @@ async function stageDistributions(root, requestedKind) {
           throw new Error('Installed desktop entry does not use the packaged Bot Combinator icon');
         }
         const desktopExec = /^Exec=(.+)$/m.exec(desktopEntry)?.[1];
-        if (desktopExec !== `${installedExecutable} %U`) {
+        const expectedDesktopExec = linuxDesktopExec(installedExecutable);
+        if (desktopExec !== expectedDesktopExec) {
           throw new Error(
             'Installed desktop entry does not launch the packaged Bot Combinator executable',
           );

@@ -2,7 +2,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs, repoRoot, walkFiles } from './_lib.mjs';
+import { isWindowsPackagedExecutable, parseArgs, repoRoot, walkFiles } from './_lib.mjs';
 
 const FUSE_SENTINEL = Buffer.from('dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX', 'ascii');
 const FUSE_VERSION_V1 = 1;
@@ -62,16 +62,15 @@ async function main() {
   );
 }
 
-function isElectronFuseBinary(file) {
+export function isElectronFuseBinary(file, platform = process.platform) {
   const normalized = file.split(path.sep).join('/');
-  if (process.platform === 'darwin') {
+  if (platform === 'darwin') {
     return /\.app\/Contents\/Frameworks\/Electron Framework\.framework\/Versions\/A\/Electron Framework$/.test(
       normalized,
     );
   }
   if (!/(?:^|\/)\w[^/]*-unpacked\//.test(normalized)) return false;
-  if (process.platform === 'win32')
-    return path.basename(file).toLowerCase() === 'bot-combinator.exe';
+  if (platform === 'win32') return isWindowsPackagedExecutable(file);
   return path.basename(file) === 'bot-combinator';
 }
 

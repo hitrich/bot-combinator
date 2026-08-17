@@ -562,6 +562,14 @@ export function executableName(baseName) {
   return process.platform === 'win32' ? `${baseName}.exe` : baseName;
 }
 
+export function isWindowsPackagedExecutable(file) {
+  return path.basename(file).toLowerCase() === 'bot combinator.exe';
+}
+
+export function linuxDesktopExec(executable) {
+  return `"${executable}" %U`;
+}
+
 export function targetTriple(platform = process.platform, arch = process.arch) {
   const key = `${platform}-${arch}`;
   const triples = {
