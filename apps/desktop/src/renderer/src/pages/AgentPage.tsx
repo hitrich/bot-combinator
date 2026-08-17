@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bot,
   Check,
@@ -10,7 +10,7 @@ import {
   Sparkles,
   TerminalSquare,
 } from 'lucide-react';
-import type { AgentEvent, AgentProvider } from '../../../shared/contracts';
+import type { AgentContextGrant, AgentEvent, AgentProvider } from '../../../shared/contracts';
 import {
   Badge,
   Button,
@@ -21,14 +21,20 @@ import {
   titleCase,
 } from '../components/ui';
 import { useWorkspace } from '../state/WorkspaceContext';
+import { useLocation } from '../lib/router';
+
+type ContextClass = AgentContextGrant['contextClass'];
 
 export function AgentPage(): React.JSX.Element {
   const { data, command, notify, refresh } = useWorkspace();
+  const location = useLocation();
+  const appliedRouteRef = useRef<string | null>(null);
   const [provider, setProvider] = useState<AgentProvider>('codex');
   const [prompt, setPrompt] = useState(
     'Find five high-fit investors I have not contacted and explain each recommendation with the available local evidence.',
   );
-  const [disclosure, setDisclosure] = useState<string[]>(['round', 'company', 'investors']);
+  const [disclosure, setDisclosure] = useState<ContextClass[]>(['round', 'company', 'investors']);
+  const [selectedBotChainDocumentIds, setSelectedBotChainDocumentIds] = useState<string[]>([]);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [runId, setRunId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -38,7 +44,7 @@ export function AgentPage(): React.JSX.Element {
 
   useEffect(
     () =>
-      window.outreachr.onAgentEvent((event) => {
+      window.botCombinator.onAgentEvent((event) => {
         setEvents((current) => [...current, event]);
         if (event.type === 'tool_proposal') void refresh();
         if (event.type === 'completed' || event.type === 'error') setRunId(null);
@@ -55,7 +61,7 @@ export function AgentPage(): React.JSX.Element {
     [data?.agentContextGrants, provider],
   );
   const contextOptions = useMemo(
-    () => [
+    (): Array<{ id: ContextClass; label: string; detail: string }> => [
       {
         id: 'round',
         label: 'Round strategy',
@@ -76,13 +82,45 @@ export function AgentPage(): React.JSX.Element {
         label: 'Private activity',
         detail: 'Emails, meetings, notes, outcomes in this run only',
       },
+      {
+        id: 'bot_chain_docs',
+        label: 'BOT Chain documentation',
+        detail: 'Only explicitly selected versioned integration files',
+      },
     ],
     [],
   );
 
   useEffect(() => {
-    setDisclosure(durableGrants.length ? durableGrants : ['round', 'company', 'investors']);
-  }, [durableGrants]);
+    const params = new URLSearchParams(location.search);
+    const routeRequestsBotChain = params.get('mode') === 'bot-chain';
+    const base: ContextClass[] = durableGrants.length
+      ? durableGrants
+      : ['round', 'company', 'investors'];
+    setDisclosure(
+      routeRequestsBotChain && !base.includes('bot_chain_docs')
+        ? [...base, 'bot_chain_docs']
+        : base,
+    );
+  }, [durableGrants, location.search]);
+
+  useEffect(() => {
+    if (!data || appliedRouteRef.current === location.search) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('mode') !== 'bot-chain') return;
+    appliedRouteRef.current = location.search;
+    const requested = params
+      .getAll('doc')
+      .filter((id) => data.botChainDocs.documents.some((document) => document.id === id));
+    const fallback = data.botChainDocs.documents
+      .filter((document) => document.importance === 'required')
+      .map((document) => document.id);
+    const selected = requested.length ? [...new Set(requested)] : fallback;
+    setSelectedBotChainDocumentIds(selected);
+    setPrompt(
+      'Use the selected BOT Chain documentation to assess this project repository, identify missing integration inputs, and prepare an implementation plan. Do not invent network, contract, BDEX, wallet, liquidity, or approval values. Keep every external action as a proposal.',
+    );
+  }, [data, location.search]);
 
   useEffect(() => {
     if (!data?.agentProposals.length) {
@@ -99,14 +137,21 @@ export function AgentPage(): React.JSX.Element {
   const selectedProposal =
     data.agentProposals.find((proposal) => proposal.id === selectedProposalId) ?? null;
 
-  const toggleContext = (id: string): void =>
+  const toggleContext = (id: ContextClass): void => {
+    const enabling = !disclosure.includes(id);
+    if (id === 'bot_chain_docs' && enabling && !selectedBotChainDocumentIds.length) {
+      setSelectedBotChainDocumentIds(
+        data.botChainDocs.documents
+          .filter((document) => document.importance === 'required')
+          .map((document) => document.id),
+      );
+    }
     setDisclosure((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     );
+  };
 
-  const toggleGrant = async (
-    contextClass: 'round' | 'company' | 'investors' | 'activity',
-  ): Promise<void> => {
+  const toggleGrant = async (contextClass: ContextClass): Promise<void> => {
     const granted = !durableGrants.includes(contextClass);
     setUpdatingGrant(contextClass);
     try {
@@ -129,6 +174,9 @@ export function AgentPage(): React.JSX.Element {
         provider,
         prompt,
         disclosedContextIds: disclosure,
+        ...(disclosure.includes('bot_chain_docs')
+          ? { botChainDocumentIds: selectedBotChainDocumentIds }
+          : {}),
       });
       setRunId(result.runId);
       notify({
@@ -181,7 +229,7 @@ export function AgentPage(): React.JSX.Element {
     <div className="page agent-page">
       <PageHeader
         title="Agent"
-        description="Research and prepare work with your installed Codex or Claude agent. Outreachr remains the authority for data and sends."
+        description="Research and prepare work with your installed Codex or Claude agent. Bot Combinator remains the authority for data and sends."
       />
 
       <div className="agent-provider-switcher" role="radiogroup" aria-label="Agent provider">
@@ -261,20 +309,55 @@ export function AgentPage(): React.JSX.Element {
                   className="agent-grant-button"
                   disabled={updatingGrant === option.id}
                   aria-busy={updatingGrant === option.id || undefined}
-                  onClick={() =>
-                    void toggleGrant(option.id as 'round' | 'company' | 'investors' | 'activity')
-                  }
+                  onClick={() => void toggleGrant(option.id)}
                 >
                   {updatingGrant === option.id
                     ? 'Saving…'
-                    : durableGrants.includes(
-                          option.id as 'round' | 'company' | 'investors' | 'activity',
-                        )
+                    : durableGrants.includes(option.id)
                       ? 'Remembered · revoke'
                       : 'Remember as default'}
                 </button>
               </div>
             ))}
+            {disclosure.includes('bot_chain_docs') ? (
+              <div className="agent-bot-doc-selector">
+                <header>
+                  <span>
+                    <strong>BOT Chain files disclosed</strong>
+                    <small>
+                      Choose the exact files inserted into this run. Hash and version metadata are
+                      included with their content.
+                    </small>
+                  </span>
+                  <Badge tone={selectedBotChainDocumentIds.length ? 'info' : 'danger'}>
+                    {selectedBotChainDocumentIds.length} selected
+                  </Badge>
+                </header>
+                <div>
+                  {data.botChainDocs.documents.map((document) => (
+                    <label key={document.id}>
+                      <input
+                        type="checkbox"
+                        checked={selectedBotChainDocumentIds.includes(document.id)}
+                        onChange={() =>
+                          setSelectedBotChainDocumentIds((current) =>
+                            current.includes(document.id)
+                              ? current.filter((id) => id !== document.id)
+                              : [...current, document.id],
+                          )
+                        }
+                      />
+                      <span>
+                        <strong>{document.title}</strong>
+                        <small>
+                          {document.version} · {document.status}
+                        </small>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="agent-composer__footer">
             <span>
@@ -293,7 +376,12 @@ export function AgentPage(): React.JSX.Element {
                 tone="primary"
                 icon={<Send aria-hidden="true" />}
                 loading={starting}
-                disabled={!prompt.trim() || currentStatus?.state !== 'ready'}
+                disabled={
+                  !prompt.trim() ||
+                  currentStatus?.state !== 'ready' ||
+                  (disclosure.includes('bot_chain_docs') &&
+                    selectedBotChainDocumentIds.length === 0)
+                }
                 onClick={() => void run()}
               >
                 Run with {titleCase(provider)}
@@ -470,7 +558,7 @@ export function AgentPage(): React.JSX.Element {
           </p>
           <p>
             <strong>Approve</strong> The founder accepts data mutations and exact external actions
-            in Outreachr.
+            in Bot Combinator.
           </p>
           <p>
             <strong>Enforce</strong> SQLite constraints and connector guards make duplicate or

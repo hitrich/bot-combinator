@@ -12,9 +12,9 @@ export const noSleep = async (): Promise<void> => undefined;
 
 export const message: EmailMessage = {
   to: [{ email: 'Partner@Example.com', name: 'Pat Partner', recipientKey: 'person-pat' }],
-  subject: 'Outreachr intro',
-  text: 'Hello from Outreachr.',
-  html: '<p>Hello from <strong>Outreachr</strong>.</p>',
+  subject: 'Bot Combinator intro',
+  text: 'Hello from Bot Combinator.',
+  html: '<p>Hello from <strong>Bot Combinator</strong>.</p>',
 };
 
 export const sendContext: SendContext = {

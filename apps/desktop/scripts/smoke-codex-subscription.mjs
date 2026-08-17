@@ -7,21 +7,21 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron } from '@playwright/test';
 
-if (process.env.OUTREACHR_LIVE_CODEX_SMOKE !== '1') {
+if (process.env.BOT_COMBINATOR_LIVE_CODEX_SMOKE !== '1') {
   throw new Error(
-    'Live Codex smoke is opt-in because it uses the signed-in account. Set OUTREACHR_LIVE_CODEX_SMOKE=1.',
+    'Live Codex smoke is opt-in because it uses the signed-in account. Set BOT_COMBINATOR_LIVE_CODEX_SMOKE=1.',
   );
 }
 
 const desktopRoot = resolve(import.meta.dirname, '..');
-const packagedExecutable = process.env.OUTREACHR_PACKAGED_EXECUTABLE?.trim();
+const packagedExecutable = process.env.BOT_COMBINATOR_PACKAGED_EXECUTABLE?.trim();
 if (packagedExecutable) await access(packagedExecutable);
 else {
   await access(join(desktopRoot, 'out', 'main', 'index.js'));
   await access(join(desktopRoot, 'resources', 'generated', 'sidecars', 'manifest.json'));
 }
 
-const dataDirectory = await mkdtemp(join(tmpdir(), 'outreachr-live-codex-'));
+const dataDirectory = await mkdtemp(join(tmpdir(), 'bot-combinator-live-codex-'));
 const logs = [];
 let application;
 let packagedProcess;
@@ -41,13 +41,13 @@ try {
     const page = await application.firstWindow({ timeout: 60_000 });
     await page.waitForLoadState('domcontentloaded');
 
-    const bootstrap = await page.evaluate(() => window.outreachr.bootstrap());
+    const bootstrap = await page.evaluate(() => window.botCombinator.bootstrap());
     if (bootstrap.isFirstRun) {
       await page.evaluate(() =>
-        window.outreachr.command('onboarding.complete', {
+        window.botCombinator.command('onboarding.complete', {
           founderName: 'Live Smoke Founder',
           founderEmail: 'live-smoke@local.invalid',
-          companyName: 'Outreachr Live Smoke',
+          companyName: 'Bot Combinator Live Smoke',
           companyOneLiner:
             'An isolated local workspace used to verify the Codex subscription path.',
           stage: 'pre_seed',
@@ -63,20 +63,20 @@ try {
     }
 
     const detection = await page.evaluate(() =>
-      window.outreachr.command('agent.detect', { provider: 'codex' }),
+      window.botCombinator.command('agent.detect', { provider: 'codex' }),
     );
     if (detection.state !== 'ready') {
       throw new Error(`Codex is not ready: ${detection.error ?? detection.state}`);
     }
 
     await page.evaluate(() => {
-      window.__outreachrLiveCodexEvents = [];
-      window.__outreachrStopLiveCodexEvents = window.outreachr.onAgentEvent((event) => {
-        window.__outreachrLiveCodexEvents.push(event);
+      window.__botCombinatorLiveCodexEvents = [];
+      window.__botCombinatorStopLiveCodexEvents = window.botCombinator.onAgentEvent((event) => {
+        window.__botCombinatorLiveCodexEvents.push(event);
       });
     });
     const { runId } = await page.evaluate(() =>
-      window.outreachr.command('agent.run', {
+      window.botCombinator.command('agent.run', {
         provider: 'codex',
         prompt:
           'Verify that this local Codex integration is operational. Return a concise summary containing the exact words "Codex subscription smoke passed" and no proposals. Do not call tools.',
@@ -86,7 +86,7 @@ try {
 
     await page.waitForFunction(
       (expectedRunId) =>
-        window.__outreachrLiveCodexEvents?.some(
+        window.__botCombinatorLiveCodexEvents?.some(
           (event) =>
             event.runId === expectedRunId && (event.type === 'completed' || event.type === 'error'),
         ),
@@ -94,8 +94,8 @@ try {
       { timeout: 5 * 60_000 },
     );
     const events = await page.evaluate((expectedRunId) => {
-      window.__outreachrStopLiveCodexEvents?.();
-      return (window.__outreachrLiveCodexEvents ?? []).filter(
+      window.__botCombinatorStopLiveCodexEvents?.();
+      return (window.__botCombinatorLiveCodexEvents ?? []).filter(
         (event) => event.runId === expectedRunId,
       );
     }, runId);
@@ -130,8 +130,8 @@ function liveSmokeEnvironment() {
   return {
     ...process.env,
     NODE_ENV: 'production',
-    OUTREACHR_STARTUP_DIAGNOSTICS: '1',
-    OUTREACHR_SMOKE_TEST: '1',
+    BOT_COMBINATOR_STARTUP_DIAGNOSTICS: '1',
+    BOT_COMBINATOR_SMOKE_TEST: '1',
     ELECTRON_ENABLE_LOGGING: '1',
     ELECTRON_DISABLE_SECURITY_WARNINGS: 'false',
   };
@@ -145,7 +145,7 @@ async function runPackagedSmoke(executable, profile, output) {
       `--user-data-dir=${profile}`,
       `--remote-debugging-port=${debuggingPort}`,
       '--remote-debugging-address=127.0.0.1',
-      '--outreachr-smoke-test',
+      '--bot-combinator-smoke-test',
       '--disable-gpu',
     ],
     {
@@ -171,12 +171,12 @@ async function runPackagedSmoke(executable, profile, output) {
 
 function packagedSmokeExpression() {
   return String.raw`(async () => {
-    const bootstrap = await window.outreachr.bootstrap();
+    const bootstrap = await window.botCombinator.bootstrap();
     if (bootstrap.isFirstRun) {
-      await window.outreachr.command('onboarding.complete', {
+      await window.botCombinator.command('onboarding.complete', {
         founderName: 'Live Smoke Founder',
         founderEmail: 'live-smoke@local.invalid',
-        companyName: 'Outreachr Live Smoke',
+        companyName: 'Bot Combinator Live Smoke',
         companyOneLiner: 'An isolated local workspace used to verify the Codex subscription path.',
         stage: 'pre_seed',
         targetAmount: 1000000,
@@ -188,13 +188,13 @@ function packagedSmokeExpression() {
         postalAddress: '1 Local Test Way\nSan Francisco, CA 94107\nUnited States'
       });
     }
-    const detection = await window.outreachr.command('agent.detect', { provider: 'codex' });
+    const detection = await window.botCombinator.command('agent.detect', { provider: 'codex' });
     if (detection.state !== 'ready') {
       return { error: 'Codex is not ready: ' + (detection.error ?? detection.state) };
     }
     const events = [];
-    const stop = window.outreachr.onAgentEvent((event) => events.push(event));
-    const { runId } = await window.outreachr.command('agent.run', {
+    const stop = window.botCombinator.onAgentEvent((event) => events.push(event));
+    const { runId } = await window.botCombinator.command('agent.run', {
       provider: 'codex',
       prompt: 'Verify that this local Codex integration is operational. Return a concise summary containing the exact words "Codex subscription smoke passed" and no proposals. Do not call tools.',
       disclosedContextIds: []

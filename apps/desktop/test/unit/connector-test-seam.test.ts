@@ -3,8 +3,8 @@ import { createConnectorTestSeam } from '../../src/main/connector-test-seam';
 
 const validEnvironment = {
   NODE_ENV: 'test',
-  OUTREACHR_E2E_GOOGLE_PROVIDER_URL: 'http://127.0.0.1:43123',
-  OUTREACHR_E2E_SECRET_KEY: 'ab'.repeat(32),
+  BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL: 'http://127.0.0.1:43123',
+  BOT_COMBINATOR_E2E_SECRET_KEY: 'ab'.repeat(32),
 } as const;
 
 describe('built-Electron connector test seam', () => {
@@ -29,7 +29,7 @@ describe('built-Electron connector test seam', () => {
       createConnectorTestSeam(
         {
           ...validEnvironment,
-          OUTREACHR_E2E_GOOGLE_PROVIDER_URL: 'https://providers.example.test',
+          BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL: 'https://providers.example.test',
         },
         true,
       ),
@@ -38,7 +38,7 @@ describe('built-Electron connector test seam', () => {
       createConnectorTestSeam(
         {
           NODE_ENV: 'test',
-          OUTREACHR_E2E_GOOGLE_PROVIDER_URL: 'http://127.0.0.1:43123',
+          BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL: 'http://127.0.0.1:43123',
         },
         true,
       ),
@@ -76,7 +76,7 @@ describe('built-Electron connector test seam', () => {
       redirectUri: 'http://127.0.0.1:19876/oauth/callback',
       scopes: ['openid'],
     });
-    expect(new URL(callback).searchParams.get('code')).toBe('outreachr-e2e-google-code');
+    expect(new URL(callback).searchParams.get('code')).toBe('bot-combinator-e2e-google-code');
     expect(new URL(callback).searchParams.get('state')).toBe('state-value');
 
     await expect(

@@ -146,7 +146,7 @@ export function OutreachPage(): React.JSX.Element {
           tone: 'error',
           title: 'Provider outcome is unconfirmed',
           detail:
-            'Outreachr will not retry. A later sent-mail reconciliation may only confirm this original operation.',
+            'Bot Combinator will not retry. A later sent-mail reconciliation may only confirm this original operation.',
         });
       }
     } finally {
@@ -273,7 +273,7 @@ export function OutreachPage(): React.JSX.Element {
         title="Message queue"
         description={
           filter === 'all'
-            ? 'Outreachr never runs unattended sequences. Follow-ups require a fresh review.'
+            ? 'Bot Combinator never runs unattended sequences. Follow-ups require a fresh review.'
             : `Showing ${filter === 'attention' ? 'messages needing attention' : filter} messages. Select the active summary again to clear the filter.`
         }
       >

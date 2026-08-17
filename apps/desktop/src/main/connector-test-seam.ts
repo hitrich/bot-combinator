@@ -1,9 +1,9 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import type { PreparedAuthorizationRequest } from '@outreachr/connectors';
+import type { PreparedAuthorizationRequest } from '@bot-combinator/connectors';
 import type { SecretStoreBackend } from './secure-store';
 
-const E2E_PROVIDER_URL = 'OUTREACHR_E2E_GOOGLE_PROVIDER_URL';
-const E2E_SECRET_KEY = 'OUTREACHR_E2E_SECRET_KEY';
+const E2E_PROVIDER_URL = 'BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL';
+const E2E_SECRET_KEY = 'BOT_COMBINATOR_E2E_SECRET_KEY';
 const GOOGLE_PROVIDER_ORIGINS = new Set([
   'https://oauth2.googleapis.com',
   'https://openidconnect.googleapis.com',
@@ -14,8 +14,8 @@ const GOOGLE_PROVIDER_ORIGINS = new Set([
 interface ConnectorTestSeamEnvironment {
   [name: string]: string | undefined;
   NODE_ENV?: string;
-  OUTREACHR_E2E_GOOGLE_PROVIDER_URL?: string;
-  OUTREACHR_E2E_SECRET_KEY?: string;
+  BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL?: string;
+  BOT_COMBINATOR_E2E_SECRET_KEY?: string;
 }
 
 export interface ConnectorTestSeam {
@@ -105,8 +105,8 @@ export function createConnectorTestSeam(
   allowTestSeam: boolean,
   nativeFetch: typeof fetch = fetch,
 ): ConnectorTestSeam | null {
-  const providerUrl = environment.OUTREACHR_E2E_GOOGLE_PROVIDER_URL;
-  const testSeamProof = environment.OUTREACHR_E2E_SECRET_KEY;
+  const providerUrl = environment.BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL;
+  const testSeamProof = environment.BOT_COMBINATOR_E2E_SECRET_KEY;
   if (!providerUrl && !testSeamProof) return null;
   if (!allowTestSeam) {
     throw new Error('Electron connector test hooks are disabled in packaged applications');
@@ -133,7 +133,7 @@ export function createConnectorTestSeam(
         throw new Error('The Electron connector test seam only authorizes Google test requests');
       }
       const callback = new URL(request.redirectUri);
-      callback.searchParams.set('code', 'outreachr-e2e-google-code');
+      callback.searchParams.set('code', 'bot-combinator-e2e-google-code');
       callback.searchParams.set('state', request.state);
       return callback.toString();
     },

@@ -22,7 +22,7 @@ body:
     attributes:
       label: Project constraints
       options:
-        - label: The proposal can work without a hosted Outreachr account or mandatory paid service.
+        - label: The proposal can work without a hosted Bot Combinator account or mandatory paid service.
           required: true
         - label: External actions remain explicit and founder-approved.
           required: true

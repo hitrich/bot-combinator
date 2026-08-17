@@ -28,7 +28,7 @@ function headerLines(message: EmailMessage, operationKey?: string): string[] {
   ];
   if (message.inReplyTo) lines.push(`In-Reply-To: ${message.inReplyTo}`);
   if (message.references?.length) lines.push(`References: ${message.references.join(' ')}`);
-  if (operationKey) lines.push(`X-Outreachr-Operation-Key: ${operationKey}`);
+  if (operationKey) lines.push(`X-Bot-Combinator-Operation-Key: ${operationKey}`);
   for (const [name, value] of Object.entries(message.headers ?? {})) {
     lines.push(`${name}: ${value}`);
   }
@@ -39,7 +39,7 @@ export function buildMimeMessage(message: EmailMessage, operationKey?: string): 
   validateEmailMessage(message);
   const headers = headerLines(message, operationKey);
   if (message.text !== undefined && message.html !== undefined) {
-    const boundary = `outreachr_${(operationKey ?? globalThis.crypto.randomUUID()).replace(/[^A-Za-z0-9]/gu, '')}`;
+    const boundary = `bot_combinator_${(operationKey ?? globalThis.crypto.randomUUID()).replace(/[^A-Za-z0-9]/gu, '')}`;
     headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
     return [
       ...headers,

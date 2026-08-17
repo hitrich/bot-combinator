@@ -1,0 +1,8 @@
+.env
+.env.local
+.env.*.local
+dist
+.wrangler
+.vercel
+.env*
+!.env.example

@@ -8,7 +8,7 @@ import type {
   LoginChallenge,
   LoginRequest,
   ProviderDetection,
-} from '@outreachr/agents';
+} from '@bot-combinator/agents';
 import type { AgentEvent } from '../../src/shared/contracts';
 import type { AgentRunRequest } from '../../src/main/agent-controller';
 import type {
@@ -61,7 +61,7 @@ const agentMocks = vi.hoisted(() => ({
   adapters: [] as unknown[],
 }));
 
-vi.mock('@outreachr/agents', () => {
+vi.mock('@bot-combinator/agents', () => {
   class FakeAdapterImplementation {
     readonly provider: 'codex' | 'claude';
     readonly options: FakeAdapter['options'];
@@ -330,16 +330,16 @@ describe('DesktopAgentService', () => {
       registerSession(registration): AgentMcpConnection {
         this.registrations.push(registration);
         return {
-          serverName: 'outreachr',
+          serverName: 'bot-combinator',
           url: 'http://127.0.0.1:43123/mcp',
           bearerToken: this.bearerToken,
           sessionId: registration.runId,
           auditPurpose: registration.purpose,
           enabledTools: [
-            'outreachr_search_investors',
-            'outreachr_propose_stage',
-            'outreachr_propose_task',
-            'outreachr_propose_draft',
+            'bot_combinator_search_investors',
+            'bot_combinator_propose_stage',
+            'bot_combinator_propose_task',
+            'bot_combinator_propose_draft',
           ],
         };
       },
@@ -734,7 +734,7 @@ describe('DesktopAgentService', () => {
       maxTurns: 4,
       timeoutMs: 300_000,
       mcp: {
-        serverName: 'outreachr',
+        serverName: 'bot-combinator',
         sessionId: request.runId,
         auditPurpose: request.prompt,
       },

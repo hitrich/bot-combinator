@@ -242,7 +242,7 @@ function PersonRow({
                   ? undefined
                   : 'This saved profile is not a secure LinkedIn URL.'
               }
-              onClick={() => void window.outreachr.openExternal(current.linkedinUrl!)}
+              onClick={() => void window.botCombinator.openExternal(current.linkedinUrl!)}
             >
               LinkedIn
             </Button>
@@ -258,7 +258,7 @@ function PersonRow({
                   ? undefined
                   : 'This saved profile is not a secure X or Twitter URL.'
               }
-              onClick={() => void window.outreachr.openExternal(current.xUrl!)}
+              onClick={() => void window.botCombinator.openExternal(current.xUrl!)}
             >
               X
             </Button>
@@ -522,9 +522,9 @@ export function InvestorDetailPage(): React.JSX.Element {
                 title={
                   isSecureExternalUrl(investor.website)
                     ? undefined
-                    : 'Only credential-free HTTPS websites can be opened from Outreachr.'
+                    : 'Only credential-free HTTPS websites can be opened from Bot Combinator.'
                 }
-                onClick={() => void window.outreachr.openExternal(investor.website!)}
+                onClick={() => void window.botCombinator.openExternal(investor.website!)}
               >
                 Website
               </Button>
@@ -585,7 +585,7 @@ export function InvestorDetailPage(): React.JSX.Element {
           </div>
         </dl>
         <div className="fit-reasons-panel">
-          <strong>Why Outreachr ranked this firm</strong>
+          <strong>Why Bot Combinator ranked this firm</strong>
           <ul>
             {investor.fitReasons.map((reason) => (
               <li key={reason}>
@@ -676,9 +676,9 @@ export function InvestorDetailPage(): React.JSX.Element {
                   title={
                     isSecureExternalUrl(item.source.url)
                       ? undefined
-                      : 'Only credential-free HTTPS sources can be opened from Outreachr.'
+                      : 'Only credential-free HTTPS sources can be opened from Bot Combinator.'
                   }
-                  onClick={() => void window.outreachr.openExternal(item.source.url)}
+                  onClick={() => void window.botCombinator.openExternal(item.source.url)}
                 >
                   Source
                 </Button>
@@ -737,9 +737,9 @@ export function InvestorDetailPage(): React.JSX.Element {
                   title={
                     isSecureExternalUrl(source.url)
                       ? undefined
-                      : 'Only credential-free HTTPS sources can be opened from Outreachr.'
+                      : 'Only credential-free HTTPS sources can be opened from Bot Combinator.'
                   }
-                  onClick={() => void window.outreachr.openExternal(source.url)}
+                  onClick={() => void window.botCombinator.openExternal(source.url)}
                 >
                   {isSecureExternalUrl(source.url) ? 'Open' : 'Unavailable'}
                 </Button>

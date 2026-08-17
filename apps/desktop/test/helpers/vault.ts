@@ -8,7 +8,7 @@ export const DESKTOP_ROOT = resolve(import.meta.dirname, '../..');
 export const RESOURCE_ROOT = resolve(DESKTOP_ROOT, '../../resources');
 
 export async function temporaryDirectory(prefix: string): Promise<string> {
-  return mkdtemp(join(tmpdir(), `outreachr-${prefix}-`));
+  return mkdtemp(join(tmpdir(), `bot-combinator-${prefix}-`));
 }
 
 export async function removeTemporaryDirectory(path: string): Promise<void> {

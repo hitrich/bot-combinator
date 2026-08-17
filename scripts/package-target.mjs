@@ -29,14 +29,14 @@ await fs.rm(path.join(repoRoot, 'apps', 'desktop', 'release'), {
   force: true,
 });
 await runPnpm(['prepare:resources'], { cwd: repoRoot, capture: false });
-await runPnpm(['--filter', '@outreachr/desktop...', 'build'], {
+await runPnpm(['--filter', '@bot-combinator/desktop...', 'build'], {
   cwd: repoRoot,
   capture: false,
 });
 
 const builderArgs = [
   '--filter',
-  '@outreachr/desktop',
+  '@bot-combinator/desktop',
   'exec',
   'electron-builder',
   platformFlag,

@@ -237,7 +237,7 @@ export function Skeleton({ className = '' }: { className?: string }): React.JSX.
 
 export function LoadingScreen(): React.JSX.Element {
   return (
-    <main className="loading-screen" aria-label="Loading Outreachr" aria-busy="true">
+    <main className="loading-screen" aria-label="Loading Bot Combinator" aria-busy="true">
       <div className="brand-mark brand-mark--large" aria-hidden="true">
         O
       </div>
@@ -266,7 +266,7 @@ export function ErrorScreen({
   return (
     <main className="error-screen">
       <AlertCircle aria-hidden="true" />
-      <h1>Outreachr could not open the vault</h1>
+      <h1>Bot Combinator could not open the vault</h1>
       <p>{message}</p>
       <Button tone="primary" loading={retrying} onClick={retry}>
         Try again

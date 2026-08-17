@@ -22,7 +22,7 @@ await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
 
 for (const target of targets) {
-  const directory = path.join(input, `outreachr-${target}`);
+  const directory = path.join(input, `bot-combinator-${target}`);
   for (const file of await walkFiles(directory)) {
     const name = path.basename(file);
     if (!allowed.test(name)) continue;
@@ -44,10 +44,8 @@ const requiredUnique = [
     `THIRD_PARTY_NOTICES-${target}.md`,
     `licenses-${target}.json`,
     `build-target-${target}.json`,
-    `outreachr-${target}.cdx.json`,
-    `outreachr-${target}.provenance.json`,
-    `outreachr-${target}.attestation.intoto.jsonl`,
-    `outreachr-${target}.attestation.intoto.jsonl.sha256`,
+    `bot-combinator-${target}.cdx.json`,
+    `bot-combinator-${target}.provenance.json`,
     `SHA256SUMS-${target}`,
     `SIGNING-STATUS-${target}.json`,
   ]),
@@ -56,10 +54,7 @@ for (const name of requiredUnique) {
   if (!seen.has(name)) throw new Error(`Staged release is missing ${name}`);
 }
 for (const target of targets) {
-  for (const checksumName of [
-    `SHA256SUMS-${target}`,
-    `outreachr-${target}.attestation.intoto.jsonl.sha256`,
-  ]) {
+  for (const checksumName of [`SHA256SUMS-${target}`]) {
     const lines = (await fs.readFile(path.join(output, checksumName), 'utf8'))
       .split(/\r?\n/)
       .filter(Boolean);
@@ -91,13 +86,13 @@ async function releaseTrustSummary(directory, releaseTargets) {
     );
   }
   return [
-    '# Verify this Outreachr release',
+    '# Verify this Bot Combinator release',
     '',
     hasUntrustedPlatformPackage
       ? '> **Platform warning:** One or more macOS/Windows packages are explicitly **UNSIGNED**. Unsigned macOS packages are also **UNNOTARIZED**. Their filenames and status manifests say so; expect Gatekeeper or SmartScreen warnings.'
       : '> All macOS and Windows packages passed their native publisher-signature gates.',
     '',
-    'Every target, signed or unsigned, is release-blocked on its SHA-256 manifest and GitHub OIDC build attestation. Verify both before installing.',
+    'Every target, signed or unsigned, is release-blocked on its SHA-256 manifest and local SLSA-format provenance. Verify the manifest before installing and inspect the provenance for its source identity.',
     '',
     '| Target | Release mode | Code signing | Notarization | Tag verification |',
     '| --- | --- | --- | --- | --- |',

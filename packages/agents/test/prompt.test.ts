@@ -40,11 +40,11 @@ describe('agent prompt preparation', () => {
       ...runRequest(),
       mcp: mcpConnection('run:prompt'),
     });
-    expect(prepared.system).toContain('exact local Outreachr MCP tools');
+    expect(prepared.system).toContain('exact local Bot Combinator MCP tools');
     expect(prepared.system).not.toContain('Do not call tools.');
     expect(prepared.prompt).toContain('"sessionId":"run:prompt"');
-    expect(prepared.prompt).toContain('outreachr_propose_draft');
-    expect(prepared.prompt).not.toContain('outreachr_propose_target');
+    expect(prepared.prompt).toContain('bot_combinator_propose_draft');
+    expect(prepared.prompt).not.toContain('bot_combinator_propose_target');
     expect(prepared.system).toContain('do not duplicate that proposal');
   });
 });

@@ -1,5 +1,5 @@
 import { safeStorage } from 'electron';
-import type { CoreVault } from '@outreachr/core';
+import type { CoreVault } from '@bot-combinator/core';
 
 interface AsyncSafeStorage {
   encryptStringAsync?: (value: string) => Promise<Buffer>;

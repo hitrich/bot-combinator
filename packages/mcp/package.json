@@ -1,8 +1,8 @@
 {
-  "name": "@outreachr/mcp",
+  "name": "@bot-combinator/mcp",
   "private": true,
   "version": "0.1.2",
-  "description": "A fail-closed, read-and-propose-only local MCP server for Outreachr",
+  "description": "A fail-closed, read-and-propose-only local MCP server for Bot Combinator",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,

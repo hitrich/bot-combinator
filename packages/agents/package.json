@@ -1,8 +1,8 @@
 {
-  "name": "@outreachr/agents",
+  "name": "@bot-combinator/agents",
   "private": true,
   "version": "0.1.2",
-  "description": "Fail-closed, proposal-only local Codex and Claude agent runtime for Outreachr",
+  "description": "Fail-closed, proposal-only local Codex and Claude agent runtime for Bot Combinator",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,

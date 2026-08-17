@@ -39,7 +39,7 @@ export async function generateThirdPartyNotices(options = {}) {
   const lines = [
     '# Third-Party Notices',
     '',
-    'Outreachr is built with the following installed build and runtime dependencies. This file is generated from the active dependency graph in the frozen pnpm virtual store; package license files remain authoritative.',
+    'Bot Combinator is built with the following installed build and runtime dependencies. This file is generated from the active dependency graph in the frozen pnpm virtual store; package license files remain authoritative.',
     '',
     '| Package | Version | Declared license | Source |',
     '| --- | --- | --- | --- |',

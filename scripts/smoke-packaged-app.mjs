@@ -37,7 +37,7 @@ for (const stageKind of stageKinds) {
 }
 
 async function smokeDistribution(distribution, timeout) {
-  const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-smoke-profile-'));
+  const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'bot-combinator-smoke-profile-'));
   let child;
   let stdout = '';
   let stderr = '';
@@ -51,14 +51,14 @@ async function smokeDistribution(distribution, timeout) {
         `--user-data-dir=${profile}`,
         `--remote-debugging-port=${debuggingPort}`,
         '--remote-debugging-address=127.0.0.1',
-        '--outreachr-smoke-test',
+        '--bot-combinator-smoke-test',
         '--disable-gpu',
       ],
       {
         env: {
           ...process.env,
           ...distribution.environment,
-          OUTREACHR_SMOKE_TEST: '1',
+          BOT_COMBINATOR_SMOKE_TEST: '1',
           ELECTRON_ENABLE_LOGGING: '1',
           ELECTRON_DISABLE_SECURITY_WARNINGS: '0',
         },
@@ -126,8 +126,8 @@ async function stageDistributions(root, requestedKind) {
         );
       }
       if (requestedKind !== 'zip') {
-        const mountpoint = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-dmg-'));
-        const installRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-dmg-install-'));
+        const mountpoint = await fs.mkdtemp(path.join(os.tmpdir(), 'bot-combinator-dmg-'));
+        const installRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bot-combinator-dmg-install-'));
         let mounted = false;
         try {
           await run(
@@ -173,7 +173,7 @@ async function stageDistributions(root, requestedKind) {
       }
 
       if (requestedKind !== 'dmg') {
-        const zipRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-zip-'));
+        const zipRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bot-combinator-zip-'));
         try {
           await run('ditto', ['-x', '-k', zips[0], zipRoot], {
             capture: false,
@@ -204,7 +204,7 @@ async function stageDistributions(root, requestedKind) {
       const installers = files.filter(
         (file) =>
           file.toLowerCase().endsWith('.exe') &&
-          path.basename(file).toLowerCase().startsWith('outreachr-') &&
+          path.basename(file).toLowerCase().startsWith('bot-combinator-') &&
           !file.toLowerCase().includes('unpacked'),
       );
       if (installers.length !== 1) {
@@ -212,17 +212,17 @@ async function stageDistributions(root, requestedKind) {
           `Expected one final NSIS installer under ${root}, found ${installers.length}`,
         );
       }
-      const installRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-nsis-'));
+      const installRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bot-combinator-nsis-'));
       try {
         await runExecutable(installers[0], ['/S', `/D=${installRoot}`], {
           capture: false,
           timeoutMs: 120_000,
         });
         const installed = (await walkFiles(installRoot)).filter(
-          (file) => path.basename(file).toLowerCase() === 'outreachr.exe',
+          (file) => path.basename(file).toLowerCase() === 'bot-combinator.exe',
         );
         if (installed.length !== 1) {
-          throw new Error(`NSIS install produced ${installed.length} Outreachr executables`);
+          throw new Error(`NSIS install produced ${installed.length} Bot Combinator executables`);
         }
         staged.push({
           kind: 'NSIS installer',
@@ -267,8 +267,8 @@ async function stageDistributions(root, requestedKind) {
           `Refusing to replace an existing ${packageName} package (${priorPackageStatus})`,
         );
       }
-      if (await pathEntryExists('/usr/bin/outreachr')) {
-        throw new Error('Refusing to replace an existing /usr/bin/outreachr entry');
+      if (await pathEntryExists('/usr/bin/bot-combinator')) {
+        throw new Error('Refusing to replace an existing /usr/bin/bot-combinator entry');
       }
       try {
         await run('sudo', ['apt-get', 'install', '--yes', '--no-install-recommends', debs[0]], {
@@ -278,7 +278,7 @@ async function stageDistributions(root, requestedKind) {
         const installedFiles = (await run('dpkg', ['--listfiles', packageName])).stdout
           .split(/\r?\n/)
           .filter(Boolean);
-        const installedExecutable = '/opt/Outreachr/outreachr';
+        const installedExecutable = '/opt/Bot Combinator/bot-combinator';
         if (!installedFiles.includes(installedExecutable)) {
           throw new Error(`Installed deb does not contain ${installedExecutable}`);
         }
@@ -286,21 +286,21 @@ async function stageDistributions(root, requestedKind) {
         if (!executableStat.isFile() || (executableStat.mode & 0o111) === 0) {
           throw new Error(`Installed deb executable is not runnable: ${installedExecutable}`);
         }
-        const desktopEntryPath = '/usr/share/applications/outreachr.desktop';
+        const desktopEntryPath = '/usr/share/applications/bot-combinator.desktop';
         if (!installedFiles.includes(desktopEntryPath)) {
           throw new Error(`Installed deb does not contain ${desktopEntryPath}`);
         }
         const desktopEntry = await fs.readFile(desktopEntryPath, 'utf8');
-        if (!/^StartupWMClass=outreachr$/m.test(desktopEntry)) {
+        if (!/^StartupWMClass=bot-combinator$/m.test(desktopEntry)) {
           throw new Error('Installed desktop entry does not match the Electron app identity');
         }
-        if (!/^Icon=outreachr$/m.test(desktopEntry)) {
-          throw new Error('Installed desktop entry does not use the packaged Outreachr icon');
+        if (!/^Icon=bot-combinator$/m.test(desktopEntry)) {
+          throw new Error('Installed desktop entry does not use the packaged Bot Combinator icon');
         }
         const desktopExec = /^Exec=(.+)$/m.exec(desktopEntry)?.[1];
         if (desktopExec !== `${installedExecutable} %U`) {
           throw new Error(
-            'Installed desktop entry does not launch the packaged Outreachr executable',
+            'Installed desktop entry does not launch the packaged Bot Combinator executable',
           );
         }
         staged.push({
@@ -332,10 +332,10 @@ async function cleanupDistributions(distributions) {
 
 async function uniqueAppExecutable(root, label) {
   const executables = (await walkFiles(root)).filter((file) =>
-    /Outreachr\.app\/Contents\/MacOS\/Outreachr$/.test(file),
+    /Bot Combinator\.app\/Contents\/MacOS\/Bot Combinator$/.test(file),
   );
   if (executables.length !== 1)
-    throw new Error(`${label} contains ${executables.length} Outreachr executables`);
+    throw new Error(`${label} contains ${executables.length} Bot Combinator executables`);
   return executables[0];
 }
 
@@ -424,7 +424,7 @@ async function waitForRendererReadiness(port, timeout) {
         const snapshot = await evaluateRenderer(target.webSocketDebuggerUrl);
         if (
           ['interactive', 'complete'].includes(snapshot.readyState) &&
-          snapshot.title === 'Outreachr' &&
+          snapshot.title === 'Bot Combinator' &&
           snapshot.rootChildCount > 0 &&
           snapshot.bodyTextLength > 40 &&
           !snapshot.loading &&

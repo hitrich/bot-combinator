@@ -33,8 +33,8 @@ export function IntroductionsPage(): React.JSX.Element {
       await command('task.create', {
         title: `Research a possible warm path to ${candidate.name}`,
         notes: candidate.firmName
-          ? `Target firm: ${candidate.firmName}. Verify the connector and relationship outside Outreachr before requesting an introduction.`
-          : 'Verify the connector and relationship outside Outreachr before requesting an introduction.',
+          ? `Target firm: ${candidate.firmName}. Verify the connector and relationship outside Bot Combinator before requesting an introduction.`
+          : 'Verify the connector and relationship outside Bot Combinator before requesting an introduction.',
         dueAt: null,
         status: 'open',
         investorId: candidate.firmId,
@@ -51,7 +51,7 @@ export function IntroductionsPage(): React.JSX.Element {
   const copyTemplate = async (): Promise<void> => {
     setCopying(true);
     try {
-      await window.outreachr.copyText(template);
+      await window.botCombinator.copyText(template);
       notify({ tone: 'success', title: 'Introduction template copied' });
     } finally {
       setCopying(false);
@@ -84,7 +84,7 @@ export function IntroductionsPage(): React.JSX.Element {
       <div className="intro-principle">
         <Network aria-hidden="true" />
         <div>
-          <strong>Outreachr does not infer or confirm warm paths.</strong>
+          <strong>Bot Combinator does not infer or confirm warm paths.</strong>
           <p>
             Use a linked task to investigate one specific connector and relationship. Verify both
             outside the app before making a request.

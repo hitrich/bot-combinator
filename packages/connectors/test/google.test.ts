@@ -42,7 +42,7 @@ describe('Google Gmail and Calendar connector', () => {
       messageId: 'msg-draft',
       threadId: 't-1',
     });
-    expect(mime).toContain('Subject: Outreachr intro');
+    expect(mime).toContain('Subject: Bot Combinator intro');
     expect(mime).toContain('multipart/alternative');
     expect(mime).toContain('Partner@Example.com'.toLocaleLowerCase('en-US'));
   });
@@ -56,7 +56,7 @@ describe('Google Gmail and Calendar connector', () => {
           calls += 1;
           const body = (await request.json()) as { raw: string };
           const mime = Buffer.from(body.raw, 'base64url').toString('utf8');
-          expect(mime).toContain('X-Outreachr-Operation-Key: send-operation-0001');
+          expect(mime).toContain('X-Bot-Combinator-Operation-Key: send-operation-0001');
           return HttpResponse.json(
             { id: 'gmail-message-1', threadId: 'gmail-thread-1' },
             { headers: { 'x-guploader-uploadid': 'google-request-1' } },
@@ -126,7 +126,7 @@ describe('Google Gmail and Calendar connector', () => {
     expect(providerCall).not.toHaveBeenCalled();
   });
 
-  it('reads the Outreachr operation key from Gmail sent-message metadata', async () => {
+  it('reads the Bot Combinator operation key from Gmail sent-message metadata', async () => {
     server.use(
       http.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', () =>
         HttpResponse.json({ messages: [{ id: 'sent-message-1', threadId: 'thread-1' }] }),
@@ -136,7 +136,9 @@ describe('Google Gmail and Calendar connector', () => {
         ({ request }) => {
           const url = new URL(request.url);
           expect(url.searchParams.get('format')).toBe('metadata');
-          expect(url.searchParams.getAll('metadataHeaders')).toContain('X-Outreachr-Operation-Key');
+          expect(url.searchParams.getAll('metadataHeaders')).toContain(
+            'X-Bot-Combinator-Operation-Key',
+          );
           return HttpResponse.json({
             id: 'sent-message-1',
             threadId: 'thread-1',
@@ -148,7 +150,7 @@ describe('Google Gmail and Calendar connector', () => {
                 { name: 'To', value: 'Investor <investor@example.test>' },
                 { name: 'Subject', value: 'Fundraising introduction' },
                 { name: 'Message-ID', value: '<sent-message-1@example.test>' },
-                { name: 'x-outreachr-operation-key', value: 'send:operation-1' },
+                { name: 'x-bot-combinator-operation-key', value: 'send:operation-1' },
               ],
             },
           });

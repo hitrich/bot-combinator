@@ -261,7 +261,7 @@ export function MeetingsPage(): React.JSX.Element {
         ) : (
           <EmptyState
             title="No upcoming investor meetings"
-            detail="Connect a calendar or add a meeting manually. Outreachr will assemble a sourced preparation brief."
+            detail="Connect a calendar or add a meeting manually. Bot Combinator will assemble a sourced preparation brief."
             action={
               <Button onClick={openCreate} icon={<Plus aria-hidden="true" />}>
                 Add meeting

@@ -39,7 +39,7 @@ function parseHash(): LocationValue {
     ? window.location.hash.slice(1)
     : window.location.hash;
   const localDestination = rawHash.startsWith('/') && !rawHash.startsWith('//') ? rawHash : '/';
-  const parsed = new URL(localDestination, 'https://outreachr.local');
+  const parsed = new URL(localDestination, 'https://bot-combinator.local');
   return {
     pathname: parsed.pathname || '/',
     search: parsed.search,
@@ -50,7 +50,7 @@ function parseHash(): LocationValue {
 function normalizeDestination(destination: string): string {
   const value = destination.trim();
   if (!value.startsWith('/') || value.startsWith('//')) {
-    throw new Error('Outreachr navigation only accepts local application paths.');
+    throw new Error('Bot Combinator navigation only accepts local application paths.');
   }
   return value;
 }
@@ -214,7 +214,7 @@ export function NavLink({
   ...rest
 }: NavLinkProps): ReactElement {
   const { location, navigate } = useRouter();
-  const target = new URL(normalizeDestination(to), 'https://outreachr.local');
+  const target = new URL(normalizeDestination(to), 'https://bot-combinator.local');
   const isActive = end
     ? location.pathname === target.pathname
     : location.pathname === target.pathname || location.pathname.startsWith(`${target.pathname}/`);

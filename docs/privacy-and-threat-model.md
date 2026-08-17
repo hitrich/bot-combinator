@@ -21,12 +21,12 @@
 | Agent overreach or prompt injection | selected context, record allowlists, no raw DB/files/shell, proposal-only MCP, deny-all provider tools, audited output schemas, and a minimal allowlist for secrets inherited by child agent processes                                                |
 | Backup disclosure                   | scrypt-derived key, authenticated encryption, no password recovery, integrity checks before restore                                                                                                                                                   |
 | Contribution privacy leak           | new allowlisted database, deterministic diff, explicit exclusion of private tables and personal addresses                                                                                                                                             |
-| Supply-chain substitution           | frozen lockfile, minimum release age, allowlisted install scripts, pinned GitHub Actions, SBOM, checksums, provenance and attestations                                                                                                                |
+| Supply-chain substitution           | frozen lockfile, minimum release age, allowlisted install scripts, full-SHA-pinned GitHub Actions, SBOM, checksums, local provenance, signed release tags, and immutable releases                                                                     |
 | Local audit mutation                | append-only SQL triggers plus a SHA-256 chain verified at startup/UI/export time                                                                                                                                                                      |
 
 ## Non-goals
 
-Outreachr does not protect an unlocked device from an administrator or malware with equivalent user privileges. It does not make public-source facts redistributable when the source license forbids redistribution. It does not guarantee email delivery, investor interest, or completeness of public research.
+Bot Combinator does not protect an unlocked device from an administrator or malware with equivalent user privileges. It does not make public-source facts redistributable when the source license forbids redistribution. It does not guarantee email delivery, investor interest, or completeness of public research.
 
 ## Logging
 

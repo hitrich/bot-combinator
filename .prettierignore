@@ -8,3 +8,5 @@ playwright-report
 test-results
 pnpm-lock.yaml
 apps/desktop/resources/generated
+apps/portal/.vercel
+apps/portal/supabase/.temp

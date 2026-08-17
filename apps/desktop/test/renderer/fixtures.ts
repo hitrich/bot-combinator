@@ -1,11 +1,11 @@
-import type { AppBootstrap, OutreachrBridge } from '../../src/shared/contracts';
+import type { AppBootstrap, BotCombinatorBridge } from '../../src/shared/contracts';
 import { vi } from 'vitest';
 
 export function bootstrapFixture(firstRun = false): AppBootstrap {
   return {
     appVersion: '0.1.0-test',
     platform: 'darwin',
-    vaultPath: '/tmp/outreachr-test/outreachr.sqlite',
+    vaultPath: '/tmp/bot-combinator-test/bot-combinator.sqlite',
     isFirstRun: firstRun,
     seedVersion: '0.1.0',
     seedSignatureStatus: 'pinned unsigned research',
@@ -107,6 +107,60 @@ export function bootstrapFixture(firstRun = false): AppBootstrap {
     mailEvents: [],
     drafts: [],
     knowledge: [],
+    botChainDocs: {
+      id: 'bot-chain-integration-pack',
+      title: 'BOT Chain Integration Pack',
+      version: '0.1.0-preview',
+      status: 'preview',
+      owner: 'Klineo',
+      publishedAt: '2026-07-31T19:00:00.000Z',
+      nextReviewAt: null,
+      manifestSha256: 'a'.repeat(64),
+      documents: [
+        {
+          id: 'bot-agents',
+          path: 'BotAgents.md',
+          title: 'BotAgents.md',
+          description: 'Repository instructions for applicant development agents.',
+          category: 'start_here',
+          importance: 'required',
+          status: 'preview',
+          version: '0.1.0-preview',
+          tags: ['agent', 'integration'],
+          sourceOwner: 'Klineo',
+          sourceUrl: null,
+          approvedAt: null,
+          lastCheckedAt: '2026-07-31T19:00:00.000Z',
+          rights: 'project_authored',
+          visibility: 'applicant',
+          sha256: 'b'.repeat(64),
+          sizeBytes: 128,
+          content: '# BOT Chain integration\n\nUse only approved versioned values.',
+        },
+      ],
+    },
+    ecosystemProgram: {
+      id: 'program:bot-chain',
+      name: 'Klineo × BOT Chain Ecosystem Program',
+      partnerName: 'BOT Chain',
+      status: 'active',
+      grantPeriodStart: null,
+      grantPeriodEnd: null,
+      projects: [],
+      cohorts: [],
+      gateDefinitions: [],
+      metrics: [],
+      summary: {
+        totalProjects: 0,
+        activeCohortProjects: 0,
+        integrationReady: 0,
+        liquidityReady: 0,
+        liveMarkets: 0,
+        graduated: 0,
+        blockedGates: 0,
+        overdueMilestones: 0,
+      },
+    },
     lists: [],
     sourceReview: [],
     connectors: [
@@ -180,8 +234,8 @@ export function bootstrapFixture(firstRun = false): AppBootstrap {
 
 export function installBridge(
   initial: AppBootstrap,
-  commandImplementation?: OutreachrBridge['command'],
-): OutreachrBridge {
+  commandImplementation?: BotCombinatorBridge['command'],
+): BotCombinatorBridge {
   const command =
     commandImplementation ??
     (vi.fn(async (name: string) => {
@@ -198,8 +252,8 @@ export function installBridge(
         ];
       }
       throw new Error(`Unexpected renderer test command: ${name}`);
-    }) as unknown as OutreachrBridge['command']);
-  const bridge: OutreachrBridge = {
+    }) as unknown as BotCombinatorBridge['command']);
+  const bridge: BotCombinatorBridge = {
     bootstrap: vi.fn(async () => initial),
     command,
     selectFile: vi.fn(async () => null),
@@ -209,7 +263,7 @@ export function installBridge(
     copyText: vi.fn(async () => undefined),
     onAgentEvent: vi.fn(() => () => undefined),
   };
-  Object.defineProperty(window, 'outreachr', {
+  Object.defineProperty(window, 'botCombinator', {
     configurable: true,
     writable: true,
     value: bridge,

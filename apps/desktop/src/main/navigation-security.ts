@@ -5,8 +5,8 @@ const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 export interface DesktopLaunchEnvironment {
   NODE_ENV?: string;
   ELECTRON_RENDERER_URL?: string;
-  OUTREACHR_E2E_DATA_DIR?: string;
-  OUTREACHR_OPEN_DEVTOOLS?: string;
+  BOT_COMBINATOR_E2E_DATA_DIR?: string;
+  BOT_COMBINATOR_OPEN_DEVTOOLS?: string;
 }
 
 export interface DesktopLaunchHooks {
@@ -53,23 +53,23 @@ export function resolveDesktopLaunchHooks(
   }
 
   let e2eDataDirectory: string | undefined;
-  if (environment.OUTREACHR_E2E_DATA_DIR) {
+  if (environment.BOT_COMBINATOR_E2E_DATA_DIR) {
     if (environment.NODE_ENV !== 'test') {
-      throw new Error('OUTREACHR_E2E_DATA_DIR is disabled outside NODE_ENV=test');
+      throw new Error('BOT_COMBINATOR_E2E_DATA_DIR is disabled outside NODE_ENV=test');
     }
     if (
-      environment.OUTREACHR_E2E_DATA_DIR.length > 4_096 ||
-      environment.OUTREACHR_E2E_DATA_DIR.includes('\0')
+      environment.BOT_COMBINATOR_E2E_DATA_DIR.length > 4_096 ||
+      environment.BOT_COMBINATOR_E2E_DATA_DIR.includes('\0')
     ) {
-      throw new Error('OUTREACHR_E2E_DATA_DIR is invalid');
+      throw new Error('BOT_COMBINATOR_E2E_DATA_DIR is invalid');
     }
-    e2eDataDirectory = environment.OUTREACHR_E2E_DATA_DIR;
+    e2eDataDirectory = environment.BOT_COMBINATOR_E2E_DATA_DIR;
   }
 
   return {
     developmentRendererUrl,
     e2eDataDirectory,
-    openDevTools: environment.OUTREACHR_OPEN_DEVTOOLS === '1',
+    openDevTools: environment.BOT_COMBINATOR_OPEN_DEVTOOLS === '1',
   };
 }
 

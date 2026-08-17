@@ -36,7 +36,9 @@ function PipelineCard({
     <article
       className="pipeline-card"
       draggable
-      onDragStart={(event) => event.dataTransfer.setData('text/outreachr-investor', investor.id)}
+      onDragStart={(event) =>
+        event.dataTransfer.setData('text/bot-combinator-investor', investor.id)
+      }
     >
       <div className="pipeline-card__top">
         <GripVertical aria-hidden="true" />
@@ -218,7 +220,7 @@ export function PipelinePage(): React.JSX.Element {
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
-                  const id = event.dataTransfer.getData('text/outreachr-investor');
+                  const id = event.dataTransfer.getData('text/bot-combinator-investor');
                   if (id) void move(id, column.stage);
                 }}
               >

@@ -2,8 +2,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS, type AgentProposal } from '@outreachr/agents';
-import type { PrivateField } from '@outreachr/mcp';
+import {
+  BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS,
+  type AgentProposal,
+} from '@bot-combinator/agents';
+import type { PrivateField } from '@bot-combinator/mcp';
 
 import { DesktopMcpBridge } from '../../src/main/mcp-service';
 import type { DesktopMcpReadScope } from '../../src/main/mcp-controller';
@@ -74,14 +77,14 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
       onProposal: options.onProposal ?? (() => undefined),
     });
     const client = new Client(
-      { name: 'outreachr-desktop-test', version: '1.0.0' },
+      { name: 'bot-combinator-desktop-test', version: '1.0.0' },
       { capabilities: {} },
     );
     const transport = new StreamableHTTPClientTransport(new URL(connection.url), {
       requestInit: {
         headers: {
           Authorization: `Bearer ${connection.bearerToken}`,
-          'X-Outreachr-Session': connection.sessionId,
+          'X-Bot-Combinator-Session': connection.sessionId,
         },
       },
     });
@@ -142,7 +145,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${bridge.bearerToken}`,
-          'X-Outreachr-Session': 'run:missing',
+          'X-Bot-Combinator-Session': 'run:missing',
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
       }),
@@ -153,7 +156,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
         headers: {
           'Content-Type': 'text/plain',
           Authorization: `Bearer ${bridge.bearerToken}`,
-          'X-Outreachr-Session': 'run:http-boundary',
+          'X-Bot-Combinator-Session': 'run:http-boundary',
         },
         body: '{}',
       }),
@@ -164,7 +167,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${bridge.bearerToken}`,
-          'X-Outreachr-Session': 'run:http-boundary',
+          'X-Bot-Combinator-Session': 'run:http-boundary',
           Origin: 'https://attacker.example',
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
@@ -176,7 +179,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${bridge.bearerToken}`,
-          'X-Outreachr-Session': 'run:http-boundary',
+          'X-Bot-Combinator-Session': 'run:http-boundary',
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'resources/list', params: {} }),
       }),
@@ -189,7 +192,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${bridge.bearerToken}`,
-          'X-Outreachr-Session': 'run:http-boundary',
+          'X-Bot-Combinator-Session': 'run:http-boundary',
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
       }),
@@ -210,19 +213,19 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     expect(listed.tools).toHaveLength(15);
     expect(listed.tools.map((tool) => tool.name)).toEqual(
       expect.arrayContaining([
-        'outreachr_search_investors',
-        'outreachr_list_activity',
-        'outreachr_propose_stage',
-        'outreachr_propose_task',
-        'outreachr_propose_draft',
+        'bot_combinator_search_investors',
+        'bot_combinator_list_activity',
+        'bot_combinator_propose_stage',
+        'bot_combinator_propose_task',
+        'bot_combinator_propose_draft',
       ]),
     );
     expect(listed.tools.map((tool) => tool.name)).not.toEqual(
       expect.arrayContaining([
-        'outreachr_propose_target',
-        'outreachr_propose_meeting',
-        'outreachr_propose_knowledge',
-        'outreachr_propose_source_review',
+        'bot_combinator_propose_target',
+        'bot_combinator_propose_meeting',
+        'bot_combinator_propose_knowledge',
+        'bot_combinator_propose_source_review',
       ]),
     );
 
@@ -235,33 +238,33 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
       {
         runId: 'round',
         readScopes: ['round'],
-        expectedReads: ['outreachr_get_round'],
+        expectedReads: ['bot_combinator_get_round'],
       },
       {
         runId: 'company',
         readScopes: ['company'],
-        expectedReads: ['outreachr_list_knowledge'],
+        expectedReads: ['bot_combinator_list_knowledge'],
       },
       {
         runId: 'investors',
         readScopes: ['investors'],
         expectedReads: [
-          'outreachr_search_investors',
-          'outreachr_list_investors',
-          'outreachr_get_investor',
-          'outreachr_search_people',
-          'outreachr_list_people',
-          'outreachr_get_person',
-          'outreachr_get_pipeline',
+          'bot_combinator_search_investors',
+          'bot_combinator_list_investors',
+          'bot_combinator_get_investor',
+          'bot_combinator_search_people',
+          'bot_combinator_list_people',
+          'bot_combinator_get_person',
+          'bot_combinator_get_pipeline',
         ],
       },
       {
         runId: 'activity',
         readScopes: ['activity'],
         expectedReads: [
-          'outreachr_list_tasks',
-          'outreachr_list_meetings',
-          'outreachr_list_activity',
+          'bot_combinator_list_tasks',
+          'bot_combinator_list_meetings',
+          'bot_combinator_list_activity',
         ],
       },
     ];
@@ -274,13 +277,13 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
       });
       const names = (await scoped.client.listTools()).tools.map((tool) => tool.name).sort();
       expect(names).toEqual(
-        [...testCase.expectedReads, ...OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS].sort(),
+        [...testCase.expectedReads, ...BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS].sort(),
       );
     }
 
     await expect(
       session.client.callTool({
-        name: 'outreachr_propose_target',
+        name: 'bot_combinator_propose_target',
         arguments: {
           audit: audit(session, 'request:forbidden-proposal', [investor.id]),
           access: { recordIds: [investor.id], fields: [] },
@@ -293,13 +296,13 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
   });
 
   it.each([
-    ['outreachr_list_investors', { limit: 10, filters: {} }],
-    ['outreachr_search_investors', { query: 'AI', limit: 10, filters: {} }],
-    ['outreachr_get_investor', { investorId: '__INVESTOR__' }],
-    ['outreachr_list_people', { limit: 10, filters: {} }],
-    ['outreachr_search_people', { query: 'Partner', limit: 10, filters: {} }],
-    ['outreachr_get_person', { personId: '__PERSON__' }],
-    ['outreachr_get_pipeline', { limit: 10, stages: [] }],
+    ['bot_combinator_list_investors', { limit: 10, filters: {} }],
+    ['bot_combinator_search_investors', { query: 'AI', limit: 10, filters: {} }],
+    ['bot_combinator_get_investor', { investorId: '__INVESTOR__' }],
+    ['bot_combinator_list_people', { limit: 10, filters: {} }],
+    ['bot_combinator_search_people', { query: 'Partner', limit: 10, filters: {} }],
+    ['bot_combinator_get_person', { personId: '__PERSON__' }],
+    ['bot_combinator_get_pipeline', { limit: 10, stages: [] }],
   ])('round-only scope blocks investor surface %s even with empty access', async (name, raw) => {
     const { snapshot } = await fixture();
     const investor = snapshot.investors[0]!;
@@ -328,11 +331,11 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
   });
 
   it.each([
-    ['outreachr_get_round', {}],
-    ['outreachr_list_knowledge', { limit: 10, categories: [] }],
-    ['outreachr_list_tasks', { limit: 10, status: [] }],
-    ['outreachr_list_meetings', { limit: 10, status: [] }],
-    ['outreachr_list_activity', { limit: 10, kinds: [] }],
+    ['bot_combinator_get_round', {}],
+    ['bot_combinator_list_knowledge', { limit: 10, categories: [] }],
+    ['bot_combinator_list_tasks', { limit: 10, status: [] }],
+    ['bot_combinator_list_meetings', { limit: 10, status: [] }],
+    ['bot_combinator_list_activity', { limit: 10, kinds: [] }],
   ])('investors-only scope blocks non-investor surface %s', async (name, extra) => {
     const { snapshot } = await fixture();
     const investor = snapshot.investors[0]!;
@@ -368,7 +371,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
       allowedPrivateFields: ['workflow'],
     });
     const publicList = await session.client.callTool({
-      name: 'outreachr_list_investors',
+      name: 'bot_combinator_list_investors',
       arguments: {
         audit: audit(session, 'request:public-investor-list'),
         access: { recordIds: [], fields: [] },
@@ -380,7 +383,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     expect(JSON.stringify(publicList.structuredContent)).toContain(investor.name);
 
     const publicPerson = await session.client.callTool({
-      name: 'outreachr_get_person',
+      name: 'bot_combinator_get_person',
       arguments: {
         audit: audit(session, 'request:public-person'),
         access: { recordIds: [], fields: [] },
@@ -391,7 +394,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     expect(publicPerson.structuredContent).not.toHaveProperty('data.workEmail');
 
     const forgedActor = await session.client.callTool({
-      name: 'outreachr_list_investors',
+      name: 'bot_combinator_list_investors',
       arguments: {
         audit: { ...audit(session, 'request:forged-actor'), actor: 'claude' },
         access: { recordIds: [], fields: [] },
@@ -403,7 +406,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     expect(JSON.stringify(forgedActor.content)).toContain('AUDIT_FAILURE');
 
     const contactEscalation = await session.client.callTool({
-      name: 'outreachr_get_person',
+      name: 'bot_combinator_get_person',
       arguments: {
         audit: audit(session, 'request:contact-escalation', [person.id]),
         access: { recordIds: [person.id], fields: ['contact'] },
@@ -469,7 +472,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
       reason: 'A founder-reviewed meeting was confirmed.',
     };
     const result = await session.client.callTool({
-      name: 'outreachr_propose_stage',
+      name: 'bot_combinator_propose_stage',
       arguments: callArguments,
     });
     expect(result.isError).not.toBe(true);
@@ -489,7 +492,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     expect(Number(vault.vault.scalar('SELECT COUNT(*) FROM send_ledger'))).toBe(beforeLedger);
 
     const replay = await session.client.callTool({
-      name: 'outreachr_propose_stage',
+      name: 'bot_combinator_propose_stage',
       arguments: callArguments,
     });
     expect(replay.isError).toBe(true);
@@ -556,7 +559,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
 
     for (const [index, title] of ['Review partner thesis', 'Prepare partner questions'].entries()) {
       const result = await session.client.callTool({
-        name: 'outreachr_propose_task',
+        name: 'bot_combinator_propose_task',
         arguments: {
           audit: audit(session, `request:person-task:${index}`, [person.firmId, person.id]),
           access: { recordIds: [person.firmId, person.id], fields: [] },
@@ -605,7 +608,7 @@ describe('DesktopMcpBridge loopback, disclosure, and proposal boundary', () => {
     ).toBe(1);
 
     const mismatched = await session.client.callTool({
-      name: 'outreachr_propose_task',
+      name: 'bot_combinator_propose_task',
       arguments: {
         audit: audit(session, 'request:person-task:mismatch', [otherInvestor.id, person.id]),
         access: { recordIds: [otherInvestor.id, person.id], fields: [] },

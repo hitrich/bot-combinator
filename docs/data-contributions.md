@@ -2,7 +2,7 @@
 
 The bundled database is a research seed, not a claim that every source permits unrestricted republication. It contains 167 institutional firms and 25 independent angels, solo GPs, scouts, or family offices. Each independent investor is represented as both a targetable investor entity and a linked person profile so that firm-level pipeline work and person-level contact safety stay consistent.
 
-Seed evidence is row-level rather than field-level. Outreachr retains exact source links for identity and contact URLs when the source relation and canonical URL both match. General claims, portfolio examples, and named-partner rows remain unattributed when the seed does not identify a supporting source; Outreachr never substitutes the first or lexicographically smallest entity source. Unknown provenance stays unknown.
+Seed evidence is row-level rather than field-level. Bot Combinator retains exact source links for identity and contact URLs when the source relation and canonical URL both match. General claims, portfolio examples, and named-partner rows remain unattributed when the seed does not identify a supporting source; Bot Combinator never substitutes the first or lexicographically smallest entity source. Unknown provenance stays unknown.
 
 ## What may be contributed
 
@@ -28,6 +28,6 @@ Seed evidence is row-level rather than field-level. Outreachr retains exact sour
 
 The contribution manifest uses SPDX `NOASSERTION`: every included source retains
 its own rights and attribution metadata, and exporting a contribution does not
-relicense upstream facts. Outreachr application code remains Apache-2.0.
+relicense upstream facts. Bot Combinator application code remains Apache-2.0.
 
 The exporter is fail-closed and constructs a new schema from an allowlist. New private tables do not become exportable by default.

@@ -8,7 +8,7 @@ import {
 } from '../../src/main/navigation-security';
 
 describe('renderer navigation boundary', () => {
-  const entry = join('/Applications', 'Outreachr.app', 'renderer', 'index.html');
+  const entry = join('/Applications', 'Bot Combinator.app', 'renderer', 'index.html');
 
   it('allows only the packaged renderer file, including its local hash routes', () => {
     const url = pathToFileURL(entry).toString();
@@ -44,8 +44,8 @@ describe('renderer navigation boundary', () => {
         {
           NODE_ENV: 'test',
           ELECTRON_RENDERER_URL: 'http://127.0.0.1:5173',
-          OUTREACHR_E2E_DATA_DIR: '/tmp/attacker-vault',
-          OUTREACHR_OPEN_DEVTOOLS: '1',
+          BOT_COMBINATOR_E2E_DATA_DIR: '/tmp/attacker-vault',
+          BOT_COMBINATOR_OPEN_DEVTOOLS: '1',
         },
         true,
       ),
@@ -82,13 +82,13 @@ describe('renderer navigation boundary', () => {
   it('allows the isolated data directory only in an unpackaged test process', () => {
     expect(
       resolveDesktopLaunchHooks(
-        { NODE_ENV: 'test', OUTREACHR_E2E_DATA_DIR: '/tmp/outreachr-e2e' },
+        { NODE_ENV: 'test', BOT_COMBINATOR_E2E_DATA_DIR: '/tmp/bot-combinator-e2e' },
         false,
       ).e2eDataDirectory,
-    ).toBe('/tmp/outreachr-e2e');
+    ).toBe('/tmp/bot-combinator-e2e');
     expect(() =>
       resolveDesktopLaunchHooks(
-        { NODE_ENV: 'production', OUTREACHR_E2E_DATA_DIR: '/tmp/outreachr-e2e' },
+        { NODE_ENV: 'production', BOT_COMBINATOR_E2E_DATA_DIR: '/tmp/bot-combinator-e2e' },
         false,
       ),
     ).toThrow('disabled outside NODE_ENV=test');

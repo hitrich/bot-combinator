@@ -15,14 +15,14 @@ const args = parseArgs();
 const releaseDir = path.resolve(
   args['release-dir'] ?? path.join(repoRoot, 'apps', 'desktop', 'release'),
 );
-const target = String(args.target ?? process.env.OUTREACHR_TARGET ?? targetId());
+const target = String(args.target ?? process.env.BOT_COMBINATOR_TARGET ?? targetId());
 const output = path.resolve(args.output ?? path.join(repoRoot, 'artifacts', target));
 const releaseMode = String(
-  args['release-mode'] ?? process.env.OUTREACHR_RELEASE_MODE ?? 'verification',
+  args['release-mode'] ?? process.env.BOT_COMBINATOR_RELEASE_MODE ?? 'verification',
 );
 const extensions = new Set(['.dmg', '.zip', '.exe', '.appimage', '.deb', '.blockmap']);
 
-if (!['signed', 'unsigned', 'checksum-attested', 'verification'].includes(releaseMode)) {
+if (!['signed', 'unsigned', 'checksum-provenance', 'verification'].includes(releaseMode)) {
   throw new Error(`Unknown release mode: ${releaseMode}`);
 }
 

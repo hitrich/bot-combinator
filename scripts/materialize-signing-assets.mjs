@@ -17,7 +17,7 @@ export async function materializeSigningAssets(options = {}) {
   const temporaryRoot = await fs.mkdtemp(
     path.join(
       options.temporaryRoot ?? process.env.RUNNER_TEMP ?? os.tmpdir(),
-      'outreachr-signing-',
+      'bot-combinator-signing-',
     ),
   );
   const environment = {};
@@ -31,27 +31,33 @@ export async function materializeSigningAssets(options = {}) {
       } else {
         assertMacSigningSourceIsExclusive('portable', sourceEnvironment);
         environment.CSC_LINK = await materialize(
-          'OUTREACHR_MAC_CERTIFICATE_BASE64',
+          'BOT_COMBINATOR_MAC_CERTIFICATE_BASE64',
           path.join(temporaryRoot, 'macos-certificate.p12'),
         );
         environment.CSC_KEY_PASSWORD = required(
-          'OUTREACHR_MAC_CERTIFICATE_PASSWORD',
+          'BOT_COMBINATOR_MAC_CERTIFICATE_PASSWORD',
           sourceEnvironment,
         );
         if (complete(API_NOTARY_GROUP, sourceEnvironment)) {
           environment.APPLE_API_KEY = await materialize(
-            'OUTREACHR_APPLE_API_KEY_BASE64',
+            'BOT_COMBINATOR_APPLE_API_KEY_BASE64',
             path.join(temporaryRoot, 'notary-key.p8'),
           );
-          environment.APPLE_API_KEY_ID = required('OUTREACHR_APPLE_API_KEY_ID', sourceEnvironment);
-          environment.APPLE_API_ISSUER = required('OUTREACHR_APPLE_API_ISSUER', sourceEnvironment);
-        } else if (complete(APPLE_ID_NOTARY_GROUP, sourceEnvironment)) {
-          environment.APPLE_ID = required('OUTREACHR_APPLE_ID', sourceEnvironment);
-          environment.APPLE_APP_SPECIFIC_PASSWORD = required(
-            'OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD',
+          environment.APPLE_API_KEY_ID = required(
+            'BOT_COMBINATOR_APPLE_API_KEY_ID',
             sourceEnvironment,
           );
-          environment.APPLE_TEAM_ID = required('OUTREACHR_APPLE_TEAM_ID', sourceEnvironment);
+          environment.APPLE_API_ISSUER = required(
+            'BOT_COMBINATOR_APPLE_API_ISSUER',
+            sourceEnvironment,
+          );
+        } else if (complete(APPLE_ID_NOTARY_GROUP, sourceEnvironment)) {
+          environment.APPLE_ID = required('BOT_COMBINATOR_APPLE_ID', sourceEnvironment);
+          environment.APPLE_APP_SPECIFIC_PASSWORD = required(
+            'BOT_COMBINATOR_APPLE_APP_SPECIFIC_PASSWORD',
+            sourceEnvironment,
+          );
+          environment.APPLE_TEAM_ID = required('BOT_COMBINATOR_APPLE_TEAM_ID', sourceEnvironment);
         } else {
           throw new Error('A complete Apple notarization credential group is required');
         }
@@ -62,11 +68,11 @@ export async function materializeSigningAssets(options = {}) {
         throw new Error('Local Keychain signing mode is only available on macOS');
       }
       environment.CSC_LINK = await materialize(
-        'OUTREACHR_WINDOWS_CERTIFICATE_BASE64',
+        'BOT_COMBINATOR_WINDOWS_CERTIFICATE_BASE64',
         path.join(temporaryRoot, 'windows-certificate.pfx'),
       );
       environment.CSC_KEY_PASSWORD = required(
-        'OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD',
+        'BOT_COMBINATOR_WINDOWS_CERTIFICATE_PASSWORD',
         sourceEnvironment,
       );
       console.log('Materialized isolated Windows signing assets.');
@@ -100,14 +106,14 @@ export async function materializeSigningAssets(options = {}) {
 }
 
 const API_NOTARY_GROUP = [
-  'OUTREACHR_APPLE_API_KEY_BASE64',
-  'OUTREACHR_APPLE_API_KEY_ID',
-  'OUTREACHR_APPLE_API_ISSUER',
+  'BOT_COMBINATOR_APPLE_API_KEY_BASE64',
+  'BOT_COMBINATOR_APPLE_API_KEY_ID',
+  'BOT_COMBINATOR_APPLE_API_ISSUER',
 ];
 const APPLE_ID_NOTARY_GROUP = [
-  'OUTREACHR_APPLE_ID',
-  'OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD',
-  'OUTREACHR_APPLE_TEAM_ID',
+  'BOT_COMBINATOR_APPLE_ID',
+  'BOT_COMBINATOR_APPLE_APP_SPECIFIC_PASSWORD',
+  'BOT_COMBINATOR_APPLE_TEAM_ID',
 ];
 
 function required(name, environment = process.env) {

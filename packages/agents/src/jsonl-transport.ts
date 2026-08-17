@@ -215,12 +215,12 @@ export class JsonlRpcTransport {
   }
 
   #denyServerRequest(request: RpcServerRequest): void {
-    // Outreachr never grants tool approvals or external-auth refreshes to an agent.
+    // Bot Combinator never grants tool approvals or external-auth refreshes to an agent.
     this.#write({
       id: request.id,
       error: {
         code: -32000,
-        message: `Outreachr proposal-only policy denied server request: ${request.method}`,
+        message: `Bot Combinator proposal-only policy denied server request: ${request.method}`,
       },
     });
   }

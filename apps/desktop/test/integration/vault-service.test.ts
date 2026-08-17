@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir, stat, truncate, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createEncryptedBackup, restoreEncryptedBackup } from '@outreachr/core';
+import { createEncryptedBackup, restoreEncryptedBackup } from '@bot-combinator/core';
 import type { VaultService } from '../../src/main/vault-service';
 import {
   RESOURCE_ROOT,
@@ -13,8 +13,8 @@ import {
   temporaryDirectory,
 } from '../helpers/vault';
 
-const PINNED_FILE_DIGEST = 'b120aeb6a71f201e6a4a3198e0b9a7eef45ff24b2c0b224b8e763fbea2caee23';
-const PINNED_LOGICAL_DIGEST = 'e91f834c59b9d7fc0a679174513c9b44b228cc6925c3654443f1b534d1643899';
+const PINNED_FILE_DIGEST = 'fd4cc1e88be90195b5e3790eb27c4680a6a4546eb8fe98437a249dc5c7a1a58e';
+const PINNED_LOGICAL_DIGEST = 'b5c7fccc6454de3cd3272ce879c800a7747419d43316112c3eb9d945ed9ba3aa';
 
 function normalizedSeedInvestorKind(label: string): string {
   const normalized = label.trim().toLowerCase();
@@ -59,7 +59,7 @@ describe('VaultService with the production investor seed', () => {
   });
 
   it('pins, imports, and persists the complete production seed in an isolated vault', async () => {
-    const seedBytes = await readFile(`${RESOURCE_ROOT}/Outreachr_Investor_Seed.sqlite`);
+    const seedBytes = await readFile(`${RESOURCE_ROOT}/Bot_Combinator_Investor_Seed.sqlite`);
     expect(createHash('sha256').update(seedBytes).digest('hex')).toBe(PINNED_FILE_DIGEST);
 
     const { service } = await create();
@@ -728,6 +728,17 @@ describe('VaultService with the production investor seed', () => {
       mailEvents: expect.any(Array),
       agentProposals: expect.any(Array),
     });
+    const docsContext = await service.agentContext(['bot_chain_docs'], ['bot-agents']);
+    expect(docsContext.company).toBeUndefined();
+    expect(docsContext.botChainDocs).toEqual([
+      expect.objectContaining({
+        id: 'bot-agents',
+        version: '0.1.0-preview',
+        status: 'preview',
+        content: expect.stringContaining('BOT Chain integration instructions'),
+      }),
+    ]);
+    expect(docsContext.botChainDocumentIds).toEqual(['bot-agents']);
   });
 
   it('creates and atomically replaces founder-owned static list membership', async () => {
@@ -1285,18 +1296,20 @@ describe('VaultService with the production investor seed', () => {
     });
 
     const backupPath = await service.exportBackup(output, 'correct horse battery staple');
-    expect(basename(backupPath)).toBe('Outreachr-2026-07-31T19-00-00-000Z.outreachr-backup');
+    expect(basename(backupPath)).toBe(
+      'Bot-Combinator-2026-07-31T19-00-00-000Z.bot-combinator-backup',
+    );
     const originalBackup = await readFile(backupPath);
     const secondBackupPath = await service.exportBackup(output, 'a different secure passphrase');
     expect(basename(secondBackupPath)).toBe(
-      'Outreachr-2026-07-31T19-00-00-000Z-2.outreachr-backup',
+      'Bot-Combinator-2026-07-31T19-00-00-000Z-2.bot-combinator-backup',
     );
     expect(await readFile(backupPath)).toEqual(originalBackup);
     if (process.platform !== 'win32') expect((await stat(backupPath)).mode & 0o777).toBe(0o600);
     const backupAudit = service.vault.one<{ detail_json: string }>(
       "SELECT detail_json FROM audit_log WHERE action='backup.exported' ORDER BY id DESC LIMIT 1",
     );
-    expect(backupAudit?.detail_json).toContain('outreachr-encrypted-backup');
+    expect(backupAudit?.detail_json).toContain('bot-combinator-encrypted-backup');
     expect(backupAudit?.detail_json).not.toContain(output);
     expect(backupAudit?.detail_json).not.toContain('correct horse battery staple');
     await service.createTask({
@@ -1312,7 +1325,7 @@ describe('VaultService with the production investor seed', () => {
       'correct horse battery staple',
     );
     const tamperedAudit = new service.vault.sqlite.Database(restoredPlaintext);
-    const tamperedAuditPath = join(output, 'tampered-audit.outreachr-backup');
+    const tamperedAuditPath = join(output, 'tampered-audit.bot-combinator-backup');
     try {
       const appendOnlyTrigger = String(
         tamperedAudit.exec(
@@ -1339,7 +1352,7 @@ describe('VaultService with the production investor seed', () => {
     ).rejects.toThrow('audit chain verification failed');
 
     const unexpectedSchema = new service.vault.sqlite.Database(restoredPlaintext);
-    const unexpectedSchemaPath = join(output, 'unexpected-schema.outreachr-backup');
+    const unexpectedSchemaPath = join(output, 'unexpected-schema.bot-combinator-backup');
     try {
       unexpectedSchema.run(`CREATE TRIGGER attacker_restore AFTER INSERT ON tasks
         BEGIN DELETE FROM tasks; END`);
@@ -1385,13 +1398,13 @@ describe('VaultService with the production investor seed', () => {
     expect(contributionAudit?.detail_json).not.toContain(output);
     expect(contributionAudit?.detail_json).not.toContain(privateEmail);
     const peopleCsv = await service.exportCsv(output, 'people');
-    expect(basename(peopleCsv)).toBe('Outreachr-people-2026-07-31T19-00-00-000Z.csv');
+    expect(basename(peopleCsv)).toBe('Bot-Combinator-people-2026-07-31T19-00-00-000Z.csv');
     const originalPeopleCsv = await readFile(peopleCsv);
     expect(originalPeopleCsv.toString('utf8')).toContain('work_email,individual_email');
     expect(originalPeopleCsv.toString('utf8')).toContain(privateEmail);
     expect(originalPeopleCsv.toString('utf8')).toContain(privatePersonalEmail);
     const secondPeopleCsv = await service.exportCsv(output, 'people');
-    expect(basename(secondPeopleCsv)).toBe('Outreachr-people-2026-07-31T19-00-00-000Z-2.csv');
+    expect(basename(secondPeopleCsv)).toBe('Bot-Combinator-people-2026-07-31T19-00-00-000Z-2.csv');
     expect(await readFile(peopleCsv)).toEqual(originalPeopleCsv);
     if (process.platform !== 'win32') expect((await stat(peopleCsv)).mode & 0o777).toBe(0o600);
     const csvAudit = service.vault.one<{ detail_json: string }>(
@@ -1403,7 +1416,7 @@ describe('VaultService with the production investor seed', () => {
     await service.createInvestor({ name: '=1+1', kind: 'angel' });
     const investorCsv = await service.exportCsv(output, 'investors');
     expect(await readFile(investorCsv, 'utf8')).toContain("'=1+1");
-    await service.importSeedFile(`${RESOURCE_ROOT}/Outreachr_Investor_Seed.sqlite`);
+    await service.importSeedFile(`${RESOURCE_ROOT}/Bot_Combinator_Investor_Seed.sqlite`);
     expect(
       Number(
         service.vault.scalar("SELECT COUNT(*) FROM audit_log WHERE action='seed.import_skipped'"),
@@ -1470,11 +1483,188 @@ describe('VaultService with the production investor seed', () => {
     expect(diff).not.toContain('Never export this private task');
   }, 120_000);
 
+  it('verifies and exports the versioned BOT Chain applicant documentation bundle', async () => {
+    const { service } = await create();
+    const bootstrap = await service.bootstrap();
+
+    expect(bootstrap.botChainDocs).toMatchObject({
+      id: 'bot-chain-integration-pack',
+      version: '0.1.0-preview',
+      status: 'preview',
+    });
+    expect(bootstrap.botChainDocs.documents).toHaveLength(8);
+    expect(
+      bootstrap.botChainDocs.documents.find((document) => document.id === 'bot-agents'),
+    ).toMatchObject({
+      path: 'BotAgents.md',
+      importance: 'required',
+      visibility: 'applicant',
+    });
+
+    const output = await temporaryDirectory('bot-chain-docs');
+    directories.push(output);
+    const exported = await service.exportBotChainDocs({
+      directory: output,
+      mode: 'selected',
+      documentIds: ['bot-agents', 'bot-chain-readiness'],
+    });
+    expect(exported.documentCount).toBe(2);
+    expect(await readFile(join(exported.path, 'BotAgents.md'), 'utf8')).toContain(
+      'BOT Chain integration instructions for coding agents',
+    );
+    expect(
+      await readFile(join(exported.path, 'docs', '02-bot-chain-integration-readiness.md'), 'utf8'),
+    ).toContain('BOT Chain integration readiness');
+    const manifest = JSON.parse(await readFile(join(exported.path, 'manifest.json'), 'utf8')) as {
+      sourceManifestSha256: string;
+      documents: unknown[];
+    };
+    expect(manifest.sourceManifestSha256).toBe(bootstrap.botChainDocs.manifestSha256);
+    expect(manifest.documents).toHaveLength(2);
+    expect(
+      Number(
+        service.vault.scalar(
+          "SELECT COUNT(*) FROM audit_log WHERE action='bot_chain_docs.exported'",
+        ),
+      ),
+    ).toBe(1);
+  });
+
+  it('persists cohort operations and exports only the controlled BOT Chain partner projection', async () => {
+    const { service } = await create();
+    let workspace = await service.createProgramProject({
+      name: 'Private Project',
+      website: 'https://project.example',
+      description: 'Internal applicant assessment that must not enter the partner report.',
+      source: 'application',
+      ownerName: 'Private Owner',
+      ownerEmail: 'private-owner@example.com',
+      targetLaunchAt: '2026-09-15T12:00:00.000Z',
+    });
+    const project = workspace.projects[0]!;
+
+    workspace = await service.createProgramCohort({
+      name: 'Launch Cohort 01',
+      thesis: 'Private selection thesis.',
+      startsOn: '2026-08-15',
+      endsOn: '2026-11-15',
+      capacity: 12,
+    });
+    const cohort = workspace.cohorts[0]!;
+    await service.assignProgramCohort({
+      cohortId: cohort.id,
+      projectId: project.id,
+      state: 'active',
+    });
+    await service.reviewProgramGate({
+      projectId: project.id,
+      gateKey: 'bot_chain_integration',
+      status: 'passed',
+      rationale: 'Founder-reviewed test deployment evidence.',
+      evidence: 'private-testnet-artifact-123',
+      reviewedBy: 'Klineo reviewer',
+    });
+    workspace = await service.createProgramMilestone({
+      projectId: project.id,
+      cohortId: cohort.id,
+      title: 'Complete integration test suite',
+      category: 'integration',
+      owner: 'Private Owner',
+      dueAt: '2026-08-28T12:00:00.000Z',
+      evidenceRequired: 'Private CI artifact',
+    });
+    await service.updateProgramMilestone({
+      id: workspace.projects[0]!.milestones[0]!.id,
+      status: 'completed',
+      evidence: 'private-ci-run-456',
+    });
+    await service.moveProgramProjectStage({
+      projectId: project.id,
+      stage: 'integration_ready',
+      reason: 'Integration gate and milestone reviewed by the program team.',
+    });
+    workspace = await service.recordProgramMetric({
+      projectId: project.id,
+      key: 'active_users',
+      value: 420,
+      unit: 'users',
+      observedAt: '2026-07-31T18:00:00.000Z',
+      sourceLabel: 'Private applicant dashboard',
+      quality: 'reported',
+    });
+
+    expect(workspace.summary).toMatchObject({
+      totalProjects: 1,
+      activeCohortProjects: 1,
+      integrationReady: 1,
+      blockedGates: 0,
+    });
+    expect(workspace.projects[0]).toMatchObject({
+      cohortId: cohort.id,
+      stage: 'integration_ready',
+    });
+
+    const output = await temporaryDirectory('partner-report');
+    directories.push(output);
+    const exported = await service.exportProgramPartnerReport(output);
+    const report = await readFile(exported.path, 'utf8');
+    expect(report).toContain('Private Project');
+    expect(report).toContain('integration ready');
+    expect(report).toContain('420 users');
+    expect(report).not.toContain('private-owner@example.com');
+    expect(report).not.toContain('Internal applicant assessment');
+    expect(report).not.toContain('private-testnet-artifact-123');
+    expect(report).not.toContain('private-ci-run-456');
+    expect(report).not.toContain('Private applicant dashboard');
+    expect(Number(service.vault.scalar('SELECT COUNT(*) FROM partner_report_exports'))).toBe(1);
+
+    const portalExport = await service.exportPortalSubmission({
+      directory: output,
+      projectId: project.id,
+      visibility: 'project_and_klineo',
+      includeMilestones: true,
+      includeGateReviews: true,
+    });
+    const portalText = await readFile(portalExport.path, 'utf8');
+    const portalBundle = JSON.parse(portalText) as {
+      schemaVersion: number;
+      project: { localProjectId: string; name: string };
+      privacy: { visibility: string; omittedDataClasses: string[] };
+      submission: { gates: unknown[]; milestones: unknown[] };
+      canonicalPayload: string;
+      contentDigest: string;
+    };
+    expect(portalBundle).toMatchObject({
+      schemaVersion: 1,
+      project: { localProjectId: project.id, name: 'Private Project' },
+      privacy: { visibility: 'project_and_klineo' },
+    });
+    expect(portalBundle.submission.gates).toHaveLength(workspace.gateDefinitions.length);
+    expect(portalBundle.submission.milestones).toHaveLength(1);
+    expect(portalBundle.contentDigest).toBe(
+      `sha256:${createHash('sha256').update(portalBundle.canonicalPayload).digest('hex')}`,
+    );
+    const canonicalBase = { ...portalBundle } as Record<string, unknown>;
+    delete canonicalBase.canonicalPayload;
+    delete canonicalBase.contentDigest;
+    expect(JSON.parse(portalBundle.canonicalPayload)).toEqual(canonicalBase);
+    expect(portalText).not.toContain('private-owner@example.com');
+    expect(portalText).not.toContain('Private Owner');
+    expect(
+      Number(
+        service.vault.scalar(
+          "SELECT COUNT(*) FROM audit_log WHERE action='portal_submission.exported'",
+        ),
+      ),
+    ).toBe(1);
+    expect(service.auditIntegrity().ok).toBe(true);
+  });
+
   it('rejects oversized selected backups and seeds before reading or mutating the vault', async () => {
     const { service, directory } = await create();
     await onboard(service);
     const auditCount = Number(service.vault.scalar('SELECT COUNT(*) FROM audit_log'));
-    const oversizedBackup = join(directory, 'oversized.outreachr-backup');
+    const oversizedBackup = join(directory, 'oversized.bot-combinator-backup');
     await writeFile(oversizedBackup, new Uint8Array([1]));
     await truncate(oversizedBackup, 512 * 1024 * 1024 + 1);
     await expect(service.restoreBackup(oversizedBackup, 'a-safe-test-password')).rejects.toThrow(

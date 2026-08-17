@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CoreVault } from '@outreachr/core';
-import { openNodeVault } from '@outreachr/core/node';
+import type { CoreVault } from '@bot-combinator/core';
+import { openNodeVault } from '@bot-combinator/core/node';
 import { ElectronSecretStoreBackend, SecureStore } from '../../src/main/secure-store';
 import { FakeSecretBackend } from '../helpers/secret-backend';
 

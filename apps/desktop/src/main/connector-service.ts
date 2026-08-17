@@ -20,7 +20,7 @@ import {
   type SendAttemptLedger,
   type SendContext,
   type SendReceipt,
-} from '@outreachr/connectors';
+} from '@bot-combinator/connectors';
 import type { AppBootstrap, ConnectorStatus, DraftMessage, MeetingItem } from '../shared/contracts';
 import type { SecureStore } from './secure-store';
 import type { VaultService } from './vault-service';
@@ -94,7 +94,7 @@ function writeLoopbackResponse(
     ...extraHeaders,
   });
   response.end(
-    `<!doctype html><meta charset="utf-8"><title>Outreachr authorization</title><p>${message}</p>`,
+    `<!doctype html><meta charset="utf-8"><title>Bot Combinator authorization</title><p>${message}</p>`,
     onComplete,
   );
 }
@@ -249,7 +249,7 @@ export async function loopbackCallback(
         writeLoopbackResponse(
           response,
           200,
-          'Authorization response received. You may close this tab and return to Outreachr.',
+          'Authorization response received. You may close this tab and return to Bot Combinator.',
           {},
           () => resolve(callbackUrl.toString()),
         );
@@ -912,7 +912,7 @@ export class ConnectorService {
     if (draft.approvalState !== 'approved')
       throw new Error('Exact founder approval is required before sending');
     if (message.message_kind !== 'initial') {
-      throw new Error('Outreachr 0.1 sends initial outreach only');
+      throw new Error('Bot Combinator 0.1 sends initial outreach only');
     }
     const provider = message.provider;
     const approval = this.#vault.vault.one<{

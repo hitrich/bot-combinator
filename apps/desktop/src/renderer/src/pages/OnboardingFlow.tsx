@@ -69,14 +69,14 @@ export function OnboardingFlow(): React.JSX.Element {
       <aside className="onboarding-aside">
         <div className="onboarding-brand">
           <span className="brand-mark">O</span>
-          <strong>Outreachr</strong>
+          <strong>Bot Combinator</strong>
         </div>
         <div className="onboarding-aside__copy">
           <Badge tone="accent">Local-first fundraising</Badge>
           <h1>Begin with a trustworthy round brief.</h1>
           <p>
-            Outreachr imports the public investor seed, keeps private activity in one local SQLite
-            vault, and asks before any external action.
+            Bot Combinator imports the public investor seed, keeps private activity in one local
+            SQLite vault, and asks before any external action.
           </p>
         </div>
         <ol>
@@ -113,7 +113,9 @@ export function OnboardingFlow(): React.JSX.Element {
               <header>
                 <span>Founder profile</span>
                 <h2>Who is running this round?</h2>
-                <p>This is the only workspace role. Outreachr does not create an online account.</p>
+                <p>
+                  This is the only workspace role. Bot Combinator does not create an online account.
+                </p>
               </header>
               <div className="form-grid">
                 <TextField
@@ -255,7 +257,7 @@ export function OnboardingFlow(): React.JSX.Element {
                 <h2>Your fundraising history stays on this device.</h2>
                 <p>
                   Provider and agent connections are optional. A real sender postal address is
-                  required before Outreachr can approve or send email.
+                  required before Bot Combinator can approve or send email.
                 </p>
               </header>
               <div className="privacy-promises">
@@ -319,8 +321,8 @@ export function OnboardingFlow(): React.JSX.Element {
                 <span>Ready</span>
                 <h2>Your local workspace is ready to build.</h2>
                 <p>
-                  Outreachr will create the vault, validate and import the research-grade seed, and
-                  open a cited work queue. Public facts still require founder review before use.
+                  Bot Combinator will create the vault, validate and import the research-grade seed,
+                  and open a cited work queue. Public facts still require founder review before use.
                 </p>
               </header>
               <div className="ready-summary">
@@ -373,8 +375,8 @@ export function OnboardingFlow(): React.JSX.Element {
                     Agents are optional. Settings → Agents supports Codex through official ChatGPT
                     sign-in. Claude can use a founder-provided Anthropic API key or, when Anthropic
                     has approved this deployment, an existing local Claude subscription sign-in that
-                    the founder explicitly enables. Outreachr never receives the subscription token,
-                    and setup-token credentials remain unsupported.
+                    the founder explicitly enables. Bot Combinator never receives the subscription
+                    token, and setup-token credentials remain unsupported.
                   </p>
                 </div>
               </div>

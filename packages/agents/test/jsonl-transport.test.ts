@@ -84,9 +84,9 @@ describe('JsonlRpcTransport', () => {
     await tick();
     const secretId = (JSON.parse(secret.writes.join('').trim()) as { id: number }).id;
     secret.child.stdout.write(
-      `${JSON.stringify({ id: secretId, error: { message: 'OUTREACHR_MCP_TOKEN=do-not-leak' } })}\n`,
+      `${JSON.stringify({ id: secretId, error: { message: 'BOT_COMBINATOR_MCP_TOKEN=do-not-leak' } })}\n`,
     );
-    await expect(secretRejected).rejects.toThrow('OUTREACHR_MCP_TOKEN=[REDACTED]');
+    await expect(secretRejected).rejects.toThrow('BOT_COMBINATOR_MCP_TOKEN=[REDACTED]');
     await expect(secretRejected).rejects.not.toThrow('do-not-leak');
     secret.transport.close();
 

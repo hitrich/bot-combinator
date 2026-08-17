@@ -82,7 +82,7 @@ function ExternalLinkButton({
       tone="quiet"
       size="small"
       icon={<ExternalLink aria-hidden="true" />}
-      onClick={() => void window.outreachr.openExternal(href)}
+      onClick={() => void window.botCombinator.openExternal(href)}
     >
       {children}
     </Button>
@@ -184,7 +184,7 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
         <strong>{existing.error}</strong>
         <p>
           Review the registered client type, callback, account access, and requested scopes below,
-          then reconnect. Outreachr never asks for an account password or client secret.
+          then reconnect. Bot Combinator never asks for an account password or client secret.
         </p>
       </div>
     </div>
@@ -223,8 +223,8 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
           </div>
         </div>
         <p className="settings-prose">
-          Disconnect deletes Outreachr's local encrypted token. It does not revoke consent at the
-          provider. Review grants in{' '}
+          Disconnect deletes Bot Combinator's local encrypted token. It does not revoke consent at
+          the provider. Review grants in{' '}
           <ExternalLinkButton
             href={
               provider === 'google'
@@ -252,8 +252,8 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
                 <div>
                   <strong>Create a Google Cloud project</strong>
                   <p>
-                    The public client ID belongs to this local installation. No hosted Outreachr
-                    service receives it.
+                    The public client ID belongs to this local installation. No hosted Bot
+                    Combinator service receives it.
                   </p>
                   <ExternalLinkButton href={officialLinks.googleProject}>
                     Open project creator
@@ -304,7 +304,7 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
                 <div>
                   <strong>Create a Desktop app OAuth client</strong>
                   <p>
-                    Choose Desktop app and copy only its client ID. Outreachr uses the system
+                    Choose Desktop app and copy only its client ID. Bot Combinator uses the system
                     browser, PKCE, and a temporary 127.0.0.1 loopback callback. Do not paste a
                     client secret.
                   </p>
@@ -374,7 +374,7 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
           <div className="setup-diagnostic" role="status">
             <Badge tone="danger">Credential storage unavailable</Badge>
             <p>
-              Unlock or install an operating-system secret service, restart Outreachr, and try
+              Unlock or install an operating-system secret service, restart Bot Combinator, and try
               again. The app refuses plaintext token storage.
             </p>
           </div>
@@ -407,9 +407,9 @@ function ConnectorSetup({ provider }: { provider: ConnectorProvider }): React.JS
           <span>
             <strong>Enable relationship sync</strong>
             <small>
-              Research-only use can leave this off; sending requires it. Outreachr retains headers
-              for known relationships plus unmatched outbound headers for later contact matching,
-              and discards unrelated inbound mail, every body, and every attachment.
+              Research-only use can leave this off; sending requires it. Bot Combinator retains
+              headers for known relationships plus unmatched outbound headers for later contact
+              matching, and discards unrelated inbound mail, every body, and every attachment.
             </small>
           </span>
         </label>
@@ -544,10 +544,10 @@ function AgentsSettings(): React.JSX.Element {
           : 'Claude subscription access disabled',
         detail: approved
           ? status.state === 'ready'
-            ? 'The official local Claude Code session is ready. Outreachr does not receive its token.'
+            ? 'The official local Claude Code session is ready. Bot Combinator does not receive its token.'
             : (status.error ??
               'Run claude auth login --claudeai in a terminal, then return and select Detect.')
-          : 'Outreachr stopped using the local Claude subscription session without signing Claude Code out.',
+          : 'Bot Combinator stopped using the local Claude subscription session without signing Claude Code out.',
       });
     } finally {
       setClaudeApprovalConfirmed(false);
@@ -610,9 +610,9 @@ function AgentsSettings(): React.JSX.Element {
             {agent.provider === 'codex' ? (
               <>
                 <p>
-                  Outreachr ships the official Codex sidecar, starts `codex app-server` locally, and
-                  opens the official ChatGPT sign-in page. Finish the browser flow, return here, and
-                  select Detect. Credentials remain in the Codex OS keyring.
+                  Bot Combinator ships the official Codex sidecar, starts `codex app-server`
+                  locally, and opens the official ChatGPT sign-in page. Finish the browser flow,
+                  return here, and select Detect. Credentials remain in the Codex OS keyring.
                 </p>
                 <ExternalLinkButton href={officialLinks.codexAuth}>
                   Codex authentication
@@ -624,8 +624,8 @@ function AgentsSettings(): React.JSX.Element {
             ) : (
               <>
                 <p>
-                  Outreachr ships the official Claude Agent SDK sidecar. API-key authentication is
-                  the default. A local Claude subscription can be used only when Anthropic has
+                  Bot Combinator ships the official Claude Agent SDK sidecar. API-key authentication
+                  is the default. A local Claude subscription can be used only when Anthropic has
                   approved this third-party integration and the founder explicitly enables it.
                 </p>
                 <ExternalLinkButton href={officialLinks.claudeAgentSdk}>
@@ -642,13 +642,14 @@ function AgentsSettings(): React.JSX.Element {
                   <legend>Claude subscription</legend>
                   <p>
                     Use the official Claude sign-in already present on this device. Subscription
-                    access is off by default and may be enabled only for an Outreachr deployment
+                    access is off by default and may be enabled only for a Bot Combinator deployment
                     Anthropic has approved. Approval for one deployment may not transfer to a fork.
                   </p>
                   <p>
-                    Outreachr never asks for, copies, stores, returns, or logs your Claude OAuth
-                    token. The official local runtime owns sign-in and refresh. Setup tokens remain
-                    unsupported, and disabling this mode does not sign you out of Claude Code.
+                    Bot Combinator never asks for, copies, stores, returns, or logs your Claude
+                    OAuth token. The official local runtime owns sign-in and refresh. Setup tokens
+                    remain unsupported, and disabling this mode does not sign you out of Claude
+                    Code.
                   </p>
                   <p>
                     Agent SDK use draws from your plan's separate Agent SDK credit under Anthropic's
@@ -674,10 +675,10 @@ function AgentsSettings(): React.JSX.Element {
                         disabled={busy === 'claude'}
                       />
                       <span>
-                        <strong>I confirm Anthropic approved this Outreachr deployment</strong>
+                        <strong>I confirm Anthropic approved this Bot Combinator deployment</strong>
                         <small>
-                          This is a founder attestation, not an approval check performed by
-                          Outreachr.
+                          This is a founder attestation, not an approval check performed by Bot
+                          Combinator.
                         </small>
                       </span>
                     </label>
@@ -726,15 +727,15 @@ function AgentsSettings(): React.JSX.Element {
                     <div className="setup-diagnostic" role="status">
                       <Badge tone="danger">Credential storage unavailable</Badge>
                       <p>
-                        Unlock or install an operating-system secret service, restart Outreachr, and
-                        try again. The app refuses plaintext API-key storage.
+                        Unlock or install an operating-system secret service, restart Bot
+                        Combinator, and try again. The app refuses plaintext API-key storage.
                       </p>
                     </div>
                   ) : null}
                   <TextField
                     label="Anthropic API key"
                     type="password"
-                    name="outreachr-anthropic-api-key"
+                    name="bot-combinator-anthropic-api-key"
                     autoComplete="new-password"
                     autoCapitalize="none"
                     autoCorrect="off"
@@ -996,7 +997,7 @@ function CommunicationSafety(): React.JSX.Element {
           <pre>{`—\n${postalAddress.trim() || 'Sender postal address required'}\n${optOutText.trim() || 'Opt-out wording required'}`}</pre>
         </div>
         <p className="settings-prose">
-          Outreachr enforces the founder’s configured controls; it does not certify legal or
+          Bot Combinator enforces the founder’s configured controls; it does not certify legal or
           deliverability compliance. Review applicable requirements and your provider’s SPF, DKIM,
           and DMARC setup before sending.
         </p>
@@ -1104,7 +1105,7 @@ export function SettingsPage(): React.JSX.Element {
     'active',
   );
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-    const stored = window.localStorage.getItem('outreachr.theme');
+    const stored = window.localStorage.getItem('bot-combinator.theme');
     return stored === 'dark' || stored === 'system' ? stored : 'light';
   });
   const encryptionAvailable = useMemo(
@@ -1112,7 +1113,7 @@ export function SettingsPage(): React.JSX.Element {
     [data],
   );
   useEffect(() => {
-    window.localStorage.setItem('outreachr.theme', theme);
+    window.localStorage.setItem('bot-combinator.theme', theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
   if (!data) return <></>;
@@ -1133,7 +1134,7 @@ export function SettingsPage(): React.JSX.Element {
   };
 
   const backup = async (): Promise<void> => {
-    const directory = await window.outreachr.selectDirectory();
+    const directory = await window.botCombinator.selectDirectory();
     if (!directory) return;
     const result = await command('backup.export', { directory, password: backupPassword });
     closeBackup();
@@ -1141,8 +1142,8 @@ export function SettingsPage(): React.JSX.Element {
   };
 
   const chooseRestore = async (): Promise<void> => {
-    const path = await window.outreachr.selectFile([
-      { name: 'Outreachr encrypted backup', extensions: ['outreachr-backup'] },
+    const path = await window.botCombinator.selectFile([
+      { name: 'Bot Combinator encrypted backup', extensions: ['bot-combinator-backup'] },
     ]);
     if (path) setRestorePath(path);
   };
@@ -1159,8 +1160,8 @@ export function SettingsPage(): React.JSX.Element {
   };
 
   const importSeed = async (): Promise<void> => {
-    const path = await window.outreachr.selectFile([
-      { name: 'Outreachr SQLite seed', extensions: ['sqlite', 'db'] },
+    const path = await window.botCombinator.selectFile([
+      { name: 'Bot Combinator SQLite seed', extensions: ['sqlite', 'db'] },
     ]);
     if (!path) return;
     const result = await command('data.importSeed', { path });
@@ -1172,14 +1173,14 @@ export function SettingsPage(): React.JSX.Element {
   };
 
   const exportPrivate = async (): Promise<void> => {
-    const directory = await window.outreachr.selectDirectory();
+    const directory = await window.botCombinator.selectDirectory();
     if (!directory) return;
     const result = await command('data.exportCsv', { directory, kind: 'investors' });
     notify({ tone: 'success', title: 'Investor CSV exported', detail: result.path });
   };
 
   const exportPublic = async (): Promise<void> => {
-    const directory = await window.outreachr.selectDirectory();
+    const directory = await window.botCombinator.selectDirectory();
     if (!directory) return;
     const result = await command('contribution.export', { directory });
     notify({
@@ -1190,7 +1191,7 @@ export function SettingsPage(): React.JSX.Element {
   };
 
   const exportAudit = async (): Promise<void> => {
-    const directory = await window.outreachr.selectDirectory();
+    const directory = await window.botCombinator.selectDirectory();
     if (!directory) return;
     const result = await command('data.exportCsv', { directory, kind: 'activity' });
     notify({ tone: 'success', title: 'Hash-chained audit log exported', detail: result.path });
@@ -1264,7 +1265,7 @@ export function SettingsPage(): React.JSX.Element {
             <>
               <Section
                 title="Application"
-                description="The desktop app and vault are independent of any hosted Outreachr account."
+                description="The desktop app and vault are independent of any hosted Bot Combinator account."
               >
                 <dl className="settings-facts">
                   <div>
@@ -1372,8 +1373,8 @@ export function SettingsPage(): React.JSX.Element {
               <Section title="Disclosure defaults">
                 <p className="settings-prose">
                   Private email bodies, calendar descriptions, decks, and transcripts are selected
-                  per run. You may later create a revocable durable rule after Outreachr has shown
-                  the exact data class.
+                  per run. You may later create a revocable durable rule after Bot Combinator has
+                  shown the exact data class.
                 </p>
               </Section>
             </>
@@ -1438,7 +1439,7 @@ export function SettingsPage(): React.JSX.Element {
                   <button onClick={() => void importSeed()}>
                     <Upload aria-hidden="true" />
                     <span>
-                      <strong>Import Outreachr seed</strong>
+                      <strong>Import Bot Combinator seed</strong>
                       <small>
                         Verify schema and immutable package digest before changing the vault.
                       </small>
@@ -1479,7 +1480,7 @@ export function SettingsPage(): React.JSX.Element {
                     <p>
                       {encryptionAvailable
                         ? 'Provider tokens are encrypted in the main process. SQLite stores ciphertext and non-secret configuration only.'
-                        : 'Unlock or install a supported operating-system secret service. Outreachr fails closed instead of using Electron’s insecure Linux basic_text fallback.'}
+                        : 'Unlock or install a supported operating-system secret service. Bot Combinator fails closed instead of using Electron’s insecure Linux basic_text fallback.'}
                     </p>
                   </div>
                   <StateDot
@@ -1522,7 +1523,7 @@ export function SettingsPage(): React.JSX.Element {
           ) : null}
           {active === 'about' ? (
             <>
-              <Section title="Outreachr">
+              <Section title="Bot Combinator">
                 <div className="about-block">
                   <div className="brand-mark brand-mark--large">O</div>
                   <div>
@@ -1537,7 +1538,7 @@ export function SettingsPage(): React.JSX.Element {
               </Section>
               <Section title="Support and legal">
                 <div className="settings-action-list">
-                  <button onClick={() => void window.outreachr.openLegal('license')}>
+                  <button onClick={() => void window.botCombinator.openLegal('license')}>
                     <ExternalLink />
                     <span>
                       <strong>Apache-2.0 license</strong>
@@ -1545,7 +1546,7 @@ export function SettingsPage(): React.JSX.Element {
                     </span>
                     <ChevronRight />
                   </button>
-                  <button onClick={() => void window.outreachr.openLegal('third-party')}>
+                  <button onClick={() => void window.botCombinator.openLegal('third-party')}>
                     <ExternalLink />
                     <span>
                       <strong>Third-party notices</strong>
@@ -1566,7 +1567,7 @@ export function SettingsPage(): React.JSX.Element {
         open={backupOpen}
         onClose={closeBackup}
         title="Create encrypted backup"
-        description="Use a strong password. Outreachr cannot recover it."
+        description="Use a strong password. Bot Combinator cannot recover it."
         footer={
           <>
             <Button tone="quiet" onClick={closeBackup}>

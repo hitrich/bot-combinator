@@ -15,7 +15,7 @@ const targets = [
 ];
 
 for (const target of targets) {
-  const candidates = [path.join(root, `outreachr-${target}`), path.join(root, target)];
+  const candidates = [path.join(root, `bot-combinator-${target}`), path.join(root, target)];
   let resolved;
   for (const candidate of candidates) {
     if (await exists(candidate)) {
@@ -31,10 +31,8 @@ for (const target of targets) {
     `THIRD_PARTY_NOTICES-${target}.md`,
     `licenses-${target}.json`,
     `build-target-${target}.json`,
-    `outreachr-${target}.cdx.json`,
-    `outreachr-${target}.provenance.json`,
-    `outreachr-${target}.attestation.intoto.jsonl`,
-    `outreachr-${target}.attestation.intoto.jsonl.sha256`,
+    `bot-combinator-${target}.cdx.json`,
+    `bot-combinator-${target}.provenance.json`,
     `SIGNING-STATUS-${target}.json`,
   ]) {
     if (!(await exists(path.join(resolved, required))))
@@ -51,19 +49,8 @@ for (const target of targets) {
       capture: false,
     },
   );
-  await run(
-    'node',
-    [
-      path.join(repoRoot, 'scripts', 'verify-checksums.mjs'),
-      '--manifest',
-      path.join(resolved, `outreachr-${target}.attestation.intoto.jsonl.sha256`),
-    ],
-    { capture: false },
-  );
   const files = await walkFiles(resolved);
   const checksumName = `SHA256SUMS-${target}`;
-  const attestationName = `outreachr-${target}.attestation.intoto.jsonl`;
-  const attestationChecksumName = `${attestationName}.sha256`;
   const checksumLines = (await fs.readFile(path.join(resolved, checksumName), 'utf8'))
     .split(/\r?\n/)
     .filter(Boolean);
@@ -78,10 +65,7 @@ for (const target of targets) {
   }
   const expectedCovered = files
     .map((file) => path.basename(file))
-    .filter(
-      (name) =>
-        name !== checksumName && name !== attestationName && name !== attestationChecksumName,
-    );
+    .filter((name) => name !== checksumName);
   if (new Set(expectedCovered).size !== expectedCovered.length) {
     throw new Error(`${target} contains duplicate asset basenames`);
   }
@@ -122,9 +106,9 @@ function verifySigningStatus(target, status, files) {
   if (
     !Array.isArray(status.mandatoryIntegrity) ||
     !status.mandatoryIntegrity.includes('sha256-manifest') ||
-    !status.mandatoryIntegrity.includes('github-oidc-build-attestation')
+    !status.mandatoryIntegrity.includes('local-slsa-provenance')
   ) {
-    throw new Error(`${target} signing status does not require checksums and GitHub attestations`);
+    throw new Error(`${target} signing status does not require checksums and local provenance`);
   }
   const names = files.map((file) => path.basename(file));
   if (target.startsWith('macos')) {
@@ -164,10 +148,10 @@ function verifySigningStatus(target, status, files) {
       throw new Error(`${target} signed release status is inconsistent with its assets`);
     }
   } else if (
-    status.releaseMode !== 'checksum-attested' ||
+    status.releaseMode !== 'checksum-provenance' ||
     status.platformTrust?.codeSigning !== 'none-required'
   ) {
-    throw new Error(`${target} must disclose checksum-attested Linux authenticity`);
+    throw new Error(`${target} must disclose checksum-provenance Linux integrity`);
   }
   if (!status.userNotice || !status.tag?.githubVerification) {
     throw new Error(

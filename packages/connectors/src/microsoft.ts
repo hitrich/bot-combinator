@@ -99,7 +99,7 @@ function graphMessage(message: EmailMessage, operationKey?: string): Record<stri
     bccRecipients: message.bcc?.map(graphRecipient),
     replyTo: message.replyTo ? [graphRecipient(message.replyTo)] : undefined,
     internetMessageHeaders: [
-      ...(operationKey ? [{ name: 'X-Outreachr-Operation-Key', value: operationKey }] : []),
+      ...(operationKey ? [{ name: 'X-Bot-Combinator-Operation-Key', value: operationKey }] : []),
       ...Object.entries(message.headers ?? {}).map(([name, value]) => ({ name, value })),
       ...(message.inReplyTo ? [{ name: 'In-Reply-To', value: message.inReplyTo }] : []),
       ...(message.references?.length
@@ -258,7 +258,7 @@ function mapGraphMessage(
       (header) =>
         typeof header?.name === 'string' &&
         header.name.toLocaleLowerCase('en-US') ===
-          'X-Outreachr-Operation-Key'.toLocaleLowerCase('en-US'),
+          'X-Bot-Combinator-Operation-Key'.toLocaleLowerCase('en-US'),
     )?.value,
     subject: typeof message.subject === 'string' ? message.subject : '',
     from,

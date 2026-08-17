@@ -10,7 +10,7 @@ import {
   type CommandRunner,
 } from './process.js';
 import { prepareAgentPrompt } from './prompt.js';
-import { OUTREACHR_AGENT_MCP_TOOLS } from './types.js';
+import { BOT_COMBINATOR_AGENT_MCP_TOOLS } from './types.js';
 import type {
   AgentAuthSource,
   AgentMcpConnection,
@@ -56,7 +56,7 @@ export interface CodexAgentOptions {
   readonly environment?: Readonly<NodeJS.ProcessEnv>;
   readonly defaultModel?: string;
   readonly requestTimeoutMs?: number;
-  /** Ephemeral credential for the host's loopback-only Outreachr MCP bridge. */
+  /** Ephemeral credential for the host's loopback-only Bot Combinator MCP bridge. */
   readonly mcpBearerToken?: string;
 }
 
@@ -89,7 +89,7 @@ export class CodexAgentAdapter implements AgentProviderAdapter {
     }
     this.#environment = {
       ...sanitizeCodexEnvironment(options.environment ?? process.env),
-      ...(this.#mcpBearerToken ? { [OUTREACHR_MCP_TOKEN_ENV]: this.#mcpBearerToken } : {}),
+      ...(this.#mcpBearerToken ? { [BOT_COMBINATOR_MCP_TOKEN_ENV]: this.#mcpBearerToken } : {}),
     };
     this.#rpc =
       options.rpc ??
@@ -151,7 +151,7 @@ export class CodexAgentAdapter implements AgentProviderAdapter {
         kind: 'environment',
         environmentVariable: 'OPENAI_API_KEY',
         instructions:
-          'Set OPENAI_API_KEY locally, then run the official `printenv OPENAI_API_KEY | codex login --with-api-key` flow. Codex stores the credential in the OS keyring; Outreachr never proxies it.',
+          'Set OPENAI_API_KEY locally, then run the official `printenv OPENAI_API_KEY | codex login --with-api-key` flow. Codex stores the credential in the OS keyring; Bot Combinator never proxies it.',
       };
     }
     if (request.mode !== 'browser' && request.mode !== 'device-code') {
@@ -299,7 +299,7 @@ export class CodexAgentAdapter implements AgentProviderAdapter {
         approvalPolicy: 'never',
         sandbox: 'read-only',
         ephemeral: true,
-        serviceName: 'outreachr',
+        serviceName: 'bot-combinator',
         environments: [],
         dynamicTools: [],
         selectedCapabilityRoots: [],
@@ -308,10 +308,10 @@ export class CodexAgentAdapter implements AgentProviderAdapter {
           apps: {},
           mcp_servers: mcp
             ? {
-                outreachr: {
+                'bot-combinator': {
                   url: mcp.url,
-                  bearer_token_env_var: OUTREACHR_MCP_TOKEN_ENV,
-                  http_headers: { [OUTREACHR_MCP_SESSION_HEADER]: mcp.sessionId },
+                  bearer_token_env_var: BOT_COMBINATOR_MCP_TOKEN_ENV,
+                  http_headers: { [BOT_COMBINATOR_MCP_SESSION_HEADER]: mcp.sessionId },
                   enabled_tools: [...mcp.enabledTools],
                   disabled_tools: [],
                   required: true,
@@ -434,7 +434,7 @@ export class CodexAgentAdapter implements AgentProviderAdapter {
     if (this.#disposed) throw new AgentRuntimeError('PROTOCOL_ERROR', 'Codex adapter is disposed.');
     this.#initialize ??= (async () => {
       await this.#rpc.request('initialize', {
-        clientInfo: { name: 'outreachr', title: 'Outreachr', version: '0.1.2' },
+        clientInfo: { name: 'bot-combinator', title: 'Bot Combinator', version: '0.1.2' },
         capabilities: {
           experimentalApi: true,
           requestAttestation: false,
@@ -475,8 +475,8 @@ const SAFE_ITEM_TYPES = new Set([
   'exitedReviewMode',
 ]);
 
-const OUTREACHR_MCP_TOKEN_ENV = 'OUTREACHR_MCP_TOKEN';
-const OUTREACHR_MCP_SESSION_HEADER = 'X-Outreachr-Session';
+const BOT_COMBINATOR_MCP_TOKEN_ENV = 'BOT_COMBINATOR_MCP_TOKEN';
+const BOT_COMBINATOR_MCP_SESSION_HEADER = 'X-Bot-Combinator-Session';
 
 export function sanitizeCodexEnvironment(
   source: Readonly<NodeJS.ProcessEnv>,
@@ -505,7 +505,7 @@ export function sanitizeCodexEnvironment(
     'SSL_CERT_DIR',
     'CODEX_HOME',
     'OPENAI_API_KEY',
-    OUTREACHR_MCP_TOKEN_ENV,
+    BOT_COMBINATOR_MCP_TOKEN_ENV,
   ] as const;
   const clean: NodeJS.ProcessEnv = {};
   for (const name of names) if (source[name] !== undefined) clean[name] = source[name];
@@ -528,13 +528,13 @@ function validateMcpConnection(connection: AgentMcpConnection, runId: string): A
   ) {
     throw new AgentRuntimeError('POLICY_DENIED', 'Codex MCP must use the loopback HTTP bridge.');
   }
-  if (connection.serverName !== 'outreachr' || connection.sessionId !== runId) {
+  if (connection.serverName !== 'bot-combinator' || connection.sessionId !== runId) {
     throw new AgentRuntimeError('POLICY_DENIED', 'Codex MCP session identity is invalid.');
   }
   if (
     connection.enabledTools.length === 0 ||
     new Set(connection.enabledTools).size !== connection.enabledTools.length ||
-    connection.enabledTools.some((tool) => !OUTREACHR_AGENT_MCP_TOOLS.includes(tool))
+    connection.enabledTools.some((tool) => !BOT_COMBINATOR_AGENT_MCP_TOOLS.includes(tool))
   ) {
     throw new AgentRuntimeError('POLICY_DENIED', 'Codex MCP tool allowlist is invalid.');
   }

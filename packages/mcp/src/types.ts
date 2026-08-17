@@ -108,7 +108,7 @@ export type ProposeSourceReviewInput = Omit<
  * database handle, provider credential, OAuth token, filesystem path, or shell.
  * Every mutating method creates only a pending proposal for founder review.
  */
-export interface OutreachrMcpService {
+export interface BotCombinatorMcpService {
   authorizeAccess(
     request: AccessRequest,
     context: Omit<ServiceInvocationContext, 'accessGrant'>,
@@ -161,7 +161,7 @@ export interface OutreachrMcpService {
   ): Promise<ProposalResult>;
 }
 
-export interface OutreachrMcpServerOptions {
+export interface BotCombinatorMcpServerOptions {
   name?: string;
   version?: string;
   now?: () => Date;

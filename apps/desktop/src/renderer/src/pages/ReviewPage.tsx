@@ -35,7 +35,7 @@ export function ReviewPage(): React.JSX.Element {
   const exportContribution = async (): Promise<void> => {
     setExporting(true);
     try {
-      const directory = await window.outreachr.selectDirectory();
+      const directory = await window.botCombinator.selectDirectory();
       if (!directory) return;
       const result = await command('contribution.export', { directory });
       notify({
@@ -120,9 +120,9 @@ export function ReviewPage(): React.JSX.Element {
                     title={
                       isSecureExternalUrl(item.source.url)
                         ? undefined
-                        : 'Only credential-free HTTPS sources can be opened from Outreachr.'
+                        : 'Only credential-free HTTPS sources can be opened from Bot Combinator.'
                     }
-                    onClick={() => void window.outreachr.openExternal(item.source.url)}
+                    onClick={() => void window.botCombinator.openExternal(item.source.url)}
                   >
                     {isSecureExternalUrl(item.source.url) ? 'Open source' : 'Source unavailable'}
                   </Button>

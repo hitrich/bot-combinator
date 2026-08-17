@@ -2,7 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
-import { GoogleConnector, InMemorySendAttemptLedger, tokenEndpoint } from '@outreachr/connectors';
+import {
+  GoogleConnector,
+  InMemorySendAttemptLedger,
+  tokenEndpoint,
+} from '@bot-combinator/connectors';
 import type { VaultService } from '../../src/main/vault-service';
 import { ConnectorService } from '../../src/main/connector-service';
 import { SecureStore } from '../../src/main/secure-store';
@@ -403,7 +407,9 @@ describe('ConnectorService with MSW provider boundaries', () => {
               from: { emailAddress: { address: 'founder@microsoft.test' } },
               toRecipients: [{ emailAddress: { address: 'graph.accepted@example.test' } }],
               sentDateTime: FIXED_NOW.toISOString(),
-              internetMessageHeaders: [{ name: 'X-Outreachr-Operation-Key', value: operationKey }],
+              internetMessageHeaders: [
+                { name: 'X-Bot-Combinator-Operation-Key', value: operationKey },
+              ],
             },
           ],
         }),
@@ -516,7 +522,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
                 { name: 'To', value: 'Investor <partner.ambiguous@example.test>' },
                 { name: 'Subject', value: 'Ambiguous provider result' },
                 { name: 'Message-ID', value: '<gmail-confirmed-message@example.test>' },
-                { name: 'X-Outreachr-Operation-Key', value: operationKey },
+                { name: 'X-Bot-Combinator-Operation-Key', value: operationKey },
               ],
             },
           }),
@@ -768,7 +774,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
             start: { dateTime: string };
             end: { dateTime: string };
             attendees: Array<{ email: string; displayName?: string; personId?: string }>;
-            extendedProperties: { private: { outreachrOperationKey: string } };
+            extendedProperties: { private: { botCombinatorOperationKey: string } };
           };
           expect(body).toMatchObject({
             summary: 'Google investor call',
@@ -782,7 +788,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
             ],
           });
           expect(body.attendees[0]).not.toHaveProperty('personId');
-          expect(body.extendedProperties.private.outreachrOperationKey).toMatch(/^meeting:/u);
+          expect(body.extendedProperties.private.botCombinatorOperationKey).toMatch(/^meeting:/u);
           return HttpResponse.json({
             id: 'created-google-meeting',
             status: 'confirmed',
@@ -1020,7 +1026,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
             'Subject',
             'Date',
             'Message-ID',
-            'X-Outreachr-Operation-Key',
+            'X-Bot-Combinator-Operation-Key',
           ]);
           const id = String(params.messageId);
           return HttpResponse.json({
@@ -1350,7 +1356,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
       provider: 'google',
       kind: 'follow_up',
       subject: 'Follow-up remains local',
-      bodyText: 'Outreachr 0.1 must not send this externally.',
+      bodyText: 'Bot Combinator 0.1 must not send this externally.',
     });
     const approved = await vault.approveDraft(draft.id, draft.contentHash);
 
@@ -1399,7 +1405,7 @@ describe('ConnectorService with MSW provider boundaries', () => {
           expect(body).toMatchObject({
             summary: 'Investor meeting',
             extendedProperties: {
-              private: { outreachrOperationKey: 'calendar-operation-1' },
+              private: { botCombinatorOperationKey: 'calendar-operation-1' },
             },
           });
           return HttpResponse.json({

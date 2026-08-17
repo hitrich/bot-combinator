@@ -1,5 +1,5 @@
-import type { AgentMcpConnection, AgentProposal, AgentProvider } from '@outreachr/agents';
-import type { PrivateField } from '@outreachr/mcp';
+import type { AgentMcpConnection, AgentProposal, AgentProvider } from '@bot-combinator/agents';
+import type { PrivateField } from '@bot-combinator/mcp';
 
 export type DesktopMcpReadScope = 'round' | 'company' | 'investors' | 'activity';
 

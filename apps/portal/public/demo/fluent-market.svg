@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" rx="28" fill="#edf0eb"/>
+  <rect x="24" y="24" width="1392" height="852" rx="20" fill="#f8faf6" stroke="#d9ded5"/>
+  <text x="64" y="78" fill="#18201a" font-size="25" font-family="Arial" font-weight="700">FLUENT / ROUTES</text>
+  <rect x="1160" y="48" width="210" height="46" rx="23" fill="#18201a"/>
+  <text x="1191" y="77" fill="#f8faf6" font-size="15" font-family="Arial">New intent</text>
+  <text x="64" y="154" fill="#18201a" font-size="44" font-family="Arial" font-weight="700">Route inspector</text>
+  <text x="64" y="190" fill="#6e776f" font-size="16" font-family="Arial">Intent #9821 · 45,000 BOT → USDC · Guardrails active</text>
+  <line x1="64" y1="226" x2="1370" y2="226" stroke="#d9ded5"/>
+  <text x="64" y="278" fill="#6e776f" font-size="13" font-family="Arial">SELECTED ROUTE</text>
+  <text x="64" y="335" fill="#18201a" font-size="32" font-family="Arial" font-weight="700">BOT / BDEX / USDC</text>
+  <rect x="64" y="372" width="840" height="384" rx="16" fill="#18201a"/>
+  <text x="98" y="416" fill="#a9b2a6" font-size="14" font-family="Arial">EXPECTED OUTPUT</text>
+  <text x="98" y="474" fill="#f8faf6" font-size="48" font-family="Arial" font-weight="700">44,812.20 USDC</text>
+  <line x1="98" y1="516" x2="870" y2="516" stroke="#394239"/>
+  <g font-family="Arial" font-size="15"><text x="98" y="564" fill="#a9b2a6">Price impact</text><text x="760" y="564" fill="#d8ff62">0.18%</text><text x="98" y="610" fill="#a9b2a6">Minimum received</text><text x="720" y="610" fill="#f8faf6">44,700.00</text><text x="98" y="656" fill="#a9b2a6">Route confidence</text><text x="770" y="656" fill="#d8ff62">HIGH</text></g>
+  <polyline points="98,720 186,704 274,712 362,680 450,686 538,638 626,646 714,600 802,614 870,566" fill="none" stroke="#82a7ff" stroke-width="4"/>
+  <rect x="932" y="372" width="438" height="384" rx="16" fill="#eef2ec" stroke="#d9ded5"/>
+  <text x="966" y="416" fill="#18201a" font-size="19" font-family="Arial" font-weight="700">Policy checks</text>
+  <g font-family="Arial"><circle cx="974" cy="470" r="9" fill="#559367"/><text x="1000" y="476" fill="#18201a" font-size="16">Slippage below 0.50%</text><circle cx="974" cy="526" r="9" fill="#559367"/><text x="1000" y="532" fill="#18201a" font-size="16">Approved venue</text><circle cx="974" cy="582" r="9" fill="#559367"/><text x="1000" y="588" fill="#18201a" font-size="16">Treasury window active</text><circle cx="974" cy="638" r="9" fill="#559367"/><text x="1000" y="644" fill="#18201a" font-size="16">Liquidity depth verified</text></g>
+  <rect x="966" y="684" width="370" height="44" rx="8" fill="#d8ff62"/>
+  <text x="1094" y="712" fill="#18201a" font-size="15" font-family="Arial" font-weight="700">All checks passed</text>
+  <text x="64" y="820" fill="#6e776f" font-size="13" font-family="Arial">AUDIT RECEIPT READY · OBSERVED 12:42:18 UTC</text>
+</svg>

@@ -45,7 +45,7 @@ const installed: CommandRunner = vi.fn(async () => ({
   stdout: 'codex-cli 0.146.0\n',
   stderr: '',
 }));
-const resolvedWorkspaceDirectory = resolve('/tmp/outreachr-agent');
+const resolvedWorkspaceDirectory = resolve('/tmp/bot-combinator-agent');
 
 function authenticatedRpc(): FakeRpc {
   const rpc = new FakeRpc();
@@ -99,7 +99,7 @@ describe('CodexAgentAdapter', () => {
   it('detects a locally authenticated ChatGPT account through app-server', async () => {
     const rpc = authenticatedRpc();
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
     });
@@ -136,7 +136,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
     });
@@ -182,7 +182,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
       defaultModel: 'gpt-safe',
@@ -220,7 +220,7 @@ describe('CodexAgentAdapter', () => {
     expect(JSON.stringify(turn)).toContain('PROPOSAL-ONLY');
   });
 
-  it('injects only the loopback Outreachr MCP and permits only its exact allowlisted tools', async () => {
+  it('injects only the loopback Bot Combinator MCP and permits only its exact allowlisted tools', async () => {
     const rpc = authenticatedRpc();
     rpc.handler = (method) => {
       if (method === 'account/read') return { account: { type: 'chatgpt' } };
@@ -233,8 +233,8 @@ describe('CodexAgentAdapter', () => {
               threadId: 'thread-1',
               item: {
                 type: 'mcpToolCall',
-                server: 'outreachr',
-                tool: 'outreachr_get_round',
+                server: 'bot-combinator',
+                tool: 'bot_combinator_get_round',
               },
             },
           });
@@ -245,7 +245,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
       mcpBearerToken: TEST_MCP_TOKEN,
@@ -253,10 +253,10 @@ describe('CodexAgentAdapter', () => {
     const connection = {
       ...mcpConnection('run-mcp'),
       enabledTools: [
-        'outreachr_get_round',
-        'outreachr_propose_stage',
-        'outreachr_propose_task',
-        'outreachr_propose_draft',
+        'bot_combinator_get_round',
+        'bot_combinator_propose_stage',
+        'bot_combinator_propose_task',
+        'bot_combinator_propose_draft',
       ] as const,
     };
     await expect(
@@ -271,23 +271,23 @@ describe('CodexAgentAdapter', () => {
         web_search: 'disabled',
         apps: {},
         mcp_servers: {
-          outreachr: {
+          'bot-combinator': {
             url: 'http://127.0.0.1:43123/mcp',
-            bearer_token_env_var: 'OUTREACHR_MCP_TOKEN',
-            http_headers: { 'X-Outreachr-Session': 'run-mcp' },
+            bearer_token_env_var: 'BOT_COMBINATOR_MCP_TOKEN',
+            http_headers: { 'X-Bot-Combinator-Session': 'run-mcp' },
             enabled_tools: [
-              'outreachr_get_round',
-              'outreachr_propose_stage',
-              'outreachr_propose_task',
-              'outreachr_propose_draft',
+              'bot_combinator_get_round',
+              'bot_combinator_propose_stage',
+              'bot_combinator_propose_task',
+              'bot_combinator_propose_draft',
             ],
             required: true,
           },
         },
       },
     });
-    expect(JSON.stringify(thread)).not.toContain('outreachr_search_investors');
-    expect(JSON.stringify(thread)).not.toContain('outreachr_propose_target');
+    expect(JSON.stringify(thread)).not.toContain('bot_combinator_search_investors');
+    expect(JSON.stringify(thread)).not.toContain('bot_combinator_propose_target');
 
     const deniedRpc = authenticatedRpc();
     deniedRpc.handler = (method) => {
@@ -301,8 +301,8 @@ describe('CodexAgentAdapter', () => {
               threadId: 'thread-1',
               item: {
                 type: 'mcpToolCall',
-                server: 'outreachr',
-                tool: 'outreachr_propose_target',
+                server: 'bot-combinator',
+                tool: 'bot_combinator_propose_target',
               },
             },
           }),
@@ -312,7 +312,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const denied = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: deniedRpc,
       commandRunner: installed,
       mcpBearerToken: TEST_MCP_TOKEN,
@@ -343,7 +343,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
     });
@@ -362,7 +362,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc,
       commandRunner: installed,
     });
@@ -377,7 +377,7 @@ describe('CodexAgentAdapter', () => {
     unauthRpc.handler = (method) =>
       method === 'account/read' ? { account: null, requiresOpenaiAuth: true } : {};
     const unauth = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: unauthRpc,
       commandRunner: installed,
     });
@@ -387,7 +387,7 @@ describe('CodexAgentAdapter', () => {
 
     const missing: CommandRunner = async () => ({ exitCode: 127, stdout: '', stderr: 'not found' });
     const missingAdapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: new FakeRpc(),
       commandRunner: missing,
     });
@@ -428,7 +428,7 @@ describe('CodexAgentAdapter', () => {
       const rpc = new FakeRpc();
       rpc.handler = scenario.handler;
       const adapter = new CodexAgentAdapter({
-        workspaceDirectory: '/tmp/outreachr-agent',
+        workspaceDirectory: '/tmp/bot-combinator-agent',
         rpc,
         commandRunner: installed,
       });
@@ -459,7 +459,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const failed = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: failedRpc,
       commandRunner: installed,
     });
@@ -478,7 +478,7 @@ describe('CodexAgentAdapter', () => {
       return {};
     };
     const adapter = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: accountFailure,
       commandRunner: installed,
     });
@@ -489,7 +489,7 @@ describe('CodexAgentAdapter', () => {
 
     const incomplete = new FakeRpc();
     const login = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: incomplete,
       commandRunner: installed,
     });
@@ -504,7 +504,7 @@ describe('CodexAgentAdapter', () => {
       throw new Error('spawn failed');
     };
     const missing = new CodexAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       rpc: new FakeRpc(),
       commandRunner: throwingRunner,
     });

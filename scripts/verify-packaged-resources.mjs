@@ -87,7 +87,9 @@ async function verifyManifestEntry(target, entry) {
   const stat = await fs.stat(target);
   const digest = await sha256File(target);
   if (stat.size === entry.size && digest === entry.sha256) return;
-  const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-normalized-binary-'));
+  const temporaryRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'bot-combinator-normalized-binary-'),
+  );
   const normalized = path.join(temporaryRoot, path.basename(target));
   try {
     await verifyEmbeddedSignature(target);
@@ -113,10 +115,10 @@ async function verifyEmbeddedSignature(target) {
   if (process.platform === 'win32') {
     const script =
       'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
-      '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
+      '$signature = Get-AuthenticodeSignature -LiteralPath $env:BOT_COMBINATOR_VERIFY_EXECUTABLE; ' +
       'if ($signature.Status -ne \'Valid\') { throw "Invalid embedded Authenticode signature: $($signature.Status)" }';
     await runWindowsPowerShell(script, {
-      OUTREACHR_VERIFY_EXECUTABLE: target,
+      BOT_COMBINATOR_VERIFY_EXECUTABLE: target,
     });
   }
 }

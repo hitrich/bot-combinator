@@ -680,7 +680,7 @@ describe('CommandService runtime boundary and workflows', () => {
       ),
     ).toBe(1);
     expect(await readFile(marker, 'utf8')).toBe(
-      'Delete the exact Outreachr SQLite vault on the next application launch.\n',
+      'Delete the exact Bot Combinator SQLite vault on the next application launch.\n',
     );
     if (process.platform !== 'win32') expect((await stat(marker)).mode & 0o777).toBe(0o600);
     expect((await service.bootstrap()).tasks.some((task) => task.title.includes('removed'))).toBe(
@@ -738,7 +738,7 @@ describe('CommandService runtime boundary and workflows', () => {
     });
 
     const restoring = service.execute('backup.restore', {
-      path: '/tmp/deferred-valid-backup.outreachr-backup',
+      path: '/tmp/deferred-valid-backup.bot-combinator-backup',
       password: 'correct horse battery staple',
     });
     await entered;

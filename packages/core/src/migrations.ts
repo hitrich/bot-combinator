@@ -1,6 +1,6 @@
 import type { Database } from 'sql.js';
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 export interface Migration {
   readonly version: number;
@@ -979,7 +979,7 @@ CREATE TRIGGER send_ledger_allows_initial_only
 BEFORE INSERT ON send_ledger
 WHEN COALESCE(NEW.message_kind,'')!='initial'
 BEGIN
-  SELECT RAISE(ABORT,'Outreachr 0.1 sends initial outreach only');
+  SELECT RAISE(ABORT,'Bot Combinator 0.1 sends initial outreach only');
 END;
 `,
   },
@@ -1052,7 +1052,7 @@ CREATE TRIGGER send_ledger_requires_visible_compliance_footer
 BEFORE INSERT ON send_ledger
 BEGIN
   SELECT CASE WHEN COALESCE(NEW.message_kind,'')!='initial'
-    THEN RAISE(ABORT,'Outreachr 0.1 sends initial outreach only') END;
+    THEN RAISE(ABORT,'Bot Combinator 0.1 sends initial outreach only') END;
   SELECT CASE WHEN trim(COALESCE((
     SELECT postal_address FROM communication_settings WHERE id='global'
   ),''))=''
@@ -1138,6 +1138,191 @@ CREATE TABLE local_preferences (
   key TEXT PRIMARY KEY,
   value_json TEXT NOT NULL,
   updated_at TEXT NOT NULL
+);
+`,
+  },
+  {
+    version: 10,
+    name: 'bot_chain_program_operations',
+    sql: `
+DROP INDEX agent_context_grants_active_idx;
+ALTER TABLE agent_context_grants RENAME TO agent_context_grants_v9;
+CREATE TABLE agent_context_grants (
+  id TEXT PRIMARY KEY,
+  provider TEXT NOT NULL CHECK(provider IN ('codex','claude')),
+  context_class TEXT NOT NULL CHECK(context_class IN ('round','company','investors','activity','bot_chain_docs')),
+  granted_at TEXT NOT NULL,
+  revoked_at TEXT,
+  UNIQUE(provider,context_class)
+);
+INSERT INTO agent_context_grants(id,provider,context_class,granted_at,revoked_at)
+SELECT id,provider,context_class,granted_at,revoked_at FROM agent_context_grants_v9;
+DROP TABLE agent_context_grants_v9;
+CREATE INDEX agent_context_grants_active_idx ON agent_context_grants(provider,context_class)
+  WHERE revoked_at IS NULL;
+
+CREATE TABLE ecosystem_programs (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  partner_name TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('planning','active','paused','completed')),
+  grant_period_start TEXT,
+  grant_period_end TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  CHECK(grant_period_start IS NULL OR grant_period_end IS NULL OR grant_period_start<=grant_period_end)
+);
+
+CREATE TABLE ecosystem_projects (
+  id TEXT PRIMARY KEY,
+  program_id TEXT NOT NULL REFERENCES ecosystem_programs(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  website TEXT,
+  description TEXT,
+  stage TEXT NOT NULL CHECK(stage IN (
+    'sourced','invited','applied','screening','qualified','cohort','integration_ready',
+    'liquidity_ready','launch_scheduled','live_market','graduated','on_hold','declined','withdrawn'
+  )),
+  source TEXT NOT NULL CHECK(source IN ('sourced','application','referral','local')),
+  owner_name TEXT,
+  owner_email TEXT,
+  target_launch_at TEXT,
+  launched_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX ecosystem_projects_program_stage_idx
+  ON ecosystem_projects(program_id,stage,updated_at DESC);
+CREATE UNIQUE INDEX ecosystem_projects_program_name_idx
+  ON ecosystem_projects(program_id,name COLLATE NOCASE);
+
+CREATE TABLE project_stage_events (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES ecosystem_projects(id) ON DELETE CASCADE,
+  from_stage TEXT,
+  to_stage TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  actor_type TEXT NOT NULL CHECK(actor_type IN ('founder','system','agent')),
+  actor_id TEXT,
+  occurred_at TEXT NOT NULL
+);
+CREATE INDEX project_stage_events_project_time_idx
+  ON project_stage_events(project_id,occurred_at DESC,id DESC);
+
+CREATE TABLE cohorts (
+  id TEXT PRIMARY KEY,
+  program_id TEXT NOT NULL REFERENCES ecosystem_programs(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  thesis TEXT,
+  starts_on TEXT,
+  ends_on TEXT,
+  capacity INTEGER CHECK(capacity IS NULL OR capacity>0),
+  status TEXT NOT NULL CHECK(status IN ('planning','applications_open','active','completed','cancelled')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  CHECK(starts_on IS NULL OR ends_on IS NULL OR starts_on<=ends_on),
+  UNIQUE(program_id,name)
+);
+
+CREATE TABLE cohort_memberships (
+  cohort_id TEXT NOT NULL REFERENCES cohorts(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL REFERENCES ecosystem_projects(id) ON DELETE CASCADE,
+  state TEXT NOT NULL CHECK(state IN ('accepted','active','completed','withdrawn')),
+  admitted_at TEXT NOT NULL,
+  completed_at TEXT,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY(cohort_id,project_id)
+);
+CREATE UNIQUE INDEX cohort_memberships_one_active_cohort_idx
+  ON cohort_memberships(project_id)
+  WHERE state IN ('accepted','active');
+
+CREATE TABLE quality_gate_definitions (
+  gate_key TEXT NOT NULL,
+  version INTEGER NOT NULL CHECK(version>0),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  sort_order INTEGER NOT NULL CHECK(sort_order>=0),
+  active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+  PRIMARY KEY(gate_key,version)
+);
+
+INSERT INTO quality_gate_definitions(gate_key,version,title,description,sort_order) VALUES
+  ('team_identity',1,'Team and identity','Canonical team, authority, entity, and conflict evidence.',10),
+  ('product_readiness',1,'Product readiness','Working product, user problem, roadmap, and operating owner.',20),
+  ('technical_security',1,'Technical and security readiness','Architecture, testing, review status, incident owner, and unresolved risks.',30),
+  ('market_community',1,'Market and community readiness','Target users, adoption evidence, community plan, and demand assumptions.',40),
+  ('token_treasury',1,'Token and treasury readiness','Token details, treasury authority, approvals, limits, and controls.',50),
+  ('bot_chain_integration',1,'BOT Chain integration','Versioned network, contract, test, and deployment evidence.',60),
+  ('bdex_readiness',1,'BDEX readiness','Verified venue, assets, pools, user flow, and monitoring evidence.',70),
+  ('bo_wallet_readiness',1,'BO Wallet readiness','Connection, network, signing, rejection, and recovery evidence.',80),
+  ('liquidity_readiness',1,'Liquidity readiness','Pair, budget, scenarios, policy, monitoring, and pause conditions.',90),
+  ('launch_operations',1,'Launch operations','Runbook, owner, communications, monitoring, and escalation.',100),
+  ('reporting_readiness',1,'Reporting readiness','KPI definitions, baseline, evidence owner, and disclosure rules.',110);
+
+CREATE TABLE project_gate_reviews (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES ecosystem_projects(id) ON DELETE CASCADE,
+  gate_key TEXT NOT NULL,
+  gate_version INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('not_started','in_review','needs_work','passed','blocked','waived')),
+  rationale TEXT,
+  evidence TEXT,
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY(gate_key,gate_version) REFERENCES quality_gate_definitions(gate_key,version),
+  UNIQUE(project_id,gate_key,gate_version)
+);
+CREATE INDEX project_gate_reviews_project_status_idx
+  ON project_gate_reviews(project_id,status,updated_at DESC);
+
+CREATE TABLE program_milestones (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES ecosystem_projects(id) ON DELETE CASCADE,
+  cohort_id TEXT REFERENCES cohorts(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL CHECK(category IN (
+    'onboarding','product','security','integration','bdex','bo_wallet','liquidity','launch','community','reporting'
+  )),
+  owner TEXT,
+  due_at TEXT,
+  evidence_required TEXT,
+  evidence TEXT,
+  status TEXT NOT NULL CHECK(status IN ('not_started','in_progress','blocked','completed','cancelled')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX program_milestones_project_status_due_idx
+  ON program_milestones(project_id,status,due_at);
+CREATE INDEX program_milestones_cohort_idx ON program_milestones(cohort_id,status);
+
+CREATE TABLE program_metric_observations (
+  id TEXT PRIMARY KEY,
+  program_id TEXT NOT NULL REFERENCES ecosystem_programs(id) ON DELETE CASCADE,
+  project_id TEXT REFERENCES ecosystem_projects(id) ON DELETE CASCADE,
+  metric_key TEXT NOT NULL,
+  value REAL NOT NULL,
+  unit TEXT NOT NULL,
+  observed_at TEXT NOT NULL,
+  source_label TEXT NOT NULL,
+  quality TEXT NOT NULL CHECK(quality IN ('verified','supported','reported','stale','unknown')),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX program_metric_observations_key_time_idx
+  ON program_metric_observations(program_id,metric_key,observed_at DESC);
+CREATE INDEX program_metric_observations_project_time_idx
+  ON program_metric_observations(project_id,observed_at DESC);
+
+CREATE TABLE partner_report_exports (
+  id TEXT PRIMARY KEY,
+  program_id TEXT NOT NULL REFERENCES ecosystem_programs(id) ON DELETE CASCADE,
+  report_sha256 TEXT NOT NULL CHECK(length(report_sha256)=64),
+  visibility_profile TEXT NOT NULL,
+  project_count INTEGER NOT NULL CHECK(project_count>=0),
+  created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 `,
   },

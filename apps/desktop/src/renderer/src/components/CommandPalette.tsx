@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Bot, Search } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, Bot, Search } from 'lucide-react';
 import { useNavigate } from '../lib/router';
 import type { CommandResultMap } from '../../../shared/contracts';
 import { useWorkspace } from '../state/WorkspaceContext';
@@ -62,7 +62,7 @@ export function CommandPalette({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Search Outreachr"
+      title="Search Bot Combinator"
       description="Find any investor, person, task, meeting, or company fact."
     >
       <div className="palette-search">
@@ -91,6 +91,14 @@ export function CommandPalette({
             <span>
               <strong>Browse the investor universe</strong>
               <small>Filter by stage, check, sector, location, and evidence.</small>
+            </span>
+            <ArrowRight aria-hidden="true" />
+          </button>
+          <button onClick={() => navigate('/bot-chain/docs')}>
+            <BookOpenCheck aria-hidden="true" />
+            <span>
+              <strong>Open Botchain Docs</strong>
+              <small>Download the versioned pack or pass selected files to an agent.</small>
             </span>
             <ArrowRight aria-hidden="true" />
           </button>

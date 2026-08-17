@@ -9,6 +9,44 @@ const id = z.string().trim().min(1).max(300);
 const nullableIso = z.string().datetime({ offset: true }).nullable();
 const provider = z.enum(['google', 'microsoft']);
 const agentProvider = z.enum(['codex', 'claude']);
+const programStage = z.enum([
+  'sourced',
+  'invited',
+  'applied',
+  'screening',
+  'qualified',
+  'cohort',
+  'integration_ready',
+  'liquidity_ready',
+  'launch_scheduled',
+  'live_market',
+  'graduated',
+  'on_hold',
+  'declined',
+  'withdrawn',
+]);
+const programGateStatus = z.enum([
+  'not_started',
+  'in_review',
+  'needs_work',
+  'passed',
+  'blocked',
+  'waived',
+]);
+const milestoneCategory = z.enum([
+  'onboarding',
+  'product',
+  'security',
+  'integration',
+  'bdex',
+  'bo_wallet',
+  'liquidity',
+  'launch',
+  'community',
+  'reporting',
+]);
+const milestoneStatus = z.enum(['not_started', 'in_progress', 'blocked', 'completed', 'cancelled']);
+const agentContextClass = z.enum(['round', 'company', 'investors', 'activity', 'bot_chain_docs']);
 const publicSourceUrl = z.string().trim().url().max(4_096).optional();
 
 function professionalProfileUrl(hostnames: readonly string[], label: string): z.ZodType<string> {
@@ -190,6 +228,101 @@ const commandSchemas: Record<keyof CommandMap, z.ZodType> = {
     content: z.string().min(1).max(5_000_000),
     sharePolicy: z.enum(['internal', 'safe_for_outreach', 'meeting_only', 'diligence_only']),
   }),
+  'botChain.docs.export': z
+    .object({
+      directory: z.string().trim().min(1).max(4_096),
+      mode: z.enum(['guide', 'selected', 'full']),
+      documentIds: z.array(id).max(200),
+    })
+    .superRefine((value, context) => {
+      if (new Set(value.documentIds).size !== value.documentIds.length) {
+        context.addIssue({ code: 'custom', path: ['documentIds'], message: 'Duplicate document' });
+      }
+      if (value.mode === 'selected' && value.documentIds.length === 0) {
+        context.addIssue({
+          code: 'custom',
+          path: ['documentIds'],
+          message: 'Select at least one document',
+        });
+      }
+    }),
+  'program.project.create': z.object({
+    name: z.string().trim().min(1).max(500),
+    website: z.string().trim().url().max(4_096).nullable(),
+    description: z.string().trim().max(100_000).nullable(),
+    source: z.enum(['sourced', 'application', 'referral', 'local']),
+    ownerName: z.string().trim().max(500).nullable(),
+    ownerEmail: z.string().trim().email().max(320).nullable(),
+    targetLaunchAt: nullableIso,
+  }),
+  'program.project.stage': z.object({
+    projectId: id,
+    stage: programStage,
+    reason: z.string().trim().min(1).max(10_000),
+  }),
+  'program.gate.review': z.object({
+    projectId: id,
+    gateKey: id,
+    status: programGateStatus,
+    rationale: z.string().trim().max(50_000).nullable(),
+    evidence: z.string().trim().max(100_000).nullable(),
+    reviewedBy: z.string().trim().max(500).nullable(),
+  }),
+  'program.cohort.create': z
+    .object({
+      name: z.string().trim().min(1).max(500),
+      thesis: z.string().trim().max(50_000).nullable(),
+      startsOn: z.string().date().nullable(),
+      endsOn: z.string().date().nullable(),
+      capacity: z.number().int().positive().max(10_000).nullable(),
+    })
+    .superRefine((value, context) => {
+      if (value.startsOn && value.endsOn && value.endsOn < value.startsOn) {
+        context.addIssue({
+          code: 'custom',
+          path: ['endsOn'],
+          message: 'Cohort end date must not be before its start date',
+        });
+      }
+    }),
+  'program.cohort.assign': z.object({
+    cohortId: id,
+    projectId: id,
+    state: z.enum(['accepted', 'active', 'completed', 'withdrawn']),
+  }),
+  'program.milestone.create': z.object({
+    projectId: id,
+    cohortId: id.nullable(),
+    title: z.string().trim().min(1).max(2_000),
+    category: milestoneCategory,
+    owner: z.string().trim().max(500).nullable(),
+    dueAt: nullableIso,
+    evidenceRequired: z.string().trim().max(50_000).nullable(),
+  }),
+  'program.milestone.update': z.object({
+    id,
+    status: milestoneStatus,
+    evidence: z.string().trim().max(100_000).nullable(),
+  }),
+  'program.metric.record': z.object({
+    projectId: id.nullable(),
+    key: z.string().trim().min(1).max(200),
+    value: z.number().finite(),
+    unit: z.string().trim().min(1).max(100),
+    observedAt: z.string().datetime({ offset: true }),
+    sourceLabel: z.string().trim().min(1).max(2_000),
+    quality: z.enum(['verified', 'supported', 'reported', 'stale', 'unknown']),
+  }),
+  'program.partnerReport.export': z.object({
+    directory: z.string().trim().min(1).max(4_096),
+  }),
+  'program.portalSubmission.export': z.object({
+    directory: z.string().trim().min(1).max(4_096),
+    projectId: id,
+    visibility: z.enum(['project_private', 'project_and_klineo']),
+    includeMilestones: z.boolean(),
+    includeGateReviews: z.boolean(),
+  }),
   'list.create': z.object({
     name: z.string().trim().min(1).max(1_000),
     description: z.string().max(20_000).nullable(),
@@ -271,14 +404,40 @@ const commandSchemas: Record<keyof CommandMap, z.ZodType> = {
   ]),
   'agent.contextGrant.set': z.object({
     provider: agentProvider,
-    contextClass: z.enum(['round', 'company', 'investors', 'activity']),
+    contextClass: agentContextClass,
     granted: z.boolean(),
   }),
-  'agent.run': z.object({
-    provider: agentProvider,
-    prompt: z.string().trim().min(1).max(100_000),
-    disclosedContextIds: z.array(z.enum(['round', 'company', 'investors', 'activity'])).max(4),
-  }),
+  'agent.run': z
+    .object({
+      provider: agentProvider,
+      prompt: z.string().trim().min(1).max(100_000),
+      disclosedContextIds: z.array(agentContextClass).max(5),
+      botChainDocumentIds: z.array(id).max(50).optional(),
+    })
+    .superRefine((value, context) => {
+      const documents = value.botChainDocumentIds ?? [];
+      if (new Set(documents).size !== documents.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['botChainDocumentIds'],
+          message: 'BOT Chain document IDs must be unique',
+        });
+      }
+      if (value.disclosedContextIds.includes('bot_chain_docs') && documents.length === 0) {
+        context.addIssue({
+          code: 'custom',
+          path: ['botChainDocumentIds'],
+          message: 'Select at least one BOT Chain document for this run',
+        });
+      }
+      if (!value.disclosedContextIds.includes('bot_chain_docs') && documents.length > 0) {
+        context.addIssue({
+          code: 'custom',
+          path: ['botChainDocumentIds'],
+          message: 'BOT Chain documents require the bot_chain_docs context class',
+        });
+      }
+    }),
   'agent.cancel': z.object({ runId: id }),
   'agent.proposal.review': z.object({
     id,
@@ -329,8 +488,8 @@ export class CommandService {
     this.#commandsInFlight += 1;
     try {
       const diagnostic = (stage: string): void => {
-        if (process.env.OUTREACHR_STARTUP_DIAGNOSTICS === '1') {
-          process.stderr.write(`[outreachr-startup] bootstrap ${stage}\n`);
+        if (process.env.BOT_COMBINATOR_STARTUP_DIAGNOSTICS === '1') {
+          process.stderr.write(`[bot-combinator-startup] bootstrap ${stage}\n`);
         }
       };
       diagnostic('connector statuses started');
@@ -431,6 +590,61 @@ export class CommandService {
           break;
         case 'knowledge.save':
           result = await this.#vault.saveKnowledge(payload as CommandMap['knowledge.save']);
+          break;
+        case 'botChain.docs.export':
+          result = await this.#vault.exportBotChainDocs(
+            payload as CommandMap['botChain.docs.export'],
+          );
+          break;
+        case 'program.project.create':
+          result = await this.#vault.createProgramProject(
+            payload as CommandMap['program.project.create'],
+          );
+          break;
+        case 'program.project.stage':
+          result = await this.#vault.moveProgramProjectStage(
+            payload as CommandMap['program.project.stage'],
+          );
+          break;
+        case 'program.gate.review':
+          result = await this.#vault.reviewProgramGate(
+            payload as CommandMap['program.gate.review'],
+          );
+          break;
+        case 'program.cohort.create':
+          result = await this.#vault.createProgramCohort(
+            payload as CommandMap['program.cohort.create'],
+          );
+          break;
+        case 'program.cohort.assign':
+          result = await this.#vault.assignProgramCohort(
+            payload as CommandMap['program.cohort.assign'],
+          );
+          break;
+        case 'program.milestone.create':
+          result = await this.#vault.createProgramMilestone(
+            payload as CommandMap['program.milestone.create'],
+          );
+          break;
+        case 'program.milestone.update':
+          result = await this.#vault.updateProgramMilestone(
+            payload as CommandMap['program.milestone.update'],
+          );
+          break;
+        case 'program.metric.record':
+          result = await this.#vault.recordProgramMetric(
+            payload as CommandMap['program.metric.record'],
+          );
+          break;
+        case 'program.partnerReport.export':
+          result = await this.#vault.exportProgramPartnerReport(
+            (payload as CommandMap['program.partnerReport.export']).directory,
+          );
+          break;
+        case 'program.portalSubmission.export':
+          result = await this.#vault.exportPortalSubmission(
+            payload as CommandMap['program.portalSubmission.export'],
+          );
           break;
         case 'list.create':
           result = await this.#vault.createList(payload as CommandMap['list.create']);
@@ -541,7 +755,10 @@ export class CommandService {
             provider: value.provider,
             model: null,
             purpose: value.prompt,
-            contextPolicy: { disclosedContextIds: value.disclosedContextIds },
+            contextPolicy: {
+              disclosedContextIds: value.disclosedContextIds,
+              botChainDocumentIds: value.botChainDocumentIds ?? [],
+            },
             status: 'running',
             startedAt: createdAt,
             completedAt: null,
@@ -553,7 +770,10 @@ export class CommandService {
             runId,
             provider: value.provider,
             prompt: value.prompt,
-            context: await this.#vault.agentContext(value.disclosedContextIds),
+            context: await this.#vault.agentContext(
+              value.disclosedContextIds,
+              value.botChainDocumentIds ?? [],
+            ),
             disclosedContextIds: value.disclosedContextIds,
             onEvent: async (event) => {
               if (event.type === 'tool_proposal' && event.proposalId && event.proposal) {

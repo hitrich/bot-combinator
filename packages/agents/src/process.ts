@@ -87,7 +87,7 @@ export function redactSecrets(value: string): string {
     .replace(/\b(sk-(?:ant-|proj-)?)[A-Za-z0-9_-]{8,}\b/g, '$1[REDACTED]')
     .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*\b/gi, 'Bearer [REDACTED]')
     .replace(
-      /("?(?:OUTREACHR_MCP_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|ANTHROPIC_API_KEY|OPENAI_API_KEY|REFRESH_TOKEN|ACCESS_TOKEN|OAUTH_TOKEN|ID_TOKEN|CLIENT_SECRET|API_KEY)"?\s*[=:]\s*"?)[^"',\s}]+/gi,
+      /("?(?:BOT_COMBINATOR_MCP_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|ANTHROPIC_API_KEY|OPENAI_API_KEY|REFRESH_TOKEN|ACCESS_TOKEN|OAUTH_TOKEN|ID_TOKEN|CLIENT_SECRET|API_KEY)"?\s*[=:]\s*"?)[^"',\s}]+/gi,
       '$1[REDACTED]',
     );
 }

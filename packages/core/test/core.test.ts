@@ -5,7 +5,7 @@ import {
   CoreVault,
   MIGRATIONS,
   MeetingSchema,
-  OutreachrRepository,
+  BotCombinatorRepository,
   SCHEMA_VERSION,
   DEFAULT_OPT_OUT_TEXT,
   approvalContentHash,
@@ -32,9 +32,9 @@ function vault(): CoreVault {
   return new CoreVault(SQL, { appliedAt: NOW });
 }
 
-function repositoryWithFounder(): { vault: CoreVault; repository: OutreachrRepository } {
+function repositoryWithFounder(): { vault: CoreVault; repository: BotCombinatorRepository } {
   const core = vault();
-  const repository = new OutreachrRepository(core);
+  const repository = new BotCombinatorRepository(core);
   repository.upsertFounderProfile({
     id: 'founder',
     fullName: 'Ada Founder',
@@ -88,7 +88,7 @@ function compliantBody(bodyText: string): string {
   });
 }
 
-function addFirmAndPeople(repository: OutreachrRepository): void {
+function addFirmAndPeople(repository: BotCombinatorRepository): void {
   repository.upsertFirm({
     id: 'firm-1',
     name: 'Calm Capital',
@@ -175,7 +175,7 @@ describe('vault transactions', () => {
 });
 
 function addPersonWithEmail(
-  repository: OutreachrRepository,
+  repository: BotCombinatorRepository,
   personId: string,
   email: string,
 ): void {
@@ -198,7 +198,7 @@ function addPersonWithEmail(
 }
 
 function message(
-  repository: OutreachrRepository,
+  repository: BotCombinatorRepository,
   id: string,
   personId: string,
   recipientAddress: string,
@@ -414,7 +414,7 @@ describe('vault migrations', () => {
     legacy.close();
 
     const migrated = new CoreVault(SQL, { bytes, appliedAt: LATER });
-    const settings = new OutreachrRepository(migrated).communicationSettings();
+    const settings = new BotCombinatorRepository(migrated).communicationSettings();
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(settings).toMatchObject({
       postalAddress: null,

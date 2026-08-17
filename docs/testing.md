@@ -22,10 +22,10 @@ Desktop tests cover command validation, seed bootstrapping, legacy-to-v9 migrati
 The normal suite never consumes an account-backed model. To validate the complete embedded Codex path with the official CLI's existing ChatGPT sign-in, explicitly opt in on a developer machine:
 
 ```bash
-OUTREACHR_LIVE_CODEX_SMOKE=1 pnpm smoke:codex
+BOT_COMBINATOR_LIVE_CODEX_SMOKE=1 pnpm smoke:codex
 ```
 
-`smoke:codex` prepares development sidecars while preserving their vendor platform signatures so the operating system can execute them outside an app bundle. To exercise a final package instead, also set `OUTREACHR_PACKAGED_EXECUTABLE` to the final Outreachr executable (for example, the executable inside a mounted macOS DMG). Packaged mode uses a temporary loopback-only Chromium debugging port rather than the disabled Electron main-process inspector, so the production fuse configuration remains intact. The harness creates an isolated local profile, completes onboarding, confirms that Codex reports ready, executes one proposal-only/no-context turn, requires a successful terminal event, and deletes the temporary profile. It does not run in CI because it depends on a human-owned subscription session. Release packaging always uses the separate normalized-resource path and signs the complete app bundle.
+`smoke:codex` prepares development sidecars while preserving their vendor platform signatures so the operating system can execute them outside an app bundle. To exercise a final package instead, also set `BOT_COMBINATOR_PACKAGED_EXECUTABLE` to the final Bot Combinator executable (for example, the executable inside a mounted macOS DMG). Packaged mode uses a temporary loopback-only Chromium debugging port rather than the disabled Electron main-process inspector, so the production fuse configuration remains intact. The harness creates an isolated local profile, completes onboarding, confirms that Codex reports ready, executes one proposal-only/no-context turn, requires a successful terminal event, and deletes the temporary profile. It does not run in CI because it depends on a human-owned subscription session. Release packaging always uses the separate normalized-resource path and signs the complete app bundle.
 
 ## Live Claude subscription smoke
 
@@ -33,7 +33,7 @@ After Anthropic has approved the deployment and the official local CLI is signed
 
 ```bash
 claude auth login --claudeai
-OUTREACHR_LIVE_CLAUDE_SMOKE=1 pnpm smoke:claude
+BOT_COMBINATOR_LIVE_CLAUDE_SMOKE=1 pnpm smoke:claude
 ```
 
 The normal suite and CI never consume Claude plan credit. This opt-in harness uses an empty temporary workspace, no disclosed CRM context, no MCP connection, no built-in tools, one turn, and the same strict structured-output parser as the app. It requires official CLI subscription detection, removes both `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` from the Agent SDK environment, verifies an exact completion phrase with no proposals, prints no account identity, and deletes the workspace.
@@ -50,6 +50,6 @@ Each job installs the frozen graph, verifies architecture, runs the full gate an
 
 ## Release gate
 
-Only a protected annotated semantic-version tag at current protected `main` starts a release. A GitHub-verified tag signature is recorded as a stronger free signal; a protected unsigned annotated tag is accepted. Complete environment-protected macOS and Windows signing groups automatically enable Developer ID/notarization/stapling or timestamped Authenticode. Absent groups produce filenames and status manifests labeled unsigned (and unnotarized on macOS); the macOS baseline's ad-hoc signature supplies execution integrity but no publisher identity. Partial groups fail. Linux signatures are optional.
+Only a GitHub-verified SSH- or GPG-signed annotated semantic-version tag at current `main` starts a release. The verified signature is mandatory because branch/tag protection and protected environments are unavailable to this private GitHub Free repository. Complete repository-secret macOS and Windows signing groups automatically enable Developer ID/notarization/stapling or timestamped Authenticode. Absent groups produce filenames and status manifests labeled unsigned (and unnotarized on macOS); the macOS baseline's ad-hoc signature supplies execution integrity but no publisher identity. Partial groups fail. Linux signatures are optional.
 
-Every mode remains blocked on final-distribution smoke tests, resource checks, SBOMs, local provenance, SHA-256 manifests, and GitHub OIDC attestations. The workflow uploads a private draft, downloads and compares every asset byte-for-byte, and publishes only after the comparison passes. No workflow may silently downgrade signing or hide unsigned status.
+Every mode remains blocked on final-distribution smoke tests, resource checks, SBOMs, local provenance, and SHA-256 manifests. The workflow uploads a private draft, downloads and compares every asset byte-for-byte, and publishes only after the comparison passes. No workflow may silently downgrade signing or hide unsigned status.

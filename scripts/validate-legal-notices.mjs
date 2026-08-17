@@ -7,7 +7,7 @@ import { exists, readJson, repoRoot, sha256File } from './_lib.mjs';
 export async function validateLegalNotices() {
   const required = {
     LICENSE: ['Apache License', 'Version 2.0'],
-    NOTICE: ['Outreachr', 'source-specific rights'],
+    NOTICE: ['Bot Combinator', 'source-specific rights'],
     'THIRD_PARTY_NOTICES.md': ['# Third-Party Notices', 'Included license texts'],
   };
   for (const [relative, markers] of Object.entries(required)) {

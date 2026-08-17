@@ -41,7 +41,7 @@ test.describe('Founder credential setup through the built Electron boundary', ()
     await expect(enableSubscription).toBeDisabled();
     await page
       .getByRole('checkbox', {
-        name: /I confirm Anthropic approved this Outreachr deployment/u,
+        name: /I confirm Anthropic approved this Bot Combinator deployment/u,
       })
       .check();
     await expect(enableSubscription).toBeEnabled();
@@ -51,7 +51,7 @@ test.describe('Founder credential setup through the built Electron boundary', ()
     ).toBeVisible();
     await expect(page.getByText('Subscription enabled by founder', { exact: true })).toBeVisible();
 
-    const subscriptionBootstrap = await page.evaluate(async () => window.outreachr.bootstrap());
+    const subscriptionBootstrap = await page.evaluate(async () => window.botCombinator.bootstrap());
     expect(
       subscriptionBootstrap.agents.find((agent) => agent.provider === 'claude')
         ?.subscriptionAuthApproved,
@@ -65,7 +65,7 @@ test.describe('Founder credential setup through the built Electron boundary', ()
     await expect(
       page.getByText('Claude subscription access disabled', { exact: true }),
     ).toBeVisible();
-    const disabledBootstrap = await page.evaluate(async () => window.outreachr.bootstrap());
+    const disabledBootstrap = await page.evaluate(async () => window.botCombinator.bootstrap());
     expect(
       disabledBootstrap.agents.find((agent) => agent.provider === 'claude')
         ?.subscriptionAuthApproved,
@@ -79,7 +79,7 @@ test.describe('Founder credential setup through the built Electron boundary', ()
     await page.getByRole('button', { name: 'Save encrypted API key', exact: true }).click();
     await expect(keyInput).toHaveValue('');
 
-    const bootstrap = await page.evaluate(async () => window.outreachr.bootstrap());
+    const bootstrap = await page.evaluate(async () => window.botCombinator.bootstrap());
     expect(JSON.stringify(bootstrap)).not.toContain(apiKey);
     const vaultBytes = await readFile(bootstrap.vaultPath);
     expect(vaultBytes.includes(Buffer.from(apiKey))).toBe(false);

@@ -6,7 +6,7 @@ import { resolvePackagedAgentExecutables } from '../src/paths.js';
 
 describe('packaged sidecar paths', () => {
   it('resolves the CI/release contract on Unix and Windows', () => {
-    const root = resolve('/tmp/outreachr/resources');
+    const root = resolve('/tmp/bot-combinator/resources');
     expect(resolvePackagedAgentExecutables(root, 'darwin')).toEqual({
       codex: resolve(root, 'sidecars/codex/bin/codex'),
       claude: resolve(root, 'sidecars/claude/claude'),

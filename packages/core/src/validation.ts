@@ -354,6 +354,187 @@ export const ListSchema = z.object({
 });
 export type ListInput = z.input<typeof ListSchema>;
 
+export const EcosystemProgramSchema = z
+  .object({
+    id: IdSchema,
+    name: z.string().trim().min(1).max(500),
+    partnerName: z.string().trim().min(1).max(500),
+    status: z.enum(['planning', 'active', 'paused', 'completed']).default('planning'),
+    grantPeriodStart: z.string().date().nullable().default(null),
+    grantPeriodEnd: z.string().date().nullable().default(null),
+    createdAt: IsoDateTimeSchema,
+    updatedAt: IsoDateTimeSchema,
+  })
+  .superRefine((program, context) => {
+    if (
+      program.grantPeriodStart &&
+      program.grantPeriodEnd &&
+      program.grantPeriodEnd < program.grantPeriodStart
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['grantPeriodEnd'],
+        message: 'Grant period end cannot be before its start',
+      });
+    }
+  });
+export type EcosystemProgramInput = z.input<typeof EcosystemProgramSchema>;
+export type EcosystemProgram = z.output<typeof EcosystemProgramSchema>;
+
+export const EcosystemProjectStageSchema = z.enum([
+  'sourced',
+  'invited',
+  'applied',
+  'screening',
+  'qualified',
+  'cohort',
+  'integration_ready',
+  'liquidity_ready',
+  'launch_scheduled',
+  'live_market',
+  'graduated',
+  'on_hold',
+  'declined',
+  'withdrawn',
+]);
+
+export const EcosystemProjectSchema = z.object({
+  id: IdSchema,
+  programId: IdSchema,
+  name: z.string().trim().min(1).max(500),
+  website: UrlSchema.nullable().default(null),
+  description: z.string().trim().max(100_000).nullable().default(null),
+  stage: EcosystemProjectStageSchema.default('sourced'),
+  source: z.enum(['sourced', 'application', 'referral', 'local']).default('local'),
+  ownerName: z.string().trim().max(500).nullable().default(null),
+  ownerEmail: EmailSchema.nullable().default(null),
+  targetLaunchAt: IsoDateTimeSchema.nullable().default(null),
+  launchedAt: IsoDateTimeSchema.nullable().default(null),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
+export type EcosystemProjectInput = z.input<typeof EcosystemProjectSchema>;
+export type EcosystemProject = z.output<typeof EcosystemProjectSchema>;
+
+export const ProjectStageEventSchema = z.object({
+  id: IdSchema,
+  projectId: IdSchema,
+  fromStage: EcosystemProjectStageSchema.nullable().default(null),
+  toStage: EcosystemProjectStageSchema,
+  reason: z.string().trim().min(1).max(10_000),
+  actorType: z.enum(['founder', 'system', 'agent']).default('founder'),
+  actorId: IdSchema.nullable().default(null),
+  occurredAt: IsoDateTimeSchema,
+});
+export type ProjectStageEventInput = z.input<typeof ProjectStageEventSchema>;
+
+export const CohortSchema = z
+  .object({
+    id: IdSchema,
+    programId: IdSchema,
+    name: z.string().trim().min(1).max(500),
+    thesis: z.string().trim().max(50_000).nullable().default(null),
+    startsOn: z.string().date().nullable().default(null),
+    endsOn: z.string().date().nullable().default(null),
+    capacity: z.number().int().positive().max(10_000).nullable().default(null),
+    status: z
+      .enum(['planning', 'applications_open', 'active', 'completed', 'cancelled'])
+      .default('planning'),
+    createdAt: IsoDateTimeSchema,
+    updatedAt: IsoDateTimeSchema,
+  })
+  .superRefine((cohort, context) => {
+    if (cohort.startsOn && cohort.endsOn && cohort.endsOn < cohort.startsOn) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['endsOn'],
+        message: 'Cohort end cannot be before its start',
+      });
+    }
+  });
+export type CohortInput = z.input<typeof CohortSchema>;
+export type Cohort = z.output<typeof CohortSchema>;
+
+export const CohortMembershipSchema = z.object({
+  cohortId: IdSchema,
+  projectId: IdSchema,
+  state: z.enum(['accepted', 'active', 'completed', 'withdrawn']),
+  admittedAt: IsoDateTimeSchema,
+  completedAt: IsoDateTimeSchema.nullable().default(null),
+  updatedAt: IsoDateTimeSchema,
+});
+export type CohortMembershipInput = z.input<typeof CohortMembershipSchema>;
+
+export const ProgramGateStatusSchema = z.enum([
+  'not_started',
+  'in_review',
+  'needs_work',
+  'passed',
+  'blocked',
+  'waived',
+]);
+
+export const ProjectGateReviewSchema = z.object({
+  id: IdSchema,
+  projectId: IdSchema,
+  gateKey: IdSchema,
+  gateVersion: z.number().int().positive(),
+  status: ProgramGateStatusSchema,
+  rationale: z.string().trim().max(50_000).nullable().default(null),
+  evidence: z.string().trim().max(100_000).nullable().default(null),
+  reviewedBy: z.string().trim().max(500).nullable().default(null),
+  reviewedAt: IsoDateTimeSchema.nullable().default(null),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
+export type ProjectGateReviewInput = z.input<typeof ProjectGateReviewSchema>;
+export type ProjectGateReview = z.output<typeof ProjectGateReviewSchema>;
+
+export const ProgramMilestoneSchema = z.object({
+  id: IdSchema,
+  projectId: IdSchema,
+  cohortId: IdSchema.nullable().default(null),
+  title: z.string().trim().min(1).max(2_000),
+  category: z.enum([
+    'onboarding',
+    'product',
+    'security',
+    'integration',
+    'bdex',
+    'bo_wallet',
+    'liquidity',
+    'launch',
+    'community',
+    'reporting',
+  ]),
+  owner: z.string().trim().max(500).nullable().default(null),
+  dueAt: IsoDateTimeSchema.nullable().default(null),
+  evidenceRequired: z.string().trim().max(50_000).nullable().default(null),
+  evidence: z.string().trim().max(100_000).nullable().default(null),
+  status: z
+    .enum(['not_started', 'in_progress', 'blocked', 'completed', 'cancelled'])
+    .default('not_started'),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
+export type ProgramMilestoneInput = z.input<typeof ProgramMilestoneSchema>;
+export type ProgramMilestone = z.output<typeof ProgramMilestoneSchema>;
+
+export const ProgramMetricObservationSchema = z.object({
+  id: IdSchema,
+  programId: IdSchema,
+  projectId: IdSchema.nullable().default(null),
+  key: z.string().trim().min(1).max(200),
+  value: z.number().finite(),
+  unit: z.string().trim().min(1).max(100),
+  observedAt: IsoDateTimeSchema,
+  sourceLabel: z.string().trim().min(1).max(2_000),
+  quality: z.enum(['verified', 'supported', 'reported', 'stale', 'unknown']),
+  createdAt: IsoDateTimeSchema,
+});
+export type ProgramMetricObservationInput = z.input<typeof ProgramMetricObservationSchema>;
+export type ProgramMetricObservation = z.output<typeof ProgramMetricObservationSchema>;
+
 export const AgentRunSchema = z.object({
   id: IdSchema,
   provider: z.enum(['codex', 'claude', 'custom']),
@@ -379,8 +560,31 @@ export const AgentProposalSchema = z.object({
 });
 export type AgentProposalInput = z.input<typeof AgentProposalSchema>;
 
+function isCanonicalBase64(value: string): boolean {
+  if (value.length === 0 || value.length % 4 !== 0) return false;
+  const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
+  const bodyLength = value.length - padding;
+  if ((padding === 1 && bodyLength % 4 !== 3) || (padding === 2 && bodyLength % 4 !== 2)) {
+    return false;
+  }
+  for (let index = 0; index < bodyLength; index += 1) {
+    const code = value.charCodeAt(index);
+    const valid =
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      (code >= 48 && code <= 57) ||
+      code === 43 ||
+      code === 47;
+    if (!valid) return false;
+  }
+  for (let index = bodyLength; index < value.length; index += 1) {
+    if (value.charCodeAt(index) !== 61) return false;
+  }
+  return true;
+}
+
 export const BackupEnvelopeSchema = z.object({
-  format: z.literal('outreachr-encrypted-backup'),
+  format: z.literal('bot-combinator-encrypted-backup'),
   version: z.literal(1),
   createdAt: IsoDateTimeSchema,
   sqliteSha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -405,7 +609,7 @@ export const BackupEnvelopeSchema = z.object({
     .string()
     .min(1)
     .max(715_827_884)
-    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u),
+    .refine(isCanonicalBase64, 'Ciphertext must be canonical base64'),
 });
 export type BackupEnvelope = z.infer<typeof BackupEnvelopeSchema>;
 

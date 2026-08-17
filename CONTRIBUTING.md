@@ -1,6 +1,6 @@
-# Contributing to Outreachr
+# Contributing to Bot Combinator
 
-Outreachr welcomes code, documentation, accessibility, connector, and rights-reviewed investor-data contributions.
+Bot Combinator welcomes code, documentation, accessibility, connector, and rights-reviewed investor-data contributions.
 
 ## Development
 

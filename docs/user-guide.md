@@ -1,13 +1,13 @@
-# Outreachr user guide
+# Bot Combinator user guide
 
-Outreachr is a single-founder, local-first fundraising workspace for pre-seed, seed, and Series A rounds. It does not create a hosted account. The canonical workspace is an SQLite file owned by the founder.
+Bot Combinator is a single-founder, local-first fundraising workspace for pre-seed, seed, and Series A rounds. The canonical private workspace is an SQLite file owned by the founder. The optional hosted collaboration portal has separate invitation-based accounts and receives only explicit program submissions—not the full desktop vault.
 
 ## First launch
 
 1. Enter the founder and company identity.
 2. Define the round stage, target amount, useful check range, sectors, geographies, and narrative.
 3. Optionally enter the sender postal address now. Setup can finish without it, but email approval and sending remain blocked until it is saved under **Communication safety**.
-4. Outreachr imports the pinned investor research seed into a new private vault.
+4. Bot Combinator imports the pinned investor research seed into a new private vault.
 5. Review **Up next** for the highest-priority local tasks and safety reviews.
 
 The bundled seed is explicitly marked research-grade. A source count is not proof of correctness. Exact claim sources retain their URLs, observation dates, confidence, and rights metadata; assertions without field-level evidence remain visibly unattributed instead of borrowing an unrelated entity source.
@@ -23,7 +23,7 @@ An investor detail page contains:
 - thesis, selected portfolio examples, source ledger, and private activity;
 - target state, current pipeline stage, expected check, next action, and conflict signal.
 
-Unknown values remain unknown. Outreachr does not infer that missing portfolio, check, or partner evidence means “none.”
+Unknown values remain unknown. Bot Combinator does not infer that missing portfolio, check, or partner evidence means “none.”
 
 ## Pipeline and round economics
 
@@ -42,11 +42,11 @@ Direct email follows this enforced flow:
 3. Confirm that the exact configured sender postal address and opt-out wording are visible in the body, then approve the recipient, sender context, subject, body, and unthreaded/attachment-free initial structure.
 4. Select **Send now**.
 5. The database atomically reserves the canonical person and normalized address before the provider request.
-6. A definitive result is recorded as sent. An uncertain result is recorded as ambiguous and is never retried; a later mailbox sync can confirm only that original reservation when the provider's authoritative sent-mail stream contains an exact Outreachr operation key plus matching provider, sole recipient, subject, and bounded timestamp.
+6. A definitive result is recorded as sent. An uncertain result is recorded as ambiguous and is never retried; a later mailbox sync can confirm only that original reservation when the provider's authoritative sent-mail stream contains an exact Bot Combinator operation key plus matching provider, sole recipient, subject, and bounded timestamp.
 
-A second unsolicited initial to the same canonical person or email is blocked across rounds and providers. Outreachr does not run unattended sequences.
+A second unsolicited initial to the same canonical person or email is blocked across rounds and providers. Bot Combinator does not run unattended sequences.
 
-The current send ledger is intentionally stricter than a sequencer: it permits at most one provider send to a canonical person or normalized address. Later replies and follow-ups can be reviewed and planned in Outreachr, but the app does not send a second message. This removes an entire accidental-spam path for the initial open-source release.
+The current send ledger is intentionally stricter than a sequencer: it permits at most one provider send to a canonical person or normalized address. Later replies and follow-ups can be reviewed and planned in Bot Combinator, but the app does not send a second message. This removes an entire accidental-spam path for the initial open-source release.
 
 Settings → Mail & calendar also provides database-enforced communication controls:
 
@@ -66,9 +66,9 @@ These controls are safety mechanisms, not legal certification. The founder must 
 
 Relationship sync is off by default and requires an additional read-only provider scope. Research and planning still work without it, but provider sending fails closed until the selected account has completed reconciliation. The first **Sync mail history** exhausts the account's available history with resumable page progress; it has no one-year or ten-page cutoff. Later reconciliations use an overlap cursor, while any contact-email identity change forces a new full scan. A provider error or pagination-token loop leaves the completion cursor unchanged and keeps sending blocked.
 
-Outreachr stores sender/recipient headers, subject, timestamps, provider/thread IDs, provider direction evidence, and classification; it never stores bodies or attachments. It discards unrelated inbound mail. It retains minimal unmatched outbound header observations so that adding a professional contact later can reconcile an older send. Gmail's `SENT` system label and Microsoft's sent-items folder are authoritative for outbound direction, including send-as aliases.
+Bot Combinator stores sender/recipient headers, subject, timestamps, provider/thread IDs, provider direction evidence, and classification; it never stores bodies or attachments. It discards unrelated inbound mail. It retains minimal unmatched outbound header observations so that adding a professional contact later can reconcile an older send. Gmail's `SENT` system label and Microsoft's sent-items folder are authoritative for outbound direction, including send-as aliases.
 
-Attributed outbound history blocks another initial even when the original message was sent outside Outreachr. It can also move an ambiguous Outreachr reservation to sent, but only from an authoritative provider sent-mail item with the exact operation key and matching send identity; forged inbound headers, partial matches, or manual guesses cannot do so, and no second provider request is made. Inbound replies enter **Up next** and **Outreach** for founder review. Hard bounces, complaints, and unsubscribe requests create a non-deactivatable suppression before any later send can be reserved. Sync is idempotent by provider message ID. Stock 0.1 sends initial outreach only; follow-ups and replies may be drafted and reviewed locally but cannot be dispatched.
+Attributed outbound history blocks another initial even when the original message was sent outside Bot Combinator. It can also move an ambiguous Bot Combinator reservation to sent, but only from an authoritative provider sent-mail item with the exact operation key and matching send identity; forged inbound headers, partial matches, or manual guesses cannot do so, and no second provider request is made. Inbound replies enter **Up next** and **Outreach** for founder review. Hard bounces, complaints, and unsubscribe requests create a non-deactivatable suppression before any later send can be reserved. Sync is idempotent by provider message ID. Stock 0.1 sends initial outreach only; follow-ups and replies may be drafted and reviewed locally but cannot be dispatched.
 
 ## Meetings and calendars
 
@@ -85,15 +85,28 @@ Knowledge items are company, round, narrative, metrics, disclosure, or other fac
 - meeting only;
 - diligence only.
 
-Documents are founder-controlled links or references to local files. Outreachr stores the reference and disclosure state; it does not silently copy, upload, or grant access to the underlying file. Encrypted SQLite backups do not include external files.
+Documents are founder-controlled links or references to local files. Bot Combinator stores the reference and disclosure state; it does not silently copy, upload, or grant access to the underlying file. Encrypted SQLite backups do not include external files.
 
 ## Local agents
 
-Outreachr runs bundled local Codex and Claude agent sidecars. Codex uses the official CLI's existing ChatGPT sign-in. Claude can use a founder-entered Anthropic API key stored as operating-system-encrypted ciphertext, or an existing official local Claude subscription session after the founder confirms Anthropic approved that deployment and explicitly enables it. Outreachr never receives or stores the subscription token, and the modes are mutually exclusive at runtime. A run receives only the checked data classes plus any explicit, revocable durable grants. Agents can research, summarize, and produce structured proposals, but they cannot directly send email, mutate arbitrary files, execute shell commands through Outreachr tools, or bypass founder approval.
+Bot Combinator runs bundled local Codex and Claude agent sidecars. Codex uses the official CLI's existing ChatGPT sign-in. Claude can use a founder-entered Anthropic API key stored as operating-system-encrypted ciphertext, or an existing official local Claude subscription session after the founder confirms Anthropic approved that deployment and explicitly enables it. Bot Combinator never receives or stores the subscription token, and the modes are mutually exclusive at runtime. A run receives only the checked data classes plus any explicit, revocable durable grants. Agents can research, summarize, and produce structured proposals, but they cannot directly send email, mutate arbitrary files, execute shell commands through Bot Combinator tools, or bypass founder approval.
+
+## Klineo and BOT Chain portal
+
+The hosted portal is a separate collaboration surface for program delivery:
+
+- Project teams maintain a product profile, immutable weekly updates, milestones, blockers, screenshots, working links, and review requests.
+- Klineo sees the cross-project portfolio, deadlines, readiness, reviews, blockers, and disclosure queue.
+- BOT Chain sees only progress and showcase records that a project lead requested and Klineo approved for `bot_chain` or `public` visibility.
+- Anonymous visitors see only approved `public` showcase items.
+
+New updates and showcase items default to **Project + Klineo**. A project lead must explicitly request BOT Chain or public sharing, and Klineo must separately approve it. Lowering an item's visibility revokes its shared state and is audited.
+
+To move desktop program data intentionally, open **Projects**, choose **Portal submission**, review the included fields and excluded private data classes, then export the JSON package. A portal import verifies the package digest before recording it. Investor records, fundraising amounts, credentials, email/calendar history, private notes, and agent transcripts are never part of the package.
 
 ## Backup, restore, import, and contribution
 
-- **Encrypted backup** produces an authenticated, password-protected vault using memory-hard key derivation. Outreachr cannot recover the password.
+- **Encrypted backup** produces an authenticated, password-protected vault using memory-hard key derivation. Bot Combinator cannot recover the password.
 - **Restore** decrypts into memory, migrates a replacement vault, and requires integrity and foreign-key checks before replacement.
 - **Seed import** validates the expected database shape and package digest before merging public research.
 - **Private CSV export** is for the founder’s own use.

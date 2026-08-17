@@ -97,7 +97,7 @@ function currentPackageItems(items: KnowledgeItem[]): Map<PackageKind, Knowledge
 
 function disclosureGuidance(kind: PackageKind, policy: KnowledgeItem['sharePolicy']): string {
   if (policy === 'internal') {
-    return 'Internal only; Outreachr will not treat it as shareable.';
+    return 'Internal only; Bot Combinator will not treat it as shareable.';
   }
   if (policy === 'diligence_only') {
     return 'Diligence only; share it only after an explicit request.';
@@ -157,7 +157,7 @@ export function DocumentsPage(): React.JSX.Element {
   const addFile = async (): Promise<void> => {
     setAddingFile(true);
     try {
-      const path = await window.outreachr.selectFile();
+      const path = await window.botCombinator.selectFile();
       if (!path) return;
       const filename = path.split(/[\\/]/u).at(-1) ?? 'Local document';
       await command('knowledge.save', {
@@ -177,9 +177,9 @@ export function DocumentsPage(): React.JSX.Element {
   };
 
   const openItem = async (item: KnowledgeItem): Promise<void> => {
-    if (isSecureExternalUrl(item.content)) await window.outreachr.openExternal(item.content);
+    if (isSecureExternalUrl(item.content)) await window.botCombinator.openExternal(item.content);
     else if (item.content.startsWith('file:'))
-      await window.outreachr.revealPath(item.content.slice(5));
+      await window.botCombinator.revealPath(item.content.slice(5));
     else if (/^https?:\/\//iu.test(item.content)) {
       notify({
         tone: 'error',
@@ -193,7 +193,7 @@ export function DocumentsPage(): React.JSX.Element {
     <div className="page">
       <PageHeader
         title="Documents & data room"
-        description="Track founder-controlled links and disclosure state. Outreachr does not silently upload local files."
+        description="Track founder-controlled links and disclosure state. Bot Combinator does not silently upload local files."
         actions={
           <>
             <Button icon={<Link2 aria-hidden="true" />} onClick={() => setLinkOpen(true)}>
@@ -215,7 +215,7 @@ export function DocumentsPage(): React.JSX.Element {
         <div>
           <strong>Access is never granted automatically.</strong>
           <p>
-            Outreachr can prepare a checklist or approved email, but the founder controls every
+            Bot Combinator can prepare a checklist or approved email, but the founder controls every
             data-room permission in the original provider.
           </p>
         </div>
@@ -306,7 +306,7 @@ export function DocumentsPage(): React.JSX.Element {
           </Button>
           <Button
             icon={<FolderOpen aria-hidden="true" />}
-            onClick={() => void window.outreachr.revealPath(data.vaultPath)}
+            onClick={() => void window.botCombinator.revealPath(data.vaultPath)}
           >
             Show local vault
           </Button>
@@ -318,7 +318,7 @@ export function DocumentsPage(): React.JSX.Element {
           if (!savingLink) setLinkOpen(false);
         }}
         title="Track a document link"
-        description="Outreachr stores the reference and disclosure policy, never the provider permission."
+        description="Bot Combinator stores the reference and disclosure policy, never the provider permission."
         footer={
           <>
             <Button tone="quiet" disabled={savingLink} onClick={() => setLinkOpen(false)}>

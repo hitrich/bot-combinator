@@ -7,15 +7,26 @@ The Electron main process is the only authority that opens the SQLite vault, sto
 ## Components
 
 - `apps/desktop`: Electron main process, CommonJS sandbox preload, React renderer, desktop integration tests, and packaging.
+- `apps/portal`: Vite/React collaboration client plus Supabase migrations and invitation Edge Function.
 - `packages/core`: SQL.js SQLite migrations, validated repositories, backups, seed import, contribution export, approvals, suppression, and send ledger.
 - `packages/connectors`: provider-neutral mail/calendar interfaces, OAuth PKCE, Gmail/Google Calendar, and Microsoft Graph.
 - `packages/agents`: Codex app-server and Claude Agent SDK adapters with a fail-closed proposal-only policy.
 - `packages/mcp`: local stdio MCP server with 19 typed read/proposal tools and record-level redaction.
 - `resources`: pinned investor seed and rights manifest.
 
+## Hosted collaboration boundary
+
+The optional portal is not a mirror of the desktop vault. It stores program-scoped projects, memberships, immutable progress versions, milestones, blockers, showcase metadata, comments, reviews, disclosure approvals, and audits in managed PostgreSQL. Every exposed table has row-level security. Browser writes use narrow security-definer RPCs; direct client insert/update/delete grants are revoked. Klineo, BOT Chain, project, and anonymous views are filtered again by stored visibility and role.
+
+Screenshots live in a private object-storage bucket. The browser validates the type and 10 MB limit, re-encodes to WebP to remove source metadata, requests a signed upload, and registers the resulting path through an authorized RPC. Downloads use short-lived signed URLs whose storage policy checks the associated showcase visibility.
+
+Invitation email is the only service-role operation and runs in a server-side Edge Function restricted to the configured portal origin and authenticated Klineo operators. The service-role credential never enters the browser or desktop app.
+
+Desktop-to-portal transfer is submission-only. The desktop creates a mode-`0600`, canonical JSON package with an SHA-256 digest and an explicit visibility choice. The package allowlist omits contacts, investors, fundraising records, credentials, provider data, private notes, and agent history. The portal recomputes the digest before recording an import; it does not continuously sync the local SQLite file.
+
 ## Storage
 
-The canonical file is `outreachr.sqlite` under Electron’s per-user application data directory. SQL.js loads it into memory and persistence exports to a mode-`0600` temporary file followed by an atomic rename. Foreign keys and migrations run on every open. File handles are stat-checked before bounded reads: local vaults and encrypted backups are capped at 512 MiB, while seed imports are capped at 256 MiB. Backup restore validates integrity before the current vault is replaced.
+The canonical file is `bot-combinator.sqlite` under Electron’s per-user application data directory. SQL.js loads it into memory and persistence exports to a mode-`0600` temporary file followed by an atomic rename. Foreign keys and migrations run on every open. File handles are stat-checked before bounded reads: local vaults and encrypted backups are capped at 512 MiB, while seed imports are capped at 256 MiB. Backup restore validates integrity before the current vault is replaced.
 
 All first-party private state is in SQLite. External documents remain where the founder placed them. OAuth ciphertext is also in SQLite, encrypted with an operating-system key that does not live in the database.
 
@@ -23,11 +34,11 @@ All first-party private state is in SQLite. External documents remain where the 
 
 `draft → approved → reserved → dispatching → sent | ambiguous`
 
-Approval is bound to a deterministic content hash. Before approval, SQLite requires the body to visibly contain the exact founder-configured postal address and opt-out wording; stock 0.1 initials must be unthreaded and attachment-free. Any communication-policy/footer change revokes active approvals. A transaction then inserts a unique send reservation for both normalized address and canonical person. SQLite independently rechecks the footer and structure, pause state, daily/hourly limits, recipient-domain daily/cooldown pacing, suppressions, and synced prior outreach. The connector claims the reservation by atomically moving it to dispatching before network I/O. Definitive provider identifiers and thread IDs mark success. Network or provider ambiguity after dispatch is terminal and blocks automatic retry. The only later transition from `dispatching` or `ambiguous` to `sent` validates an exact Outreachr operation key against an authoritative provider sent-mail observation, including provider, sole normalized recipient, subject, and a bounded provider timestamp; it never issues another send.
+Approval is bound to a deterministic content hash. Before approval, SQLite requires the body to visibly contain the exact founder-configured postal address and opt-out wording; stock 0.1 initials must be unthreaded and attachment-free. Any communication-policy/footer change revokes active approvals. A transaction then inserts a unique send reservation for both normalized address and canonical person. SQLite independently rechecks the footer and structure, pause state, daily/hourly limits, recipient-domain daily/cooldown pacing, suppressions, and synced prior outreach. The connector claims the reservation by atomically moving it to dispatching before network I/O. Definitive provider identifiers and thread IDs mark success. Network or provider ambiguity after dispatch is terminal and blocks automatic retry. The only later transition from `dispatching` or `ambiguous` to `sent` validates an exact Bot Combinator operation key against an authoritative provider sent-mail observation, including provider, sole normalized recipient, subject, and a bounded provider timestamp; it never issues another send.
 
 ## Mail relationship state
 
-Relationship sync is optional for research-only use and required for provider sending. The initial reconciliation exhausts all provider pages, persists resumable progress separately from the completion cursor, and fails closed on errors or token loops. Contact-identity changes force a full rescan; otherwise an overlap cursor drives incremental reconciliation. Messages are deduplicated by provider/message ID. Known-contact/thread headers and unmatched outbound headers enter `mail_events`; unrelated inbound mail does not. Gmail `SENT` labels and the Microsoft sent-items stream establish alias-safe outbound direction. Their exact operation-key observations may confirm a matching unconfirmed Outreachr send; inbound or non-authoritative observations cannot. Inbound replies become review work; hard-bounce, complaint, and unsubscribe triggers activate non-deactivatable person suppressions. Bodies and attachments never enter this flow.
+Relationship sync is optional for research-only use and required for provider sending. The initial reconciliation exhausts all provider pages, persists resumable progress separately from the completion cursor, and fails closed on errors or token loops. Contact-identity changes force a full rescan; otherwise an overlap cursor drives incremental reconciliation. Messages are deduplicated by provider/message ID. Known-contact/thread headers and unmatched outbound headers enter `mail_events`; unrelated inbound mail does not. Gmail `SENT` labels and the Microsoft sent-items stream establish alias-safe outbound direction. Their exact operation-key observations may confirm a matching unconfirmed Bot Combinator send; inbound or non-authoritative observations cannot. Inbound replies become review work; hard-bounce, complaint, and unsubscribe triggers activate non-deactivatable person suppressions. Bodies and attachments never enter this flow.
 
 ## Calendar state
 

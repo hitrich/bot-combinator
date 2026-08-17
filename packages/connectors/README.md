@@ -1,6 +1,6 @@
-# `@outreachr/connectors`
+# `@bot-combinator/connectors`
 
-Provider-neutral email, calendar, and OAuth primitives for Outreachr. The package supports Gmail, Google Calendar, Microsoft Graph mail, and Microsoft Graph calendar without depending on Electron, SQLite, or a secret-storage implementation.
+Provider-neutral email, calendar, and OAuth primitives for Bot Combinator. The package supports Gmail, Google Calendar, Microsoft Graph mail, and Microsoft Graph calendar without depending on Electron, SQLite, or a secret-storage implementation.
 
 ## Security and delivery contract
 
@@ -10,7 +10,7 @@ Provider-neutral email, calendar, and OAuth primitives for Outreachr. The packag
 - If a recipient was contacted before, the connector blocks the send. There is deliberately no bypass flag in this package.
 - Gmail's response includes a message id and produces a `sent` receipt. Microsoft Graph `202 Accepted` produces an `accepted` receipt: Graph accepted the request but did not confirm delivery. It is never automatically resent.
 - A network interruption or 5xx response during send becomes `ambiguous`. The operation key remains claimed and a replay returns the existing receipt instead of contacting the provider again.
-- Sent messages carry `X-Outreachr-Operation-Key`. Relationship-mail reads expose that value as `MailboxMessage.operationKey` when the provider preserves it, so the application can confirm an ambiguous operation from the provider-authoritative sent stream. The application must also match provider, recipient, subject, and a bounded send-time window; a header alone is never proof and reconciliation never triggers another provider send.
+- Sent messages carry `X-Bot-Combinator-Operation-Key`. Relationship-mail reads expose that value as `MailboxMessage.operationKey` when the provider preserves it, so the application can confirm an ambiguous operation from the provider-authoritative sent stream. The application must also match provider, recipient, subject, and a bounded send-time window; a header alone is never proof and reconciliation never triggers another provider send.
 - Explicit `408` and `429` responses can be retried inside the same guarded call. Reads also retry transient network/5xx failures. Non-idempotent draft and event creation do not retry network/5xx failures.
 - Tokens and client configuration are not persisted here. Store refresh/access tokens in the operating-system credential vault, not SQLite or logs.
 
@@ -27,7 +27,11 @@ The Node tests use [MSW](https://mswjs.io/) to intercept the injected `fetch` im
 ## Minimal integration
 
 ```ts
-import { GoogleConnector, fingerprintEmail, type SendAttemptLedger } from '@outreachr/connectors';
+import {
+  GoogleConnector,
+  fingerprintEmail,
+  type SendAttemptLedger,
+} from '@bot-combinator/connectors';
 
 const connector = new GoogleConnector({
   fetch,
@@ -76,8 +80,8 @@ Each founder supplies their own Google Desktop OAuth client:
 2. In the [API Library](https://console.cloud.google.com/apis/library), enable **Gmail API** and **Google Calendar API**.
 3. Configure the [OAuth consent screen](https://console.cloud.google.com/auth/overview). For a personal/testing client, add the founder's Google account as a test user. Google documents the process in [Configure OAuth consent](https://developers.google.com/workspace/guides/configure-oauth-consent).
 4. In [Google Auth Platform clients](https://console.cloud.google.com/auth/clients), create an OAuth client of type **Desktop app**. Google has a matching [desktop credential guide](https://developers.google.com/workspace/guides/create-credentials#desktop-app).
-5. Copy only the public desktop **Client ID** into Outreachr. Do not paste or import a client secret; this package never sends `client_secret`.
-6. Outreachr opens the system browser, binds a temporary `127.0.0.1` port, and supplies the same loopback callback to `prepareDesktopAuthorization` and `exchangeAuthorizationCode`. See Google's [OAuth for installed apps](https://developers.google.com/identity/protocols/oauth2/native-app).
+5. Copy only the public desktop **Client ID** into Bot Combinator. Do not paste or import a client secret; this package never sends `client_secret`.
+6. Bot Combinator opens the system browser, binds a temporary `127.0.0.1` port, and supplies the same loopback callback to `prepareDesktopAuthorization` and `exchangeAuthorizationCode`. See Google's [OAuth for installed apps](https://developers.google.com/identity/protocols/oauth2/native-app).
 
 The `minimum` Google scope profile contains:
 
@@ -94,7 +98,7 @@ Each founder supplies their own Microsoft Entra public-client registration:
 
 1. Open [Microsoft Entra app registrations](https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade) and select **New registration**. The [registration quickstart](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app) explains account-type choices.
 2. Copy the **Application (client) ID** and **Directory (tenant) ID**. `common`, `organizations`, `consumers`, or a tenant id can be supplied to the OAuth helpers, depending on the registration.
-3. Under **Authentication → Add a platform**, choose **Mobile and desktop applications**, add the exact loopback redirect `http://localhost/oauth/callback`, and enable public-client flows where required. Outreachr advertises `http://localhost:<dynamic-port>/oauth/callback` to Microsoft because Entra ignores a loopback port only for `localhost`; the listener itself remains bound to `127.0.0.1` and validates the exact Host. See [desktop app configuration](https://learn.microsoft.com/en-us/entra/identity-platform/scenario-desktop-app-configuration) and the [Node desktop tutorial](https://learn.microsoft.com/en-us/entra/identity-platform/tutorial-v2-nodejs-desktop).
+3. Under **Authentication → Add a platform**, choose **Mobile and desktop applications**, add the exact loopback redirect `http://localhost/oauth/callback`, and enable public-client flows where required. Bot Combinator advertises `http://localhost:<dynamic-port>/oauth/callback` to Microsoft because Entra ignores a loopback port only for `localhost`; the listener itself remains bound to `127.0.0.1` and validates the exact Host. See [desktop app configuration](https://learn.microsoft.com/en-us/entra/identity-platform/scenario-desktop-app-configuration) and the [Node desktop tutorial](https://learn.microsoft.com/en-us/entra/identity-platform/tutorial-v2-nodejs-desktop).
 4. Do **not** create or import a client secret. This is a public desktop client and the token exchange uses PKCE.
 5. Under **API permissions**, add delegated Microsoft Graph permissions. The founder consents in the system browser. Organizational policies may require administrator consent; see [permissions and consent](https://learn.microsoft.com/en-us/entra/identity-platform/permissions-consent-overview).
 
@@ -108,7 +112,7 @@ import {
   prepareDesktopAuthorization,
   validateOAuthCallback,
   exchangeAuthorizationCode,
-} from '@outreachr/connectors';
+} from '@bot-combinator/connectors';
 
 const redirectUri = createLoopbackRedirectUri(boundLoopbackPort);
 const authorization = await prepareDesktopAuthorization({
@@ -143,7 +147,7 @@ Both providers implement:
 
 Provider responses are treated as untrusted data. Mailbox records without a usable provider id,
 sender, or timestamp and calendar records without a usable id, start, or end are skipped without
-discarding the provider's next-page token. Malformed attendee identities are omitted. Outreachr
+discarding the provider's next-page token. Malformed attendee identities are omitted. Bot Combinator
 never substitutes placeholder email addresses or epoch timestamps. A successful create response
 that cannot identify the object it may have created fails with `AMBIGUOUS_CREATE`,
 `mayHaveSucceeded: true`, and `retryable: false`. The same fail-closed result applies when a

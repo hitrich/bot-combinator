@@ -3,11 +3,11 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  OUTREACHR_MCP_TOOL_NAMES,
-  createOutreachrMcpServer,
+  BOT_COMBINATOR_MCP_TOOL_NAMES,
+  createBotCombinatorMcpServer,
   type AccessRequest,
   type AuditEvent,
-  type OutreachrMcpService,
+  type BotCombinatorMcpService,
   type ServiceInvocationContext,
 } from '../src/index.js';
 
@@ -84,13 +84,13 @@ const proposal = {
   createdAt: NOW,
 };
 
-function createService(): OutreachrMcpService & {
+function createService(): BotCombinatorMcpService & {
   audits: AuditEvent[];
-  authorizeAccess: ReturnType<typeof vi.fn<OutreachrMcpService['authorizeAccess']>>;
-  getInvestor: ReturnType<typeof vi.fn<OutreachrMcpService['getInvestor']>>;
-  getPerson: ReturnType<typeof vi.fn<OutreachrMcpService['getPerson']>>;
-  listTasks: ReturnType<typeof vi.fn<OutreachrMcpService['listTasks']>>;
-  proposeStage: ReturnType<typeof vi.fn<OutreachrMcpService['proposeStage']>>;
+  authorizeAccess: ReturnType<typeof vi.fn<BotCombinatorMcpService['authorizeAccess']>>;
+  getInvestor: ReturnType<typeof vi.fn<BotCombinatorMcpService['getInvestor']>>;
+  getPerson: ReturnType<typeof vi.fn<BotCombinatorMcpService['getPerson']>>;
+  listTasks: ReturnType<typeof vi.fn<BotCombinatorMcpService['listTasks']>>;
+  proposeStage: ReturnType<typeof vi.fn<BotCombinatorMcpService['proposeStage']>>;
 } {
   const audits: AuditEvent[] = [];
   return {
@@ -203,17 +203,17 @@ function createService(): OutreachrMcpService & {
 
 interface Harness {
   client: Client;
-  server: ReturnType<typeof createOutreachrMcpServer>;
+  server: ReturnType<typeof createBotCombinatorMcpServer>;
   close: () => Promise<void>;
 }
 
 const openHarnesses: Harness[] = [];
 
 async function connect(
-  service: OutreachrMcpService,
+  service: BotCombinatorMcpService,
   enabledTools?: readonly string[],
 ): Promise<Harness> {
-  const server = createOutreachrMcpServer(service, {
+  const server = createBotCombinatorMcpServer(service, {
     now: () => new Date(NOW),
     createInvocationId: () => '11111111-1111-4111-8111-111111111111',
     ...(enabledTools ? { enabledTools } : {}),
@@ -266,7 +266,7 @@ function structured(result: Awaited<ReturnType<Client['callTool']>>) {
 
 describe('tool discovery and hard capability boundary', () => {
   it('refuses to start with an incomplete injected adapter', () => {
-    expect(() => createOutreachrMcpServer({} as OutreachrMcpService)).toThrow(
+    expect(() => createBotCombinatorMcpServer({} as BotCombinatorMcpService)).toThrow(
       'complete, injected service adapter',
     );
   });
@@ -276,32 +276,32 @@ describe('tool discovery and hard capability boundary', () => {
     const listed = await client.listTools();
 
     expect(listed.tools.map((tool) => tool.name).sort()).toEqual(
-      [...OUTREACHR_MCP_TOOL_NAMES].sort(),
+      [...BOT_COMBINATOR_MCP_TOOL_NAMES].sort(),
     );
     expect(listed.tools).toHaveLength(19);
     for (const tool of listed.tools) {
       const meta = tool._meta as Record<string, unknown>;
-      expect(meta['outreachr/riskLevel']).toMatch(/^(read|proposal)$/u);
-      expect(meta['outreachr/privateDataDefault']).toBe('redacted');
-      expect(meta['outreachr/auditContextRequired']).toBe(true);
-      expect(meta['outreachr/forbiddenCapabilities']).toContain('message_send');
-      expect(meta['outreachr/forbiddenCapabilities']).toContain('raw_sql');
+      expect(meta['bot-combinator/riskLevel']).toMatch(/^(read|proposal)$/u);
+      expect(meta['bot-combinator/privateDataDefault']).toBe('redacted');
+      expect(meta['bot-combinator/auditContextRequired']).toBe(true);
+      expect(meta['bot-combinator/forbiddenCapabilities']).toContain('message_send');
+      expect(meta['bot-combinator/forbiddenCapabilities']).toContain('raw_sql');
       expect(tool.annotations?.destructiveHint).toBe(false);
       expect(tool.annotations?.openWorldHint).toBe(false);
     }
   });
 
   it('can expose a strict host-selected subset and disables every unlisted tool', async () => {
-    const enabled = ['outreachr_search_investors', 'outreachr_propose_task'] as const;
+    const enabled = ['bot_combinator_search_investors', 'bot_combinator_propose_task'] as const;
     const { client } = await connect(createService(), enabled);
     await expect(client.listTools()).resolves.toMatchObject({
       tools: [
-        expect.objectContaining({ name: 'outreachr_search_investors' }),
-        expect.objectContaining({ name: 'outreachr_propose_task' }),
+        expect.objectContaining({ name: 'bot_combinator_search_investors' }),
+        expect.objectContaining({ name: 'bot_combinator_propose_task' }),
       ],
     });
     const disabled = await client.callTool({
-      name: 'outreachr_propose_target',
+      name: 'bot_combinator_propose_target',
       arguments: publicArguments({
         investorId: investor.id,
         target: true,
@@ -311,17 +311,19 @@ describe('tool discovery and hard capability boundary', () => {
     expect(disabled.isError).toBe(true);
     expect(JSON.stringify(disabled.content)).toContain('disabled');
     expect(() =>
-      createOutreachrMcpServer(createService(), { enabledTools: ['outreachr_send_message'] }),
+      createBotCombinatorMcpServer(createService(), {
+        enabledTools: ['bot_combinator_send_message'],
+      }),
     ).toThrow('unknown tool');
   });
 
   it.each([
-    'outreachr_send_message',
-    'outreachr_approve_and_send',
-    'outreachr_raw_sql',
-    'outreachr_read_file',
-    'outreachr_shell',
-    'outreachr_get_oauth_token',
+    'bot_combinator_send_message',
+    'bot_combinator_approve_and_send',
+    'bot_combinator_raw_sql',
+    'bot_combinator_read_file',
+    'bot_combinator_shell',
+    'bot_combinator_get_oauth_token',
   ])('rejects absent forbidden tool %s at the MCP protocol boundary', async (name) => {
     const { client } = await connect(createService());
     const result = await client.callTool({ name, arguments: publicArguments() });
@@ -333,17 +335,17 @@ describe('tool discovery and hard capability boundary', () => {
 describe('validation, authorization, redaction, and audit', () => {
   it.each([
     {
-      name: 'outreachr_search_investors',
+      name: 'bot_combinator_search_investors',
       arguments: publicArguments({ query: 'AI', limit: 10, filters: {} }),
       expectedId: investor.id,
     },
     {
-      name: 'outreachr_list_investors',
+      name: 'bot_combinator_list_investors',
       arguments: publicArguments({ limit: 10, filters: {} }),
       expectedId: investor.id,
     },
     {
-      name: 'outreachr_list_people',
+      name: 'bot_combinator_list_people',
       arguments: publicArguments({ limit: 10, filters: {} }),
       expectedId: person.id,
     },
@@ -356,7 +358,7 @@ describe('validation, authorization, redaction, and audit', () => {
 
   it.each([
     {
-      name: 'outreachr_get_pipeline',
+      name: 'bot_combinator_get_pipeline',
       ids: ['pipeline:1'],
       fields: ['notes'],
       arguments: { limit: 20, stages: [] },
@@ -364,7 +366,7 @@ describe('validation, authorization, redaction, and audit', () => {
       privateKey: 'privateNotes',
     },
     {
-      name: 'outreachr_list_meetings',
+      name: 'bot_combinator_list_meetings',
       ids: ['meeting:1'],
       fields: ['meeting_attendees', 'notes'],
       arguments: { limit: 20, status: [] },
@@ -372,7 +374,7 @@ describe('validation, authorization, redaction, and audit', () => {
       privateKey: 'agenda',
     },
     {
-      name: 'outreachr_list_knowledge',
+      name: 'bot_combinator_list_knowledge',
       ids: ['knowledge:1'],
       fields: ['knowledge_content'],
       arguments: { limit: 20, categories: [] },
@@ -380,7 +382,7 @@ describe('validation, authorization, redaction, and audit', () => {
       privateKey: 'content',
     },
     {
-      name: 'outreachr_list_activity',
+      name: 'bot_combinator_list_activity',
       ids: ['activity:1'],
       fields: ['activity_detail'],
       arguments: { limit: 20, kinds: [] },
@@ -407,7 +409,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const { client } = await connect(createService());
     const output = structured(
       await client.callTool({
-        name: 'outreachr_get_round',
+        name: 'bot_combinator_get_round',
         arguments: disclosedArguments(['round:1'], ['round_financials'], { roundId: 'round:1' }),
       }),
     );
@@ -420,7 +422,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
     const output = structured(result);
@@ -440,7 +442,7 @@ describe('validation, authorization, redaction, and audit', () => {
   it('redacts work email and private relationship state from person search by default', async () => {
     const { client } = await connect(createService());
     const result = await client.callTool({
-      name: 'outreachr_search_people',
+      name: 'bot_combinator_search_people',
       arguments: publicArguments({ query: 'Alex', limit: 10, filters: {} }),
     });
     const output = structured(result);
@@ -457,7 +459,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_person',
+      name: 'bot_combinator_get_person',
       arguments: disclosedArguments([person.id], ['contact', 'workflow'], { personId: person.id }),
     });
     const output = structured(result);
@@ -478,7 +480,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const { client } = await connect(service);
     const defaultResult = structured(
       await client.callTool({
-        name: 'outreachr_list_tasks',
+        name: 'bot_combinator_list_tasks',
         arguments: publicArguments({ limit: 20, status: [] }),
       }),
     );
@@ -487,7 +489,7 @@ describe('validation, authorization, redaction, and audit', () => {
 
     const scopedResult = structured(
       await client.callTool({
-        name: 'outreachr_list_tasks',
+        name: 'bot_combinator_list_tasks',
         arguments: disclosedArguments([task.id], [], { limit: 20, status: [] }),
       }),
     );
@@ -501,7 +503,7 @@ describe('validation, authorization, redaction, and audit', () => {
     service.authorizeAccess.mockResolvedValue({ recordIds: [person.id], fields: ['contact'] });
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -516,7 +518,7 @@ describe('validation, authorization, redaction, and audit', () => {
     service.authorizeAccess.mockRejectedValue(new Error('authorization backend unavailable'));
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -530,7 +532,7 @@ describe('validation, authorization, redaction, and audit', () => {
     service.getInvestor.mockRejectedValue(new Error('secret internal database detail'));
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -540,9 +542,9 @@ describe('validation, authorization, redaction, and audit', () => {
   });
 
   it.each([
-    ['outreachr_list_meetings', { limit: 20, status: [] }],
-    ['outreachr_list_knowledge', { limit: 20, categories: [] }],
-    ['outreachr_list_activity', { limit: 20, kinds: [] }],
+    ['bot_combinator_list_meetings', { limit: 20, status: [] }],
+    ['bot_combinator_list_knowledge', { limit: 20, categories: [] }],
+    ['bot_combinator_list_activity', { limit: 20, kinds: [] }],
   ])('omits undisclosed private records from %s', async (name, args) => {
     const { client } = await connect(createService());
     const output = structured(
@@ -560,7 +562,7 @@ describe('validation, authorization, redaction, and audit', () => {
     } as never);
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -574,7 +576,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_list_investors',
+      name: 'bot_combinator_list_investors',
       arguments: publicArguments({ limit: 51, filters: {} }),
     });
 
@@ -586,7 +588,7 @@ describe('validation, authorization, redaction, and audit', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({
         investorId: investor.id,
         rawSql: 'SELECT * FROM connector_configs',
@@ -602,7 +604,7 @@ describe('validation, authorization, redaction, and audit', () => {
     vi.mocked(service.recordAuditEvent).mockRejectedValue(new Error('audit unavailable'));
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -619,7 +621,7 @@ describe('validation, authorization, redaction, and audit', () => {
       .mockRejectedValueOnce(new Error('audit unavailable'));
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_get_investor',
+      name: 'bot_combinator_get_investor',
       arguments: publicArguments({ investorId: investor.id }),
     });
 
@@ -632,7 +634,7 @@ describe('validation, authorization, redaction, and audit', () => {
 describe('proposal-only mutations', () => {
   it.each([
     {
-      name: 'outreachr_propose_target',
+      name: 'bot_combinator_propose_target',
       ids: [investor.id],
       arguments: {
         investorId: investor.id,
@@ -641,7 +643,7 @@ describe('proposal-only mutations', () => {
       },
     },
     {
-      name: 'outreachr_propose_task',
+      name: 'bot_combinator_propose_task',
       ids: [investor.id, person.id],
       arguments: {
         title: 'Prepare meeting brief',
@@ -653,7 +655,7 @@ describe('proposal-only mutations', () => {
       },
     },
     {
-      name: 'outreachr_propose_meeting',
+      name: 'bot_combinator_propose_meeting',
       ids: [investor.id, person.id],
       arguments: {
         title: 'Partner meeting',
@@ -666,7 +668,7 @@ describe('proposal-only mutations', () => {
       },
     },
     {
-      name: 'outreachr_propose_knowledge',
+      name: 'bot_combinator_propose_knowledge',
       ids: [],
       arguments: {
         title: 'Approved company summary',
@@ -677,7 +679,7 @@ describe('proposal-only mutations', () => {
       },
     },
     {
-      name: 'outreachr_propose_draft',
+      name: 'bot_combinator_propose_draft',
       ids: [person.id],
       arguments: {
         personId: person.id,
@@ -689,7 +691,7 @@ describe('proposal-only mutations', () => {
       },
     },
     {
-      name: 'outreachr_propose_source_review',
+      name: 'bot_combinator_propose_source_review',
       ids: ['review:1'],
       arguments: {
         reviewId: 'review:1',
@@ -714,7 +716,7 @@ describe('proposal-only mutations', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_propose_stage',
+      name: 'bot_combinator_propose_stage',
       arguments: disclosedArguments([investor.id], [], {
         investorId: investor.id,
         stage: 'meeting',
@@ -736,7 +738,7 @@ describe('proposal-only mutations', () => {
     service.authorizeAccess.mockResolvedValue({ recordIds: [], fields: [] });
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_propose_stage',
+      name: 'bot_combinator_propose_stage',
       arguments: disclosedArguments([investor.id], [], {
         investorId: investor.id,
         stage: 'meeting',
@@ -753,7 +755,7 @@ describe('proposal-only mutations', () => {
     service.proposeStage.mockResolvedValue({ ...proposal, status: 'applied' } as never);
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_propose_stage',
+      name: 'bot_combinator_propose_stage',
       arguments: disclosedArguments([investor.id], [], {
         investorId: investor.id,
         stage: 'meeting',
@@ -769,7 +771,7 @@ describe('proposal-only mutations', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_propose_meeting',
+      name: 'bot_combinator_propose_meeting',
       arguments: disclosedArguments([investor.id], [], {
         title: 'Partner meeting',
         startsAt: NOW,
@@ -788,7 +790,7 @@ describe('proposal-only mutations', () => {
     const service = createService();
     const { client } = await connect(service);
     const result = await client.callTool({
-      name: 'outreachr_propose_draft',
+      name: 'bot_combinator_propose_draft',
       arguments: disclosedArguments([person.id], [], {
         personId: person.id,
         provider: 'google',

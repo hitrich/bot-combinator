@@ -6,15 +6,15 @@ product
 
 ## Users
 
-Outreachr is for a solo founder or CEO running a US-focused pre-seed, seed, or Series A raise. They work under time pressure, move between research, introductions, direct outreach, meetings, diligence, and allocation, and need one trustworthy local system instead of a spreadsheet-and-inbox patchwork. The primary task on any screen is to decide and complete the safest, highest-leverage next action for the round.
+Bot Combinator is for a solo founder or CEO running a US-focused pre-seed, seed, or Series A raise. They work under time pressure, move between research, introductions, direct outreach, meetings, diligence, and allocation, and need one trustworthy local system instead of a spreadsheet-and-inbox patchwork. The primary task on any screen is to decide and complete the safest, highest-leverage next action for the round.
 
 ## Product Purpose
 
-Outreachr is a free, Apache-2.0, local-first Electron fundraising operating system. It joins an evidence-backed investor graph to a founder-controlled CRM, explains investor fit, preserves source history, coordinates warm paths and approved direct outreach, and keeps all private activity in a single local SQLite vault. Success means a founder can move from round definition to a prioritized, cited target list and a disciplined live process without a hosted account, mandatory paid service, or accidental spam.
+Bot Combinator is a free, Apache-2.0, local-first Electron fundraising operating system. It joins an evidence-backed investor graph to a founder-controlled CRM, explains investor fit, preserves source history, coordinates warm paths and approved direct outreach, and keeps all private activity in a single local SQLite vault. Success means a founder can move from round definition to a prioritized, cited target list and a disciplined live process without a hosted account, mandatory paid service, or accidental spam.
 
 ## Brand Personality
 
-Exact, calm, resourceful. Outreachr speaks like a prepared chief of staff: candid about uncertainty, terse when action is obvious, and rigorous when evidence or external communication is involved. It should create confidence and momentum without manufacturing urgency.
+Exact, calm, resourceful. Bot Combinator speaks like a prepared chief of staff: candid about uncertainty, terse when action is obvious, and rigorous when evidence or external communication is involved. It should create confidence and momentum without manufacturing urgency.
 
 ## Anti-references
 

@@ -135,7 +135,7 @@ export function TasksPage(): React.JSX.Element {
       ) : (
         <EmptyState
           title={showDone ? 'No tasks yet' : 'No open tasks'}
-          detail="The queue is clear. Outreachr will create reviewable tasks from round activity when needed."
+          detail="The queue is clear. Bot Combinator will create reviewable tasks from round activity when needed."
           action={<Button onClick={() => setCreateOpen(true)}>Add a task</Button>}
         />
       )}

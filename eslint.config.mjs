@@ -14,6 +14,12 @@ export default tseslint.config(
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      '**/.tmp/**',
+      '**/.vercel/**',
+      '**/supabase/.temp/**',
+      // Supabase Edge Functions run in Deno and are checked by the Supabase CLI,
+      // not by this Node/DOM TypeScript project service.
+      'apps/portal/supabase/functions/**/*.ts',
     ],
   },
   js.configs.recommended,

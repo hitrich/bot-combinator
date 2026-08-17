@@ -23,5 +23,5 @@ test-results/
 *.key
 *.crt
 *.mobileprovision
-*.outreachr-backup
+*.bot-combinator-backup
 apps/desktop/resources/generated/

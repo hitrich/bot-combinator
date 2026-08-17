@@ -33,7 +33,9 @@ import { assessReleaseSecrets } from './validate-release-secrets.mjs';
 import { verifyFuseBinary } from './verify-electron-fuses.mjs';
 import { signingStatus } from './write-signing-status.mjs';
 
-const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'outreachr-release-script-test-'));
+const temporaryRoot = await fs.mkdtemp(
+  path.join(os.tmpdir(), 'bot-combinator-release-script-test-'),
+);
 try {
   const virtualStore = path.join(temporaryRoot, 'node_modules', '.pnpm');
   const activePackage = path.join(virtualStore, 'active@1.0.0', 'node_modules', 'active');
@@ -95,9 +97,9 @@ try {
       error.cause === cleanupFailure &&
       error.errors[1] === secondCleanupFailure,
   );
-  assert.deepEqual(nsisUninstallArgs('C:\\Temp\\Outreachr install'), [
+  assert.deepEqual(nsisUninstallArgs('C:\\Temp\\Bot Combinator install'), [
     '/S',
-    '_?=C:\\Temp\\Outreachr install',
+    '_?=C:\\Temp\\Bot Combinator install',
   ]);
   const payload = path.join(temporaryRoot, 'payload');
   await fs.mkdir(path.join(payload, 'nested'), { recursive: true });
@@ -116,15 +118,16 @@ try {
   assert.equal(targetId('win32', 'arm64'), 'windows-arm64');
   assert.equal(targetId('linux', 'arm64'), 'linux-arm64');
   const localSigningInput = {
-    OUTREACHR_MAC_KEYCHAIN_IDENTITY: 'Developer ID Application: Example Maintainer (ABCDE12345)',
-    OUTREACHR_MAC_EXPECTED_TEAM_ID: 'ABCDE12345',
-    OUTREACHR_APPLE_KEYCHAIN_PROFILE: 'outreachr-notary',
+    BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY:
+      'Developer ID Application: Example Maintainer (ABCDE12345)',
+    BOT_COMBINATOR_MAC_EXPECTED_TEAM_ID: 'ABCDE12345',
+    BOT_COMBINATOR_APPLE_KEYCHAIN_PROFILE: 'bot-combinator-notary',
   };
   assert.deepEqual(localKeychainSigningConfiguration(localSigningInput), {
     environment: {
       CSC_NAME: 'Example Maintainer (ABCDE12345)',
       CSC_IDENTITY_AUTO_DISCOVERY: 'false',
-      APPLE_KEYCHAIN_PROFILE: 'outreachr-notary',
+      APPLE_KEYCHAIN_PROFILE: 'bot-combinator-notary',
     },
     identity: 'Developer ID Application: Example Maintainer (ABCDE12345)',
     expectedTeamId: 'ABCDE12345',
@@ -133,14 +136,14 @@ try {
   assert.equal(
     localKeychainSigningConfiguration({
       ...localSigningInput,
-      OUTREACHR_MAC_KEYCHAIN_IDENTITY: '0123456789abcdef0123456789abcdef01234567',
+      BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY: '0123456789abcdef0123456789abcdef01234567',
     }).environment.CSC_NAME,
     '0123456789ABCDEF0123456789ABCDEF01234567',
   );
   const customKeychain = path.join(temporaryRoot, 'release-signing.keychain-db');
   const localSigningWithKeychain = localKeychainSigningConfiguration({
     ...localSigningInput,
-    OUTREACHR_APPLE_KEYCHAIN: customKeychain,
+    BOT_COMBINATOR_APPLE_KEYCHAIN: customKeychain,
   });
   assert.equal(localSigningWithKeychain.environment.CSC_KEYCHAIN, customKeychain);
   assert.equal(localSigningWithKeychain.environment.APPLE_KEYCHAIN, customKeychain);
@@ -148,7 +151,7 @@ try {
     () =>
       localKeychainSigningConfiguration({
         ...localSigningInput,
-        OUTREACHR_APPLE_KEYCHAIN: 'relative.keychain-db',
+        BOT_COMBINATOR_APPLE_KEYCHAIN: 'relative.keychain-db',
       }),
     /absolute Keychain path/,
   );
@@ -156,16 +159,16 @@ try {
     () =>
       localKeychainSigningConfiguration({
         ...localSigningInput,
-        OUTREACHR_MAC_CERTIFICATE_BASE64: 'portable-certificate',
+        BOT_COMBINATOR_MAC_CERTIFICATE_BASE64: 'portable-certificate',
       }),
-    /mutually exclusive.*OUTREACHR_MAC_CERTIFICATE_BASE64/,
+    /mutually exclusive.*BOT_COMBINATOR_MAC_CERTIFICATE_BASE64/,
   );
   assert.throws(
     () =>
       assertMacSigningSourceIsExclusive('portable', {
-        OUTREACHR_APPLE_KEYCHAIN_PROFILE: 'local-profile',
+        BOT_COMBINATOR_APPLE_KEYCHAIN_PROFILE: 'local-profile',
       }),
-    /mutually exclusive.*OUTREACHR_APPLE_KEYCHAIN_PROFILE/,
+    /mutually exclusive.*BOT_COMBINATOR_APPLE_KEYCHAIN_PROFILE/,
   );
   const developerIdOutput =
     '  1) 0123456789ABCDEF0123456789ABCDEF01234567 "Developer ID Application: Example Maintainer (ABCDE12345)"\n' +
@@ -225,16 +228,16 @@ try {
     command: 'security',
     commandArgs: ['find-identity', '-v', '-p', 'codesigning', customKeychain],
   });
-  assert.deepEqual(notarytoolCredentialArgs({ APPLE_KEYCHAIN_PROFILE: 'outreachr-notary' }), [
+  assert.deepEqual(notarytoolCredentialArgs({ APPLE_KEYCHAIN_PROFILE: 'bot-combinator-notary' }), [
     '--keychain-profile',
-    'outreachr-notary',
+    'bot-combinator-notary',
   ]);
   assert.deepEqual(
     notarytoolCredentialArgs({
       APPLE_KEYCHAIN: customKeychain,
-      APPLE_KEYCHAIN_PROFILE: 'outreachr-notary',
+      APPLE_KEYCHAIN_PROFILE: 'bot-combinator-notary',
     }),
-    ['--keychain', customKeychain, '--keychain-profile', 'outreachr-notary'],
+    ['--keychain', customKeychain, '--keychain-profile', 'bot-combinator-notary'],
   );
   assert.deepEqual(
     notarytoolCredentialArgs({
@@ -255,7 +258,7 @@ try {
   assert.throws(
     () =>
       notarytoolCredentialArgs({
-        APPLE_KEYCHAIN_PROFILE: 'outreachr-notary',
+        APPLE_KEYCHAIN_PROFILE: 'bot-combinator-notary',
         APPLE_ID: 'maintainer@example.com',
         APPLE_APP_SPECIFIC_PASSWORD: 'secret',
         APPLE_TEAM_ID: 'ABCDE12345',
@@ -282,19 +285,19 @@ try {
     overall: 'mixed-or-unsigned',
   });
   assert.throws(
-    () => assessReleaseSecrets({ OUTREACHR_MAC_CERTIFICATE_BASE64: 'partial' }, 'optional'),
+    () => assessReleaseSecrets({ BOT_COMBINATOR_MAC_CERTIFICATE_BASE64: 'partial' }, 'optional'),
     /partially configured|partial/,
   );
   const completeReleaseSecrets = {
-    OUTREACHR_MAC_CERTIFICATE_BASE64: 'certificate',
-    OUTREACHR_MAC_CERTIFICATE_PASSWORD: 'password',
-    OUTREACHR_MAC_EXPECTED_TEAM_ID: 'TEAM',
-    OUTREACHR_APPLE_API_KEY_BASE64: 'key',
-    OUTREACHR_APPLE_API_KEY_ID: 'key-id',
-    OUTREACHR_APPLE_API_ISSUER: 'issuer',
-    OUTREACHR_WINDOWS_CERTIFICATE_BASE64: 'certificate',
-    OUTREACHR_WINDOWS_CERTIFICATE_PASSWORD: 'password',
-    OUTREACHR_WINDOWS_EXPECTED_PUBLISHER: 'publisher',
+    BOT_COMBINATOR_MAC_CERTIFICATE_BASE64: 'certificate',
+    BOT_COMBINATOR_MAC_CERTIFICATE_PASSWORD: 'password',
+    BOT_COMBINATOR_MAC_EXPECTED_TEAM_ID: 'TEAM',
+    BOT_COMBINATOR_APPLE_API_KEY_BASE64: 'key',
+    BOT_COMBINATOR_APPLE_API_KEY_ID: 'key-id',
+    BOT_COMBINATOR_APPLE_API_ISSUER: 'issuer',
+    BOT_COMBINATOR_WINDOWS_CERTIFICATE_BASE64: 'certificate',
+    BOT_COMBINATOR_WINDOWS_CERTIFICATE_PASSWORD: 'password',
+    BOT_COMBINATOR_WINDOWS_EXPECTED_PUBLISHER: 'publisher',
   };
   assert.deepEqual(assessReleaseSecrets(completeReleaseSecrets, 'optional'), {
     policy: 'optional',
@@ -310,13 +313,13 @@ try {
     }).platformTrust.notarization,
     'none',
   );
-  assert.deepEqual(pnpmInvocation(['--filter', '@outreachr/desktop', 'build'], 'linux'), {
+  assert.deepEqual(pnpmInvocation(['--filter', '@bot-combinator/desktop', 'build'], 'linux'), {
     command: 'pnpm',
-    args: ['--filter', '@outreachr/desktop', 'build'],
+    args: ['--filter', '@bot-combinator/desktop', 'build'],
   });
   assert.deepEqual(
     pnpmInvocation(
-      ['--filter', '@outreachr/desktop', 'build & echo remains one argument'],
+      ['--filter', '@bot-combinator/desktop', 'build & echo remains one argument'],
       'win32',
       'C:\\node\\node.exe',
     ),
@@ -325,7 +328,7 @@ try {
       args: [
         'C:\\node\\node_modules\\corepack\\dist\\pnpm.js',
         '--filter',
-        '@outreachr/desktop',
+        '@bot-combinator/desktop',
         'build & echo remains one argument',
       ],
     },
@@ -388,7 +391,7 @@ try {
   );
   assert.equal(
     desktopManifest.desktopName,
-    'outreachr.desktop',
+    'bot-combinator.desktop',
     'Linux packages must declare the installed desktop-entry filename',
   );
   const electronBuilderVersion = String(desktopManifest.devDependencies?.['electron-builder']);
@@ -409,8 +412,8 @@ try {
   );
   assert.match(
     electronBuilderConfig,
-    /^linux:\r?\n\s+executableName: outreachr\r?\n\s+syncDesktopName: true$/m,
-    'Linux packages must use the stable outreachr executable and matching desktop identity',
+    /^linux:\r?\n\s+executableName: bot-combinator\r?\n\s+syncDesktopName: true$/m,
+    'Linux packages must use the stable bot-combinator executable and matching desktop identity',
   );
   const packageBuildScript = String(rootManifest.scripts?.['build:packages'] ?? '');
   assert.doesNotMatch(
@@ -419,10 +422,10 @@ try {
     'cold package builds must not use a path-separator-sensitive workspace filter',
   );
   for (const packageName of [
-    '@outreachr/agents',
-    '@outreachr/connectors',
-    '@outreachr/core',
-    '@outreachr/mcp',
+    '@bot-combinator/agents',
+    '@bot-combinator/connectors',
+    '@bot-combinator/core',
+    '@bot-combinator/mcp',
   ]) {
     assert.ok(
       packageBuildScript.includes(`--filter ${packageName}`),
@@ -453,7 +456,7 @@ try {
     ['linux-x64', 'ubuntu-24.04'],
     ['linux-arm64', 'ubuntu-24.04-arm'],
   ];
-  for (const workflowName of ['verify.yml', 'release.yml', 'codeql.yml']) {
+  for (const workflowName of ['verify.yml', 'release.yml']) {
     const workflow = await fs.readFile(
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8',
@@ -503,28 +506,28 @@ try {
   );
   assert.match(
     verifyWorkflow,
-    /verify-complete:[\s\S]*?needs: \[native-verify, quality-security, attest-verified-builds\]/,
-    'the stable branch-protection check must wait for every push attestation',
+    /verify-complete:[\s\S]*?needs: \[native-verify, quality-security\]/,
+    'the stable verification check must wait for native and quality/security jobs',
+  );
+  assert.doesNotMatch(
+    releaseWorkflow,
+    /attest-build-provenance|verify-attestations\.mjs/,
+    'the private Free-plan release workflow must not require unavailable GitHub attestations',
   );
   assert.match(
     releaseWorkflow,
-    /verify-attestations\.mjs[^\r\n]*--source-digest "\$GITHUB_SHA"/,
-    'release attestation verification must bind the protected tag to its exact source commit',
-  );
-  assert.match(
-    releaseWorkflow,
-    /for \(const requiredCheck of \['All native targets', 'JavaScript and TypeScript'\]\)/,
-    'release preflight must require both exact hosted check-run contexts on protected main',
+    /for \(const requiredCheck of \['All native targets'\]\)/,
+    'release preflight must require the exact hosted verification check on current main',
   );
   assert.match(
     releaseWorkflow,
     /release\.data\.immutable !== true/,
-    'release publication must fail closed unless GitHub reports an immutable public release',
+    'release publication must fail closed unless GitHub reports an immutable release',
   );
   assert.match(
     releaseWorkflow,
-    /verify-published-assets\.mjs --expected publish-assets --actual downloaded-public-assets/,
-    'release publication must compare the immutable public assets byte-for-byte',
+    /verify-published-assets\.mjs --expected publish-assets --actual downloaded-release-assets/,
+    'release publication must compare the immutable private-repository assets byte-for-byte',
   );
   assert.match(
     releaseChecklist,
@@ -538,8 +541,8 @@ try {
   );
   assert.match(
     releaseChecklist,
-    /CodeQL check context \*\*JavaScript and TypeScript\*\*/,
-    'the maintainer release checklist must name the exact CodeQL check-run context',
+    /private repository on GitHub Free/i,
+    'the maintainer release checklist must disclose the private Free-plan constraints',
   );
   const seedManifest = JSON.parse(
     await fs.readFile(path.join(repoRoot, 'resources', 'seed-manifest.json'), 'utf8'),
@@ -600,10 +603,8 @@ try {
 
   const targets = nativeReleaseMatrix.map(([target]) => target);
   const releaseAssets = path.join(temporaryRoot, 'release-assets');
-  const attestationSource = path.join(temporaryRoot, 'attestation.jsonl');
-  await fs.writeFile(attestationSource, '{"test":"attestation"}\n', 'utf8');
   for (const target of targets) {
-    const bundle = path.join(releaseAssets, `outreachr-${target}`);
+    const bundle = path.join(releaseAssets, `bot-combinator-${target}`);
     await fs.mkdir(bundle, { recursive: true });
     const required = {
       LICENSE: 'test license\n',
@@ -611,14 +612,14 @@ try {
       [`THIRD_PARTY_NOTICES-${target}.md`]: '# Test notices\n',
       [`licenses-${target}.json`]: '{}\n',
       [`build-target-${target}.json`]: '{}\n',
-      [`outreachr-${target}.cdx.json`]: '{}\n',
-      [`outreachr-${target}.provenance.json`]: '{}\n',
+      [`bot-combinator-${target}.cdx.json`]: '{}\n',
+      [`bot-combinator-${target}.provenance.json`]: '{}\n',
       ...distributionFixtures(target),
     };
     for (const [name, contents] of Object.entries(required)) {
       await fs.writeFile(path.join(bundle, name), contents, 'utf8');
     }
-    const releaseMode = target.startsWith('linux') ? 'checksum-attested' : 'unsigned';
+    const releaseMode = target.startsWith('linux') ? 'checksum-provenance' : 'unsigned';
     await fs.writeFile(
       path.join(bundle, `SIGNING-STATUS-${target}.json`),
       `${JSON.stringify(
@@ -640,15 +641,6 @@ try {
       '--output',
       path.join(bundle, `SHA256SUMS-${target}`),
     ]);
-    await run(
-      'node',
-      [
-        path.join(repoRoot, 'scripts', 'copy-attestation.mjs'),
-        '--output',
-        path.join(bundle, `outreachr-${target}.attestation.intoto.jsonl`),
-      ],
-      { env: { ...process.env, ATTESTATION_BUNDLE: attestationSource } },
-    );
   }
 
   const verifyBundles = path.join(repoRoot, 'scripts', 'verify-release-bundle.mjs');
@@ -676,7 +668,7 @@ try {
   );
   assert.notEqual(draftTamperResult.code, 0, 'tampered draft-release asset must be rejected');
 
-  const firstBundle = path.join(releaseAssets, 'outreachr-macos-x64');
+  const firstBundle = path.join(releaseAssets, 'bot-combinator-macos-x64');
   const unattested = path.join(firstBundle, 'unattested-extra.txt');
   await fs.writeFile(unattested, 'must fail closed\n', 'utf8');
   const unattestedResult = await run('node', [verifyBundles, '--directory', releaseAssets], {
@@ -700,7 +692,7 @@ try {
   for (const directory of ['one', 'two']) {
     await fs.mkdir(path.join(collisionRoot, directory), { recursive: true });
     await fs.writeFile(
-      path.join(collisionRoot, directory, `Outreachr-collision${collisionExtension}`),
+      path.join(collisionRoot, directory, `Bot-Combinator-collision${collisionExtension}`),
       directory,
       'utf8',
     );
@@ -721,7 +713,7 @@ try {
   assert.notEqual(collisionResult.code, 0, 'artifact basename collisions must be rejected');
 
   console.log(
-    'Release-script self-test passed: command portability, cleanup-error preservation, deterministic NSIS uninstall, active dependency metadata, Electron fuse enforcement, optional/partial signing policy, trust disclosures, pinned seed integrity, checksums, tamper/path safety, all six release bundles, complete attestation coverage, draft-asset comparison, and collision rejection.',
+    'Release-script self-test passed: command portability, cleanup-error preservation, deterministic NSIS uninstall, active dependency metadata, Electron fuse enforcement, optional/partial signing policy, trust disclosures, pinned seed integrity, checksums, local provenance coverage, tamper/path safety, all six release bundles, draft-asset comparison, and collision rejection.',
   );
 } finally {
   await fs.rm(temporaryRoot, { recursive: true, force: true });
@@ -730,15 +722,15 @@ try {
 function distributionFixtures(target) {
   if (target.startsWith('macos')) {
     return {
-      [`Outreachr-test-${target}-UNSIGNED-UNNOTARIZED.dmg`]: 'dmg\n',
-      [`Outreachr-test-${target}-UNSIGNED-UNNOTARIZED.zip`]: 'zip\n',
+      [`Bot-Combinator-test-${target}-UNSIGNED-UNNOTARIZED.dmg`]: 'dmg\n',
+      [`Bot-Combinator-test-${target}-UNSIGNED-UNNOTARIZED.zip`]: 'zip\n',
     };
   }
   if (target.startsWith('windows')) {
-    return { [`Outreachr-test-${target}-UNSIGNED.exe`]: 'exe\n' };
+    return { [`Bot-Combinator-test-${target}-UNSIGNED.exe`]: 'exe\n' };
   }
   return {
-    [`Outreachr-test-${target}.AppImage`]: 'appimage\n',
-    [`Outreachr-test-${target}.deb`]: 'deb\n',
+    [`Bot-Combinator-test-${target}.AppImage`]: 'appimage\n',
+    [`Bot-Combinator-test-${target}.deb`]: 'deb\n',
   };
 }

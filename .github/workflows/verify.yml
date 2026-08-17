@@ -110,9 +110,9 @@ jobs:
         if: runner.os != 'Linux'
         run: node scripts/verify-code-signing.mjs --expect unsigned --release-dir apps/desktop/release
 
-      - name: Record Linux checksum-and-attestation trust mode
+      - name: Record Linux checksum-and-provenance trust mode
         if: runner.os == 'Linux'
-        run: node scripts/verify-code-signing.mjs --expect checksum-attested --release-dir apps/desktop/release
+        run: node scripts/verify-code-signing.mjs --expect checksum-provenance --release-dir apps/desktop/release
 
       - name: Smoke packaged app
         if: runner.os != 'Linux'
@@ -125,21 +125,21 @@ jobs:
       - name: Collect distributable artifacts
         run: node scripts/collect-release-artifacts.mjs --release-dir apps/desktop/release
         env:
-          OUTREACHR_TARGET: ${{ matrix.target }}
-          OUTREACHR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-attested' || 'unsigned' }}
+          BOT_COMBINATOR_TARGET: ${{ matrix.target }}
+          BOT_COMBINATOR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-provenance' || 'unsigned' }}
 
       - name: Write machine-readable package trust disclosure
         run: node scripts/write-signing-status.mjs
         env:
-          OUTREACHR_TARGET: ${{ matrix.target }}
-          OUTREACHR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-attested' || 'unsigned' }}
-          OUTREACHR_TAG_VERIFICATION: not-applicable
+          BOT_COMBINATOR_TARGET: ${{ matrix.target }}
+          BOT_COMBINATOR_RELEASE_MODE: ${{ runner.os == 'Linux' && 'checksum-provenance' || 'unsigned' }}
+          BOT_COMBINATOR_TAG_VERIFICATION: not-applicable
 
       - name: Generate CycloneDX SBOM
-        run: node scripts/generate-sbom.mjs --target ${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.cdx.json
+        run: node scripts/generate-sbom.mjs --target ${{ matrix.target }} --output artifacts/${{ matrix.target }}/bot-combinator-${{ matrix.target }}.cdx.json
 
       - name: Generate local SLSA-format provenance
-        run: node scripts/generate-provenance.mjs --target ${{ matrix.target }} --artifact-dir artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.provenance.json
+        run: node scripts/generate-provenance.mjs --target ${{ matrix.target }} --artifact-dir artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/bot-combinator-${{ matrix.target }}.provenance.json
 
       - name: Generate SHA-256 manifest
         run: node scripts/generate-checksums.mjs --directory artifacts/${{ matrix.target }} --output artifacts/${{ matrix.target }}/SHA256SUMS-${{ matrix.target }}
@@ -150,7 +150,7 @@ jobs:
       - name: Upload native verification bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: outreachr-${{ matrix.target }}
+          name: bot-combinator-${{ matrix.target }}
           path: artifacts/${{ matrix.target }}/*
           if-no-files-found: error
           retention-days: 14
@@ -202,62 +202,15 @@ jobs:
 
   verify-complete:
     name: All native targets
-    needs: [native-verify, quality-security, attest-verified-builds]
+    needs: [native-verify, quality-security]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every native matrix entry
-        if: needs.native-verify.result != 'success' || needs.quality-security.result != 'success' || (github.event_name != 'pull_request' && needs.attest-verified-builds.result != 'success')
+        if: needs.native-verify.result != 'success' || needs.quality-security.result != 'success'
         run: exit 1
 
       - name: Confirm complete native verification
-        if: needs.native-verify.result == 'success' && needs.quality-security.result == 'success' && (github.event_name == 'pull_request' || needs.attest-verified-builds.result == 'success')
-        run: echo 'All six target-native verification jobs, the quality/security gate, and every required push attestation passed.'
-
-  attest-verified-builds:
-    name: Attest ${{ matrix.target }}
-    needs: native-verify
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [macos-x64, macos-arm64, windows-x64, windows-arm64, linux-x64, linux-arm64]
-    steps:
-      - name: Check out release utilities only
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Download verified native bundle
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: outreachr-${{ matrix.target }}
-          path: artifacts/${{ matrix.target }}
-
-      - name: Create GitHub build attestation
-        id: attestation
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
-        with:
-          subject-path: artifacts/${{ matrix.target }}/*
-
-      - name: Preserve attestation bundle and checksum
-        run: node scripts/copy-attestation.mjs --output artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl
-        env:
-          ATTESTATION_BUNDLE: ${{ steps.attestation.outputs.bundle-path }}
-
-      - name: Upload attestation bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: outreachr-${{ matrix.target }}-attestation
-          path: |
-            artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl
-            artifacts/${{ matrix.target }}/outreachr-${{ matrix.target }}.attestation.intoto.jsonl.sha256
-          if-no-files-found: error
-          retention-days: 14
+        if: needs.native-verify.result == 'success' && needs.quality-security.result == 'success'
+        run: echo 'All six target-native verification jobs and the quality/security gate passed.'

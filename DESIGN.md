@@ -1,5 +1,5 @@
 ---
-name: Outreachr
+name: Bot Combinator
 description: A calm, evidence-first fundraising operating system for founders.
 colors:
   paper: '#ffffff'
@@ -126,11 +126,11 @@ components:
     padding: '10px'
 ---
 
-# Design System: Outreachr
+# Design System: Bot Combinator
 
 ## Overview
 
-**Creative North Star: “The Morning Brief.”** A founder opens Outreachr before the day’s first investor call and finds a prepared briefing desk: clear, exact, calm, and already arranged around the decisions that matter. The interface is a working instrument, not a performance of productivity.
+**Creative North Star: “The Morning Brief.”** A founder opens Bot Combinator before the day’s first investor call and finds a prepared briefing desk: clear, exact, calm, and already arranged around the decisions that matter. The interface is a working instrument, not a performance of productivity.
 
 **The Decision-First Rule.** Each page exposes the next safe action while keeping the evidence, uncertainty, and consequence in view. Familiar tables, queues, detail panes, and dialogs disappear into the work.
 

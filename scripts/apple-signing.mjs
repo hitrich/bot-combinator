@@ -2,14 +2,14 @@ import path from 'node:path';
 import { run } from './_lib.mjs';
 
 const PORTABLE_MAC_VARIABLES = [
-  'OUTREACHR_MAC_CERTIFICATE_BASE64',
-  'OUTREACHR_MAC_CERTIFICATE_PASSWORD',
-  'OUTREACHR_APPLE_API_KEY_BASE64',
-  'OUTREACHR_APPLE_API_KEY_ID',
-  'OUTREACHR_APPLE_API_ISSUER',
-  'OUTREACHR_APPLE_ID',
-  'OUTREACHR_APPLE_APP_SPECIFIC_PASSWORD',
-  'OUTREACHR_APPLE_TEAM_ID',
+  'BOT_COMBINATOR_MAC_CERTIFICATE_BASE64',
+  'BOT_COMBINATOR_MAC_CERTIFICATE_PASSWORD',
+  'BOT_COMBINATOR_APPLE_API_KEY_BASE64',
+  'BOT_COMBINATOR_APPLE_API_KEY_ID',
+  'BOT_COMBINATOR_APPLE_API_ISSUER',
+  'BOT_COMBINATOR_APPLE_ID',
+  'BOT_COMBINATOR_APPLE_APP_SPECIFIC_PASSWORD',
+  'BOT_COMBINATOR_APPLE_TEAM_ID',
   'CSC_LINK',
   'CSC_KEY_PASSWORD',
   'APPLE_API_KEY',
@@ -21,9 +21,9 @@ const PORTABLE_MAC_VARIABLES = [
 ];
 
 const LOCAL_KEYCHAIN_VARIABLES = [
-  'OUTREACHR_MAC_KEYCHAIN_IDENTITY',
-  'OUTREACHR_APPLE_KEYCHAIN_PROFILE',
-  'OUTREACHR_APPLE_KEYCHAIN',
+  'BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY',
+  'BOT_COMBINATOR_APPLE_KEYCHAIN_PROFILE',
+  'BOT_COMBINATOR_APPLE_KEYCHAIN',
   'CSC_NAME',
   'CSC_KEYCHAIN',
   'APPLE_KEYCHAIN_PROFILE',
@@ -49,20 +49,22 @@ export function assertMacSigningSourceIsExclusive(source, environment = process.
 
 export function localKeychainSigningConfiguration(environment = process.env) {
   assertMacSigningSourceIsExclusive('local-keychain', environment);
-  const identity = requiredText(environment, 'OUTREACHR_MAC_KEYCHAIN_IDENTITY');
-  const expectedTeamId = requiredText(environment, 'OUTREACHR_MAC_EXPECTED_TEAM_ID');
+  const identity = requiredText(environment, 'BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY');
+  const expectedTeamId = requiredText(environment, 'BOT_COMBINATOR_MAC_EXPECTED_TEAM_ID');
   if (!/^[A-Z0-9]{10}$/u.test(expectedTeamId)) {
-    throw new Error('OUTREACHR_MAC_EXPECTED_TEAM_ID must be an exact 10-character Apple Team ID');
+    throw new Error(
+      'BOT_COMBINATOR_MAC_EXPECTED_TEAM_ID must be an exact 10-character Apple Team ID',
+    );
   }
-  const keychainProfile = requiredText(environment, 'OUTREACHR_APPLE_KEYCHAIN_PROFILE');
-  const keychain = optionalText(environment, 'OUTREACHR_APPLE_KEYCHAIN');
+  const keychainProfile = requiredText(environment, 'BOT_COMBINATOR_APPLE_KEYCHAIN_PROFILE');
+  const keychain = optionalText(environment, 'BOT_COMBINATOR_APPLE_KEYCHAIN');
   if (keychain && !path.isAbsolute(keychain)) {
-    throw new Error('OUTREACHR_APPLE_KEYCHAIN must be an absolute Keychain path');
+    throw new Error('BOT_COMBINATOR_APPLE_KEYCHAIN must be an absolute Keychain path');
   }
   const identityFingerprint = /^[0-9a-f]{40}$/iu.test(identity);
   if (!identityFingerprint && !identity.startsWith('Developer ID Application: ')) {
     throw new Error(
-      'OUTREACHR_MAC_KEYCHAIN_IDENTITY must be the exact Developer ID Application name or SHA-1 fingerprint',
+      'BOT_COMBINATOR_MAC_KEYCHAIN_IDENTITY must be the exact Developer ID Application name or SHA-1 fingerprint',
     );
   }
   // electron-builder rejects Apple certificate type prefixes in CSC_NAME. Its

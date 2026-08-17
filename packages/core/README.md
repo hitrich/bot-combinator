@@ -1,6 +1,6 @@
-# `@outreachr/core`
+# `@bot-combinator/core`
 
-The local domain and data layer for Outreachr. It runs SQLite through `sql.js` WebAssembly, so the same database implementation works in packaged Electron builds on macOS, Windows, and Linux without a native Node add-on or platform-specific ABI rebuild.
+The local domain and data layer for Bot Combinator. It runs SQLite through `sql.js` WebAssembly, so the same database implementation works in packaged Electron builds on macOS, Windows, and Linux without a native Node add-on or platform-specific ABI rebuild.
 
 The package is Apache-2.0. Investor facts retain the rights and attribution requirements recorded on their sources; exporting a contribution never overrides source terms.
 
@@ -9,7 +9,7 @@ The package is Apache-2.0. Investor facts retain the rights and attribution requ
 - One canonical local SQLite vault for the founder profile, fundraising rounds, investor firms, people, funds, evidence claims, sources, tags, targets, and pipeline history.
 - Drafts, exact-content approvals, sender/opt-out footer rules, communication pause/daily/hourly/domain limits, suppressions, attributed mailbox relationship events, a pre-dispatch send reservation ledger, meetings, tasks, notes, knowledge, lists, connector references, agent runs/proposals, and an append-only hash-chained audit log.
 - Versioned, transactional migrations with foreign-key and integrity checks.
-- Import of immutable Outreachr investor seed databases with pinned-digest handling for unsigned research artifacts.
+- Import of immutable Bot Combinator investor seed databases with pinned-digest handling for unsigned research artifacts.
 - Deterministic contribution SQLite packages containing only an explicit public-data allowlist.
 - Password-encrypted, authenticated backup envelopes with lifecycle hooks for desktop integration.
 
@@ -18,17 +18,17 @@ The package does **not** store OAuth tokens, provider credentials, API keys, or 
 ## Install and load SQLite
 
 ```ts
-import { openNodeVault } from '@outreachr/core/node';
-import { OutreachrRepository } from '@outreachr/core';
+import { openNodeVault } from '@bot-combinator/core/node';
+import { BotCombinatorRepository } from '@bot-combinator/core';
 
 const vault = await openNodeVault({ bytes: existingBytes });
-const repository = new OutreachrRepository(vault);
+const repository = new BotCombinatorRepository(vault);
 ```
 
 `openNodeVault` resolves the packaged `sql-wasm.wasm` file for Node/Electron. Browser-style bundlers can supply their own asset location:
 
 ```ts
-import { CoreVault, initializeSqlite } from '@outreachr/core';
+import { CoreVault, initializeSqlite } from '@bot-combinator/core';
 
 const sqlite = await initializeSqlite({
   locateFile: () => new URL('./sql-wasm.wasm', import.meta.url).toString(),
@@ -59,7 +59,7 @@ Provider relationship sync is metadata-minimizing: callers store header-only mes
 ## Investor seed import
 
 ```ts
-import { importInvestorSeed } from '@outreachr/core';
+import { importInvestorSeed } from '@bot-combinator/core';
 
 const result = importInvestorSeed(vault.sqlite, vault, seedBytes, {
   importedAt: new Date().toISOString(),
@@ -75,7 +75,7 @@ Seed assertions are local research material by default. They are imported as pub
 ## Contribution export and privacy boundary
 
 ```ts
-import { exportContribution } from '@outreachr/core';
+import { exportContribution } from '@bot-combinator/core';
 
 const contribution = exportContribution(vault.sqlite, vault, {
   packageId: 'contribution:github-user:2026-07-31',
@@ -96,7 +96,7 @@ The contribution manifest states this boundary. Review and CI should still inspe
 ## Encrypted backups
 
 ```ts
-import { createEncryptedBackup, restoreEncryptedBackup } from '@outreachr/core';
+import { createEncryptedBackup, restoreEncryptedBackup } from '@bot-combinator/core';
 
 const envelope = await createEncryptedBackup(vault.export(), passphrase, {
   hooks: {

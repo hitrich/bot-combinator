@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
-import { serveOutreachrMcpOverStdio, privateFieldSchema } from '@outreachr/mcp';
+import { serveBotCombinatorMcpOverStdio, privateFieldSchema } from '@bot-combinator/mcp';
 
 import { DesktopMcpBridge } from './mcp-service';
 import { VaultService } from './vault-service';
 
 const APP_VERSION = '0.1.2';
 const SESSION_ID = 'codex-local';
-const PURPOSE = 'Manage Outreachr from Codex';
+const PURPOSE = 'Manage Bot Combinator from Codex';
 
 function argument(name: string): string {
   const index = process.argv.indexOf(name);
@@ -83,8 +83,8 @@ async function main(): Promise<void> {
       await vault.persist();
     },
   });
-  const running = await serveOutreachrMcpOverStdio(bridge.serviceForSession(SESSION_ID), {
-    name: 'outreachr-codex',
+  const running = await serveBotCombinatorMcpOverStdio(bridge.serviceForSession(SESSION_ID), {
+    name: 'bot-combinator-codex',
     version: APP_VERSION,
     enabledTools: connection.enabledTools,
   });
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
 
 void main().catch((error: unknown) => {
   process.stderr.write(
-    `Outreachr MCP failed: ${error instanceof Error ? error.message : String(error)}\n`,
+    `Bot Combinator MCP failed: ${error instanceof Error ? error.message : String(error)}\n`,
   );
   process.exitCode = 1;
 });

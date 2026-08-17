@@ -1,14 +1,14 @@
 export const IPC_CHANNELS = {
-  bootstrap: 'outreachr:bootstrap',
-  command: 'outreachr:command',
-  selectFile: 'outreachr:select-file',
-  selectDirectory: 'outreachr:select-directory',
-  openExternal: 'outreachr:open-external',
-  revealPath: 'outreachr:reveal-path',
-  copyText: 'outreachr:copy-text',
-  openLegal: 'outreachr:open-legal',
-  oauthCallback: 'outreachr:oauth-callback',
-  agentEvent: 'outreachr:agent-event',
+  bootstrap: 'bot-combinator:bootstrap',
+  command: 'bot-combinator:command',
+  selectFile: 'bot-combinator:select-file',
+  selectDirectory: 'bot-combinator:select-directory',
+  openExternal: 'bot-combinator:open-external',
+  revealPath: 'bot-combinator:reveal-path',
+  copyText: 'bot-combinator:copy-text',
+  openLegal: 'bot-combinator:open-legal',
+  oauthCallback: 'bot-combinator:oauth-callback',
+  agentEvent: 'bot-combinator:agent-event',
 } as const;
 
 export type InvestorKind =
@@ -275,6 +275,221 @@ export interface KnowledgeItem {
   sharePolicy: 'internal' | 'safe_for_outreach' | 'meeting_only' | 'diligence_only';
 }
 
+export type BotChainDocCategory =
+  'start_here' | 'application' | 'integration' | 'bdex' | 'bo_wallet' | 'liquidity' | 'security';
+
+export interface BotChainDocument {
+  id: string;
+  path: string;
+  title: string;
+  description: string;
+  category: BotChainDocCategory;
+  importance: 'required' | 'recommended' | 'reference';
+  status: 'preview' | 'approved' | 'stale' | 'superseded';
+  version: string;
+  tags: string[];
+  sourceOwner: string;
+  sourceUrl: string | null;
+  approvedAt: string | null;
+  lastCheckedAt: string;
+  rights: 'project_authored' | 'redistributable' | 'link_only' | 'unknown';
+  visibility: 'applicant' | 'klineo_internal' | 'bot_chain_partner' | 'public';
+  sha256: string;
+  sizeBytes: number;
+  content: string;
+}
+
+export interface BotChainDocsBundle {
+  id: string;
+  title: string;
+  version: string;
+  status: 'preview' | 'approved' | 'stale';
+  owner: string;
+  publishedAt: string;
+  nextReviewAt: string | null;
+  manifestSha256: string;
+  documents: BotChainDocument[];
+}
+
+export type ProgramProjectStage =
+  | 'sourced'
+  | 'invited'
+  | 'applied'
+  | 'screening'
+  | 'qualified'
+  | 'cohort'
+  | 'integration_ready'
+  | 'liquidity_ready'
+  | 'launch_scheduled'
+  | 'live_market'
+  | 'graduated'
+  | 'on_hold'
+  | 'declined'
+  | 'withdrawn';
+
+export type ProgramGateStatus =
+  'not_started' | 'in_review' | 'needs_work' | 'passed' | 'blocked' | 'waived';
+
+export interface ProgramGateDefinition {
+  key: string;
+  version: number;
+  title: string;
+  description: string;
+  sortOrder: number;
+}
+
+export interface ProgramGateReview {
+  id: string;
+  projectId: string;
+  gateKey: string;
+  gateVersion: number;
+  status: ProgramGateStatus;
+  rationale: string | null;
+  evidence: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  updatedAt: string;
+}
+
+export interface ProgramMilestone {
+  id: string;
+  projectId: string;
+  cohortId: string | null;
+  title: string;
+  category:
+    | 'onboarding'
+    | 'product'
+    | 'security'
+    | 'integration'
+    | 'bdex'
+    | 'bo_wallet'
+    | 'liquidity'
+    | 'launch'
+    | 'community'
+    | 'reporting';
+  owner: string | null;
+  dueAt: string | null;
+  evidenceRequired: string | null;
+  evidence: string | null;
+  status: 'not_started' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProgramMetricObservation {
+  id: string;
+  projectId: string | null;
+  key: string;
+  value: number;
+  unit: string;
+  observedAt: string;
+  sourceLabel: string;
+  quality: 'verified' | 'supported' | 'reported' | 'stale' | 'unknown';
+  createdAt: string;
+}
+
+export interface ProgramProject {
+  id: string;
+  programId: string;
+  name: string;
+  website: string | null;
+  description: string | null;
+  stage: ProgramProjectStage;
+  source: 'sourced' | 'application' | 'referral' | 'local';
+  ownerName: string | null;
+  ownerEmail: string | null;
+  targetLaunchAt: string | null;
+  launchedAt: string | null;
+  cohortId: string | null;
+  cohortName: string | null;
+  gates: ProgramGateReview[];
+  milestones: ProgramMilestone[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProgramCohort {
+  id: string;
+  programId: string;
+  name: string;
+  thesis: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  capacity: number | null;
+  status: 'planning' | 'applications_open' | 'active' | 'completed' | 'cancelled';
+  memberProjectIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProgramWorkspace {
+  id: string;
+  name: string;
+  partnerName: string;
+  status: 'planning' | 'active' | 'paused' | 'completed';
+  grantPeriodStart: string | null;
+  grantPeriodEnd: string | null;
+  projects: ProgramProject[];
+  cohorts: ProgramCohort[];
+  gateDefinitions: ProgramGateDefinition[];
+  metrics: ProgramMetricObservation[];
+  summary: {
+    totalProjects: number;
+    activeCohortProjects: number;
+    integrationReady: number;
+    liquidityReady: number;
+    liveMarkets: number;
+    graduated: number;
+    blockedGates: number;
+    overdueMilestones: number;
+  };
+}
+
+export interface PortalSubmissionBundle {
+  schemaVersion: 1;
+  exportedAt: string;
+  source: {
+    application: 'Bot Combinator Desktop';
+    mode: 'explicit_program_submission';
+  };
+  privacy: {
+    visibility: 'project_private' | 'project_and_klineo';
+    omittedDataClasses: string[];
+  };
+  project: {
+    localProjectId: string;
+    name: string;
+    website: string | null;
+    description: string | null;
+    stage: ProgramProjectStage;
+    targetLaunchAt: string | null;
+    cohortName: string | null;
+  };
+  submission: {
+    gates: Array<{
+      key: string;
+      version: number;
+      title: string;
+      status: ProgramGateStatus;
+      rationale: string | null;
+      evidence: string | null;
+      reviewedAt: string | null;
+    }>;
+    milestones: Array<{
+      localMilestoneId: string;
+      title: string;
+      category: ProgramMilestone['category'];
+      dueAt: string | null;
+      status: ProgramMilestone['status'];
+      evidenceRequired: string | null;
+      evidence: string | null;
+      updatedAt: string;
+    }>;
+  };
+  canonicalPayload: string;
+  contentDigest: string;
+}
+
 export interface ListItem {
   id: string;
   name: string;
@@ -307,7 +522,7 @@ export interface AgentStatus {
 
 export interface AgentContextGrant {
   provider: AgentProvider;
-  contextClass: 'round' | 'company' | 'investors' | 'activity';
+  contextClass: 'round' | 'company' | 'investors' | 'activity' | 'bot_chain_docs';
   grantedAt: string;
 }
 
@@ -372,6 +587,8 @@ export interface AppBootstrap {
   mailEvents: MailEventItem[];
   drafts: DraftMessage[];
   knowledge: KnowledgeItem[];
+  botChainDocs: BotChainDocsBundle;
+  ecosystemProgram: ProgramWorkspace;
   lists: ListItem[];
   sourceReview: SourceReviewItem[];
   connectors: ConnectorStatus[];
@@ -455,6 +672,63 @@ export interface CommandMap {
   'meeting.create': Omit<MeetingItem, 'id'>;
   'meeting.update': { id: string; agenda: string | null; notes: string | null };
   'knowledge.save': Omit<KnowledgeItem, 'id' | 'updatedAt'> & { id?: string };
+  'botChain.docs.export': {
+    directory: string;
+    mode: 'guide' | 'selected' | 'full';
+    documentIds: string[];
+  };
+  'program.project.create': {
+    name: string;
+    website: string | null;
+    description: string | null;
+    source: ProgramProject['source'];
+    ownerName: string | null;
+    ownerEmail: string | null;
+    targetLaunchAt: string | null;
+  };
+  'program.project.stage': {
+    projectId: string;
+    stage: ProgramProjectStage;
+    reason: string;
+  };
+  'program.gate.review': {
+    projectId: string;
+    gateKey: string;
+    status: ProgramGateStatus;
+    rationale: string | null;
+    evidence: string | null;
+    reviewedBy: string | null;
+  };
+  'program.cohort.create': {
+    name: string;
+    thesis: string | null;
+    startsOn: string | null;
+    endsOn: string | null;
+    capacity: number | null;
+  };
+  'program.cohort.assign': {
+    cohortId: string;
+    projectId: string;
+    state: 'accepted' | 'active' | 'completed' | 'withdrawn';
+  };
+  'program.milestone.create': Omit<
+    ProgramMilestone,
+    'id' | 'status' | 'evidence' | 'createdAt' | 'updatedAt'
+  >;
+  'program.milestone.update': {
+    id: string;
+    status: ProgramMilestone['status'];
+    evidence: string | null;
+  };
+  'program.metric.record': Omit<ProgramMetricObservation, 'id' | 'createdAt'>;
+  'program.partnerReport.export': { directory: string };
+  'program.portalSubmission.export': {
+    directory: string;
+    projectId: string;
+    visibility: PortalSubmissionBundle['privacy']['visibility'];
+    includeMilestones: boolean;
+    includeGateReviews: boolean;
+  };
   'list.create': {
     name: string;
     description: string | null;
@@ -513,7 +787,12 @@ export interface CommandMap {
     contextClass: AgentContextGrant['contextClass'];
     granted: boolean;
   };
-  'agent.run': { provider: AgentProvider; prompt: string; disclosedContextIds: string[] };
+  'agent.run': {
+    provider: AgentProvider;
+    prompt: string;
+    disclosedContextIds: AgentContextGrant['contextClass'][];
+    botChainDocumentIds?: string[];
+  };
   'agent.cancel': { runId: string };
   'agent.proposal.review': {
     id: string;
@@ -543,6 +822,25 @@ export interface CommandResultMap {
   'meeting.create': MeetingItem;
   'meeting.update': MeetingItem;
   'knowledge.save': KnowledgeItem;
+  'botChain.docs.export': {
+    path: string;
+    bundleVersion: string;
+    manifestSha256: string;
+    documentCount: number;
+  };
+  'program.project.create': ProgramWorkspace;
+  'program.project.stage': ProgramWorkspace;
+  'program.gate.review': ProgramWorkspace;
+  'program.cohort.create': ProgramWorkspace;
+  'program.cohort.assign': ProgramWorkspace;
+  'program.milestone.create': ProgramWorkspace;
+  'program.milestone.update': ProgramWorkspace;
+  'program.metric.record': ProgramWorkspace;
+  'program.partnerReport.export': { path: string };
+  'program.portalSubmission.export': {
+    path: string;
+    contentDigest: string;
+  };
   'list.create': ListItem;
   'list.update': ListItem;
   'draft.create': DraftMessage;
@@ -585,7 +883,7 @@ export interface CommandResultMap {
   }>;
 }
 
-export interface OutreachrBridge {
+export interface BotCombinatorBridge {
   bootstrap: () => Promise<AppBootstrap>;
   command: <K extends keyof CommandMap>(
     command: K,
@@ -602,6 +900,6 @@ export interface OutreachrBridge {
 
 declare global {
   interface Window {
-    outreachr: OutreachrBridge;
+    botCombinator: BotCombinatorBridge;
   }
 }

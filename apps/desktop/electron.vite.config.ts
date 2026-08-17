@@ -3,22 +3,24 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 const workspacePackages = [
-  '@outreachr/core',
-  '@outreachr/connectors',
-  '@outreachr/agents',
-  '@outreachr/mcp',
+  '@bot-combinator/core',
+  '@bot-combinator/connectors',
+  '@bot-combinator/agents',
+  '@bot-combinator/mcp',
   '@modelcontextprotocol/sdk',
   '@anthropic-ai/claude-agent-sdk',
   'zod',
 ];
 
 const developmentCspPlugin = {
-  name: 'outreachr-development-csp',
+  name: 'bot-combinator-development-csp',
   apply: 'serve' as const,
   transformIndexHtml(html: string): string {
     const productionDirective = "connect-src 'self';";
     if (!html.includes(productionDirective)) {
-      throw new Error('Outreachr renderer CSP is missing its production connect-src directive');
+      throw new Error(
+        'Bot Combinator renderer CSP is missing its production connect-src directive',
+      );
     }
     return html.replace(
       productionDirective,

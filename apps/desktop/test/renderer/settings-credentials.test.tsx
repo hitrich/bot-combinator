@@ -224,7 +224,7 @@ describe('credential setup guidance and renderer boundary', () => {
     expect(enable).toBeDisabled();
     fireEvent.click(
       within(agents).getByRole('checkbox', {
-        name: /I confirm Anthropic approved this Outreachr deployment/u,
+        name: /I confirm Anthropic approved this Bot Combinator deployment/u,
       }),
     );
     expect(enable).toBeEnabled();

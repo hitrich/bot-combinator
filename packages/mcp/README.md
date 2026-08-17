@@ -1,6 +1,6 @@
-# `@outreachr/mcp`
+# `@bot-combinator/mcp`
 
-A local, fail-closed [Model Context Protocol](https://modelcontextprotocol.io/) server for Outreachr. The package uses `@modelcontextprotocol/sdk` `1.30.0` and exposes a deliberately narrow interface between a founder-authorized agent and the local fundraising vault.
+A local, fail-closed [Model Context Protocol](https://modelcontextprotocol.io/) server for Bot Combinator. The package uses `@modelcontextprotocol/sdk` `1.30.0` and exposes a deliberately narrow interface between a founder-authorized agent and the local fundraising vault.
 
 ## Safety boundary
 
@@ -17,30 +17,30 @@ Proposal tools do not apply their proposed operation. Every successful proposal 
 
 Read tools:
 
-- `outreachr_search_investors`, `outreachr_list_investors`, `outreachr_get_investor`
-- `outreachr_search_people`, `outreachr_list_people`, `outreachr_get_person`
-- `outreachr_get_pipeline`, `outreachr_get_round`
-- `outreachr_list_tasks`, `outreachr_list_meetings`, `outreachr_list_knowledge`, `outreachr_list_activity`
+- `bot_combinator_search_investors`, `bot_combinator_list_investors`, `bot_combinator_get_investor`
+- `bot_combinator_search_people`, `bot_combinator_list_people`, `bot_combinator_get_person`
+- `bot_combinator_get_pipeline`, `bot_combinator_get_round`
+- `bot_combinator_list_tasks`, `bot_combinator_list_meetings`, `bot_combinator_list_knowledge`, `bot_combinator_list_activity`
 
 Proposal tools:
 
-- `outreachr_propose_target`, `outreachr_propose_stage`
-- `outreachr_propose_task`, `outreachr_propose_meeting`, `outreachr_propose_knowledge`
-- `outreachr_propose_draft`, `outreachr_propose_source_review`
+- `bot_combinator_propose_target`, `bot_combinator_propose_stage`
+- `bot_combinator_propose_task`, `bot_combinator_propose_meeting`, `bot_combinator_propose_knowledge`
+- `bot_combinator_propose_draft`, `bot_combinator_propose_source_review`
 
 Tool definitions include standard MCP safety annotations and namespaced machine-readable metadata: risk level, side effect, founder-approval requirement, local data boundary, default redaction, required audit context, and the explicit forbidden-capability list.
 
 ## Host integration
 
-The Electron main process implements `OutreachrMcpService`; the package never imports Electron or `@outreachr/core` and never receives a database or secret-store handle.
+The Electron main process implements `BotCombinatorMcpService`; the package never imports Electron or `@bot-combinator/core` and never receives a database or secret-store handle.
 
 ```ts
-import { serveOutreachrMcpOverStdio } from '@outreachr/mcp';
+import { serveBotCombinatorMcpOverStdio } from '@bot-combinator/mcp';
 import { createDesktopMcpAdapter } from './mcp-adapter.js';
 
 const service = createDesktopMcpAdapter();
-const running = await serveOutreachrMcpOverStdio(service, {
-  name: 'outreachr-desktop',
+const running = await serveBotCombinatorMcpOverStdio(service, {
+  name: 'bot-combinator-desktop',
   version: app.getVersion(),
 });
 
@@ -54,15 +54,15 @@ The desktop build also emits `out/main/mcp-stdio.js` for trusted local Codex cli
 Build and register the local server with Codex:
 
 ```sh
-pnpm --filter @outreachr/desktop build
-codex mcp add outreachr -- \
+pnpm --filter @bot-combinator/desktop build
+codex mcp add bot-combinator -- \
   "$(command -v node)" \
   "$PWD/apps/desktop/out/main/mcp-stdio.js" \
-  --data-directory "$HOME/Library/Application Support/@outreachr/desktop" \
+  --data-directory "$HOME/Library/Application Support/@bot-combinator/desktop" \
   --resource-directory "$PWD/apps/desktop/resources/generated"
 ```
 
-The standalone stdio server and desktop UI should not edit the same SQL.js vault concurrently. Close Outreachr before starting a Codex task that uses the standalone server, then reopen the app to review any pending proposals. The MCP still cannot approve or send messages.
+The standalone stdio server and desktop UI should not edit the same SQL.js vault concurrently. Close Bot Combinator before starting a Codex task that uses the standalone server, then reopen the app to review any pending proposals. The MCP still cannot approve or send messages.
 
 ## Authorization and redaction
 

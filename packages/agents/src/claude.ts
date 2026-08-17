@@ -11,7 +11,7 @@ import {
   type CommandRunner,
 } from './process.js';
 import { prepareAgentPrompt } from './prompt.js';
-import { OUTREACHR_AGENT_MCP_TOOLS } from './types.js';
+import { BOT_COMBINATOR_AGENT_MCP_TOOLS } from './types.js';
 import type {
   AgentAuthSource,
   AgentMcpConnection,
@@ -182,7 +182,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
           kind: 'external-command',
           command: 'claude auth login --claudeai',
           instructions:
-            'Run this official Claude Code command in a local terminal, complete the Claude.ai sign-in, then return to Outreachr and detect again. Claude Code owns the local keychain/config session; Outreachr never receives or persists its token.',
+            'Run this official Claude Code command in a local terminal, complete the Claude.ai sign-in, then return to Bot Combinator and detect again. Claude Code owns the local keychain/config session; Bot Combinator never receives or persists its token.',
         });
       }
       return Promise.reject(
@@ -196,7 +196,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
       return Promise.reject(
         new AgentRuntimeError(
           'POLICY_DENIED',
-          'Outreachr never accepts or passes CLAUDE_CODE_OAUTH_TOKEN setup tokens. Approved subscription access uses the official local Claude Code keychain/config session.',
+          'Bot Combinator never accepts or passes CLAUDE_CODE_OAUTH_TOKEN setup tokens. Approved subscription access uses the official local Claude Code keychain/config session.',
         ),
       );
     }
@@ -206,13 +206,13 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
         kind: 'environment',
         environmentVariable: 'ANTHROPIC_API_KEY',
         instructions:
-          'Create a founder-controlled Anthropic API key in the official console, then save it in Settings → Agents. Outreachr encrypts it with the operating-system credential facility and never returns it to the renderer after saving. ANTHROPIC_API_KEY remains available as an optional launch-environment override.',
+          'Create a founder-controlled Anthropic API key in the official console, then save it in Settings → Agents. Bot Combinator encrypts it with the operating-system credential facility and never returns it to the renderer after saving. ANTHROPIC_API_KEY remains available as an optional launch-environment override.',
       });
     }
     return Promise.reject(
       new AgentRuntimeError(
         'POLICY_DENIED',
-        'Claude setup in Outreachr requires a founder-controlled Anthropic API key.',
+        'Claude setup in Bot Combinator requires a founder-controlled Anthropic API key.',
       ),
     );
   }
@@ -223,7 +223,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
       if (!this.#clearEnvironmentCredential) {
         throw new AgentRuntimeError(
           'POLICY_DENIED',
-          'Remove ANTHROPIC_API_KEY from the founder-controlled launch environment and restart Outreachr to log out. This adapter never persists plaintext credentials.',
+          'Remove ANTHROPIC_API_KEY from the founder-controlled launch environment and restart Bot Combinator to log out. This adapter never persists plaintext credentials.',
         );
       }
       await this.#clearEnvironmentCredential(source);
@@ -233,8 +233,8 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
     throw new AgentRuntimeError(
       'POLICY_DENIED',
       this.#subscriptionAuthApproved
-        ? 'Disable Anthropic-approved subscription authentication in Outreachr to disconnect it. Outreachr will not modify or log out the independent official Claude Code session.'
-        : 'Outreachr has no supported Claude API-key session to log out. It will not modify an independent Claude subscription login.',
+        ? 'Disable Anthropic-approved subscription authentication in Bot Combinator to disconnect it. Bot Combinator will not modify or log out the independent official Claude Code session.'
+        : 'Bot Combinator has no supported Claude API-key session to log out. It will not modify an independent Claude subscription login.',
     );
   }
 
@@ -282,7 +282,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
         options: {
           abortController,
           cwd: this.#workspaceDirectory,
-          env: { ...this.#environment, CLAUDE_AGENT_SDK_CLIENT_APP: 'outreachr/0.1.2' },
+          env: { ...this.#environment, CLAUDE_AGENT_SDK_CLIENT_APP: 'bot-combinator/0.1.2' },
           systemPrompt: prepared.system,
           tools: [],
           allowedTools: [...allowedMcpTools],
@@ -294,7 +294,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
                 ? { behavior: 'allow' as const }
                 : {
                     behavior: 'deny' as const,
-                    message: `Outreachr proposal-only policy forbids tool ${toolName}.`,
+                    message: `Bot Combinator proposal-only policy forbids tool ${toolName}.`,
                     interrupt: true,
                   },
             ),
@@ -302,12 +302,12 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
           strictMcpConfig: true,
           mcpServers: mcp
             ? {
-                outreachr: {
+                'bot-combinator': {
                   type: 'http',
                   url: mcp.url,
                   headers: {
                     Authorization: `Bearer ${mcp.bearerToken}`,
-                    [OUTREACHR_MCP_SESSION_HEADER]: mcp.sessionId,
+                    [BOT_COMBINATOR_MCP_SESSION_HEADER]: mcp.sessionId,
                   },
                   tools: mcp.enabledTools.map((name) => ({
                     name,
@@ -455,7 +455,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
         authenticated: false,
         authSource: 'unknown',
         detail:
-          'Claude Code returned an unrecognized authentication status; Outreachr failed closed.',
+          'Claude Code returned an unrecognized authentication status; Bot Combinator failed closed.',
       };
     }
   }
@@ -471,7 +471,7 @@ export class ClaudeAgentAdapter implements AgentProviderAdapter {
   }
 }
 
-const OUTREACHR_MCP_SESSION_HEADER = 'X-Outreachr-Session';
+const BOT_COMBINATOR_MCP_SESSION_HEADER = 'X-Bot-Combinator-Session';
 
 export const CLAUDE_DISALLOWED_TOOLS = [
   'Agent',
@@ -522,7 +522,7 @@ export function sanitizeClaudeEnvironment(
   if (!subscriptionAuthApproved && source.ANTHROPIC_API_KEY !== undefined) {
     clean.ANTHROPIC_API_KEY = source.ANTHROPIC_API_KEY;
   }
-  clean.CLAUDE_AGENT_SDK_CLIENT_APP = 'outreachr/0.1.2';
+  clean.CLAUDE_AGENT_SDK_CLIENT_APP = 'bot-combinator/0.1.2';
   return clean;
 }
 
@@ -578,12 +578,12 @@ function validateMcpConnection(connection: AgentMcpConnection, runId: string): A
     throw new AgentRuntimeError('POLICY_DENIED', 'Claude MCP must use the loopback HTTP bridge.');
   }
   if (
-    connection.serverName !== 'outreachr' ||
+    connection.serverName !== 'bot-combinator' ||
     connection.sessionId !== runId ||
     connection.bearerToken.length < 32 ||
     connection.enabledTools.length === 0 ||
     new Set(connection.enabledTools).size !== connection.enabledTools.length ||
-    connection.enabledTools.some((tool) => !OUTREACHR_AGENT_MCP_TOOLS.includes(tool))
+    connection.enabledTools.some((tool) => !BOT_COMBINATOR_AGENT_MCP_TOOLS.includes(tool))
   ) {
     throw new AgentRuntimeError('POLICY_DENIED', 'Claude MCP connection is invalid.');
   }

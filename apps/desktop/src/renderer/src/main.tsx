@@ -8,14 +8,14 @@ import { App } from './App';
 import { WorkspaceProvider } from './state/WorkspaceContext';
 import './styles/global.css';
 
-const storedTheme = window.localStorage.getItem('outreachr.theme');
+const storedTheme = window.localStorage.getItem('bot-combinator.theme');
 document.documentElement.dataset.theme =
   storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'light';
 
 const root = document.getElementById('root');
 
 if (!root) {
-  throw new Error('Outreachr could not find its application root.');
+  throw new Error('Bot Combinator could not find its application root.');
 }
 
 ReactDOM.createRoot(root).render(

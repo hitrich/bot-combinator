@@ -21,13 +21,13 @@ const desktopRoot = resolve(import.meta.dirname, '..');
 
 export const test = base.extend<DesktopFixtures>({
   dataDirectory: async ({}, provide) => {
-    const directory = await mkdtemp(join(tmpdir(), 'outreachr-e2e-data-'));
+    const directory = await mkdtemp(join(tmpdir(), 'bot-combinator-e2e-data-'));
     await provide(directory);
     await rm(directory, { recursive: true, force: true, maxRetries: 3 });
   },
 
   exportDirectory: async ({}, provide) => {
-    const directory = await mkdtemp(join(tmpdir(), 'outreachr-e2e-export-'));
+    const directory = await mkdtemp(join(tmpdir(), 'bot-combinator-e2e-export-'));
     await mkdir(directory, { recursive: true });
     await provide(directory);
     await rm(directory, { recursive: true, force: true, maxRetries: 3 });
@@ -49,17 +49,17 @@ export const test = base.extend<DesktopFixtures>({
   desktopApp: async ({ dataDirectory, googleProviderMock, startupLogs }, provide) => {
     const application = await electron.launch({
       // The main process requests its single-instance lock before it can apply
-      // OUTREACHR_E2E_DATA_DIR. Give Electron the isolated user-data path at
+      // BOT_COMBINATOR_E2E_DATA_DIR. Give Electron the isolated user-data path at
       // process launch so sequential fixtures never contend for the same lock.
       args: [desktopRoot, `--user-data-dir=${dataDirectory}`],
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        OUTREACHR_E2E_DATA_DIR: dataDirectory,
-        OUTREACHR_E2E_GOOGLE_PROVIDER_URL: googleProviderMock.baseUrl,
-        OUTREACHR_E2E_SECRET_KEY: randomBytes(32).toString('hex'),
+        BOT_COMBINATOR_E2E_DATA_DIR: dataDirectory,
+        BOT_COMBINATOR_E2E_GOOGLE_PROVIDER_URL: googleProviderMock.baseUrl,
+        BOT_COMBINATOR_E2E_SECRET_KEY: randomBytes(32).toString('hex'),
         CLAUDE_CODE_OAUTH_TOKEN: 'e2e-setup-token-must-never-persist',
-        OUTREACHR_STARTUP_DIAGNOSTICS: '1',
+        BOT_COMBINATOR_STARTUP_DIAGNOSTICS: '1',
         ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
       },
       timeout: 60_000,

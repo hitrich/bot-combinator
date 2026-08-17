@@ -87,42 +87,42 @@ export interface AgentResult {
  * desktop agent runtime deliberately enables only proposal kinds its current
  * founder-review UI can apply without changing semantics.
  */
-export const OUTREACHR_AGENT_MCP_READ_TOOLS = [
-  'outreachr_search_investors',
-  'outreachr_list_investors',
-  'outreachr_get_investor',
-  'outreachr_search_people',
-  'outreachr_list_people',
-  'outreachr_get_person',
-  'outreachr_get_pipeline',
-  'outreachr_get_round',
-  'outreachr_list_tasks',
-  'outreachr_list_meetings',
-  'outreachr_list_knowledge',
-  'outreachr_list_activity',
+export const BOT_COMBINATOR_AGENT_MCP_READ_TOOLS = [
+  'bot_combinator_search_investors',
+  'bot_combinator_list_investors',
+  'bot_combinator_get_investor',
+  'bot_combinator_search_people',
+  'bot_combinator_list_people',
+  'bot_combinator_get_person',
+  'bot_combinator_get_pipeline',
+  'bot_combinator_get_round',
+  'bot_combinator_list_tasks',
+  'bot_combinator_list_meetings',
+  'bot_combinator_list_knowledge',
+  'bot_combinator_list_activity',
 ] as const;
 
-export const OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS = [
-  'outreachr_propose_stage',
-  'outreachr_propose_task',
-  'outreachr_propose_draft',
+export const BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS = [
+  'bot_combinator_propose_stage',
+  'bot_combinator_propose_task',
+  'bot_combinator_propose_draft',
 ] as const;
 
-export const OUTREACHR_AGENT_MCP_TOOLS = [
-  ...OUTREACHR_AGENT_MCP_READ_TOOLS,
-  ...OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS,
+export const BOT_COMBINATOR_AGENT_MCP_TOOLS = [
+  ...BOT_COMBINATOR_AGENT_MCP_READ_TOOLS,
+  ...BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS,
 ] as const;
 
-export type OutreachrAgentMcpToolName = (typeof OUTREACHR_AGENT_MCP_TOOLS)[number];
+export type BotCombinatorAgentMcpToolName = (typeof BOT_COMBINATOR_AGENT_MCP_TOOLS)[number];
 
 /** A short-lived, loopback-only MCP connection created by the desktop host. */
 export interface AgentMcpConnection {
-  readonly serverName: 'outreachr';
+  readonly serverName: 'bot-combinator';
   readonly url: string;
   readonly bearerToken: string;
   readonly sessionId: string;
   readonly auditPurpose: string;
-  readonly enabledTools: readonly OutreachrAgentMcpToolName[];
+  readonly enabledTools: readonly BotCombinatorAgentMcpToolName[];
 }
 
 export interface AgentRunRequest {

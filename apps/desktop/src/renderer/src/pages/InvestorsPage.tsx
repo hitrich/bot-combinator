@@ -123,7 +123,7 @@ export function InvestorsPage(): React.JSX.Element {
   const exportData = async (): Promise<void> => {
     setExporting(true);
     try {
-      const directory = await window.outreachr.selectDirectory();
+      const directory = await window.botCombinator.selectDirectory();
       if (!directory) return;
       const result = await command('data.exportCsv', {
         directory,

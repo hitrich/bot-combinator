@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-07-31T19:41:08Z",
-  "title": "Design System: Outreachr",
+  "title": "Design System: Bot Combinator",
   "extensions": {
     "colorMeta": {
       "paper": {
@@ -253,7 +253,7 @@
   ],
   "narrative": {
     "northStar": "The Morning Brief",
-    "overview": "A founder opens Outreachr before the day’s first investor call and finds a prepared briefing desk: clear, exact, calm, and already arranged around the decisions that matter. The interface is a working instrument, not a performance of productivity.",
+    "overview": "A founder opens Bot Combinator before the day’s first investor call and finds a prepared briefing desk: clear, exact, calm, and already arranged around the decisions that matter. The interface is a working instrument, not a performance of productivity.",
     "keyCharacteristics": [
       "Bright paper and cool fog surfaces anchored by marine blue.",
       "Compact records with generous reading rhythm and stable information architecture.",

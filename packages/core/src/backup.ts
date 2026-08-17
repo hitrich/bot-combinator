@@ -31,7 +31,7 @@ interface BackupHeader {
 
 function authenticatedHeader(header: BackupHeader): Buffer {
   return Buffer.from(
-    stableJson({ format: 'outreachr-encrypted-backup', version: 1, ...header }),
+    stableJson({ format: 'bot-combinator-encrypted-backup', version: 1, ...header }),
     'utf8',
   );
 }
@@ -97,7 +97,7 @@ export async function createEncryptedBackup(
   cipher.setAAD(authenticatedHeader({ createdAt, sqliteSha256, kdf, cipher: cipherHeader }));
   const ciphertext = Buffer.concat([cipher.update(sqliteBytes), cipher.final()]);
   const envelope = BackupEnvelopeSchema.parse({
-    format: 'outreachr-encrypted-backup',
+    format: 'bot-combinator-encrypted-backup',
     version: 1,
     createdAt,
     sqliteSha256,

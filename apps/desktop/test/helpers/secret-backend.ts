@@ -1,6 +1,6 @@
 import type { SecretStoreBackend, SecretStoreStatus } from '../../src/main/secure-store';
 
-const PREFIX = Buffer.from('outreachr-test-cipher-v1:', 'utf8');
+const PREFIX = Buffer.from('bot-combinator-test-cipher-v1:', 'utf8');
 
 export class FakeSecretBackend implements SecretStoreBackend {
   available = true;

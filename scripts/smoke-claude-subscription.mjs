@@ -5,13 +5,13 @@ import { join } from 'node:path';
 
 import { ClaudeAgentAdapter, createAllowlist } from '../packages/agents/dist/index.js';
 
-if (process.env.OUTREACHR_LIVE_CLAUDE_SMOKE !== '1') {
+if (process.env.BOT_COMBINATOR_LIVE_CLAUDE_SMOKE !== '1') {
   throw new Error(
-    'Live Claude smoke is opt-in because it consumes subscription credit. Set OUTREACHR_LIVE_CLAUDE_SMOKE=1.',
+    'Live Claude smoke is opt-in because it consumes subscription credit. Set BOT_COMBINATOR_LIVE_CLAUDE_SMOKE=1.',
   );
 }
 
-const workspaceDirectory = await mkdtemp(join(tmpdir(), 'outreachr-live-claude-'));
+const workspaceDirectory = await mkdtemp(join(tmpdir(), 'bot-combinator-live-claude-'));
 const adapter = new ClaudeAgentAdapter({
   workspaceDirectory,
   allowSubscriptionAuth: true,

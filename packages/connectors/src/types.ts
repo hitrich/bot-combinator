@@ -150,7 +150,7 @@ export interface MailboxMessage {
   threadId?: string;
   internetMessageId?: string;
   /**
-   * Outreachr's opaque, per-send idempotency key when the provider preserved
+   * Bot Combinator's opaque, per-send idempotency key when the provider preserved
    * the custom message header. This is used only to reconcile a previously
    * ambiguous local send with an authoritative sent-mail observation.
    */

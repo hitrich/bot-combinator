@@ -127,7 +127,7 @@ describe('desktop renderer smoke and accessibility contracts', () => {
 
     fireEvent.keyDown(window, { key: 'k', metaKey: true });
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveAccessibleName('Search Outreachr');
+    expect(dialog).toHaveAccessibleName('Search Bot Combinator');
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Search query' }), {
       target: { value: 'Calm' },
     });

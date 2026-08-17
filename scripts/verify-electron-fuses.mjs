@@ -70,8 +70,9 @@ function isElectronFuseBinary(file) {
     );
   }
   if (!/(?:^|\/)\w[^/]*-unpacked\//.test(normalized)) return false;
-  if (process.platform === 'win32') return path.basename(file).toLowerCase() === 'outreachr.exe';
-  return path.basename(file) === 'outreachr';
+  if (process.platform === 'win32')
+    return path.basename(file).toLowerCase() === 'bot-combinator.exe';
+  return path.basename(file) === 'bot-combinator';
 }
 
 function allOffsets(haystack, needle) {

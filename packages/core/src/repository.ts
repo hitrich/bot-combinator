@@ -5,8 +5,12 @@ import {
   AgentProposalSchema,
   AgentRunSchema,
   ClaimSchema,
+  CohortMembershipSchema,
+  CohortSchema,
   ConnectorConfigSchema,
   ContactMethodSchema,
+  EcosystemProgramSchema,
+  EcosystemProjectSchema,
   FirmSchema,
   FounderProfileSchema,
   FundSchema,
@@ -19,6 +23,10 @@ import {
   normalizeEmail,
   NoteSchema,
   PersonSchema,
+  ProgramMetricObservationSchema,
+  ProgramMilestoneSchema,
+  ProjectGateReviewSchema,
+  ProjectStageEventSchema,
   RoundSchema,
   SourceSchema,
   stableJson,
@@ -28,8 +36,15 @@ import {
   type AgentProposalInput,
   type AgentRunInput,
   type ClaimInput,
+  type Cohort,
+  type CohortInput,
+  type CohortMembershipInput,
   type ConnectorConfigInput,
   type ContactMethodInput,
+  type EcosystemProgram,
+  type EcosystemProgramInput,
+  type EcosystemProject,
+  type EcosystemProjectInput,
   type FirmInput,
   type FounderProfileInput,
   type FundInput,
@@ -39,6 +54,13 @@ import {
   type MessageDraftInput,
   type NoteInput,
   type PersonInput,
+  type ProgramMetricObservation,
+  type ProgramMetricObservationInput,
+  type ProgramMilestone,
+  type ProgramMilestoneInput,
+  type ProjectGateReview,
+  type ProjectGateReviewInput,
+  type ProjectStageEventInput,
   type RoundInput,
   type SourceInput,
   type SuppressionInput,
@@ -183,6 +205,24 @@ export interface TargetListItem {
   nextActionAt: string | null;
 }
 
+export interface CohortMembershipRecord {
+  cohortId: string;
+  projectId: string;
+  state: 'accepted' | 'active' | 'completed' | 'withdrawn';
+  admittedAt: string;
+  completedAt: string | null;
+  updatedAt: string;
+}
+
+export interface QualityGateDefinitionRecord {
+  key: string;
+  version: number;
+  title: string;
+  description: string;
+  sortOrder: number;
+  active: boolean;
+}
+
 function bool(value: boolean): number {
   return value ? 1 : 0;
 }
@@ -235,7 +275,7 @@ function auditEntryHash(row: AuditRow, previousHash: string | null): string {
 
 export function appendAuditEntry(vault: CoreVault, input: AuditEntryInput): number {
   const detailJson = stableJson(input.detail ?? {});
-  vault.run('SAVEPOINT outreachr_audit_append');
+  vault.run('SAVEPOINT bot_combinator_audit_append');
   try {
     vault.run(
       'INSERT INTO audit_log(occurred_at,actor_type,actor_id,action,entity_type,entity_id,detail_json) VALUES (?,?,?,?,?,?,?)',
@@ -272,11 +312,11 @@ export function appendAuditEntry(vault: CoreVault, input: AuditEntryInput): numb
         input.occurredAt,
       ],
     );
-    vault.run('RELEASE SAVEPOINT outreachr_audit_append');
+    vault.run('RELEASE SAVEPOINT bot_combinator_audit_append');
     return auditId;
   } catch (error) {
-    vault.run('ROLLBACK TO SAVEPOINT outreachr_audit_append');
-    vault.run('RELEASE SAVEPOINT outreachr_audit_append');
+    vault.run('ROLLBACK TO SAVEPOINT bot_combinator_audit_append');
+    vault.run('RELEASE SAVEPOINT bot_combinator_audit_append');
     throw error;
   }
 }
@@ -359,7 +399,7 @@ export function approvalContentHash(message: {
   );
 }
 
-export class OutreachrRepository {
+export class BotCombinatorRepository {
   constructor(readonly vault: CoreVault) {}
 
   private audit(
@@ -1204,7 +1244,7 @@ export class OutreachrRepository {
       return false;
     }
 
-    this.vault.run('SAVEPOINT outreachr_send_mailbox_reconcile');
+    this.vault.run('SAVEPOINT bot_combinator_send_mailbox_reconcile');
     try {
       this.vault.run(
         `UPDATE send_ledger SET dispatch_status='sent',provider_message_id=?,
@@ -1214,8 +1254,8 @@ export class OutreachrRepository {
         [value.providerMessageId, value.providerThreadId, value.occurredAt, value.operationKey],
       );
       if (this.vault.db.getRowsModified() !== 1) {
-        this.vault.run('ROLLBACK TO SAVEPOINT outreachr_send_mailbox_reconcile');
-        this.vault.run('RELEASE SAVEPOINT outreachr_send_mailbox_reconcile');
+        this.vault.run('ROLLBACK TO SAVEPOINT bot_combinator_send_mailbox_reconcile');
+        this.vault.run('RELEASE SAVEPOINT bot_combinator_send_mailbox_reconcile');
         return false;
       }
       this.vault.run(
@@ -1236,11 +1276,11 @@ export class OutreachrRepository {
         value.reconciledAt,
         'connector',
       );
-      this.vault.run('RELEASE SAVEPOINT outreachr_send_mailbox_reconcile');
+      this.vault.run('RELEASE SAVEPOINT bot_combinator_send_mailbox_reconcile');
       return true;
     } catch (error) {
-      this.vault.run('ROLLBACK TO SAVEPOINT outreachr_send_mailbox_reconcile');
-      this.vault.run('RELEASE SAVEPOINT outreachr_send_mailbox_reconcile');
+      this.vault.run('ROLLBACK TO SAVEPOINT bot_combinator_send_mailbox_reconcile');
+      this.vault.run('RELEASE SAVEPOINT bot_combinator_send_mailbox_reconcile');
       throw error;
     }
   }
@@ -1456,6 +1496,557 @@ export class OutreachrRepository {
     );
     if (this.vault.db.getRowsModified() !== 1) throw new Error('Proposal is not pending');
     this.audit(`agent.proposal_${decision}`, 'agent_proposal', proposalId, {}, reviewedAt);
+  }
+
+  upsertEcosystemProgram(
+    input: EcosystemProgramInput,
+    actorType: 'founder' | 'system' = 'founder',
+  ): void {
+    const value = EcosystemProgramSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO ecosystem_programs(id,name,partner_name,status,grant_period_start,grant_period_end,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+       name=excluded.name,partner_name=excluded.partner_name,status=excluded.status,
+       grant_period_start=excluded.grant_period_start,grant_period_end=excluded.grant_period_end,
+       updated_at=excluded.updated_at`,
+      [
+        value.id,
+        value.name,
+        value.partnerName,
+        value.status,
+        value.grantPeriodStart,
+        value.grantPeriodEnd,
+        value.createdAt,
+        value.updatedAt,
+      ],
+    );
+    this.audit(
+      'ecosystem_program.upsert',
+      'ecosystem_program',
+      value.id,
+      { status: value.status, partnerName: value.partnerName },
+      value.updatedAt,
+      actorType,
+      actorType === 'system' ? 'system' : 'founder',
+    );
+  }
+
+  ecosystemProgram(id: string): EcosystemProgram | null {
+    const row = this.vault.one<{
+      id: string;
+      name: string;
+      partner_name: string;
+      status: EcosystemProgram['status'];
+      grant_period_start: string | null;
+      grant_period_end: string | null;
+      created_at: string;
+      updated_at: string;
+    }>('SELECT * FROM ecosystem_programs WHERE id=?', [IdSchema.parse(id)]);
+    if (!row) return null;
+    return EcosystemProgramSchema.parse({
+      id: row.id,
+      name: row.name,
+      partnerName: row.partner_name,
+      status: row.status,
+      grantPeriodStart: row.grant_period_start,
+      grantPeriodEnd: row.grant_period_end,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    });
+  }
+
+  createEcosystemProject(input: EcosystemProjectInput, reason: string): void {
+    const value = EcosystemProjectSchema.parse(input);
+    const event = ProjectStageEventSchema.parse({
+      id: `project-stage:${randomUUID()}`,
+      projectId: value.id,
+      fromStage: null,
+      toStage: value.stage,
+      reason,
+      actorType: 'founder',
+      actorId: 'founder',
+      occurredAt: value.createdAt,
+    });
+    this.vault.transaction(() => {
+      this.vault.run(
+        `INSERT INTO ecosystem_projects(
+          id,program_id,name,website,description,stage,source,owner_name,owner_email,
+          target_launch_at,launched_at,created_at,updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          value.id,
+          value.programId,
+          value.name,
+          value.website,
+          value.description,
+          value.stage,
+          value.source,
+          value.ownerName,
+          value.ownerEmail,
+          value.targetLaunchAt,
+          value.launchedAt,
+          value.createdAt,
+          value.updatedAt,
+        ],
+      );
+      this.insertProjectStageEvent(event);
+      this.audit(
+        'ecosystem_project.created',
+        'ecosystem_project',
+        value.id,
+        { programId: value.programId, stage: value.stage, source: value.source },
+        value.createdAt,
+      );
+    });
+  }
+
+  private insertProjectStageEvent(input: ProjectStageEventInput): void {
+    const value = ProjectStageEventSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO project_stage_events(
+        id,project_id,from_stage,to_stage,reason,actor_type,actor_id,occurred_at
+      ) VALUES (?,?,?,?,?,?,?,?)`,
+      [
+        value.id,
+        value.projectId,
+        value.fromStage,
+        value.toStage,
+        value.reason,
+        value.actorType,
+        value.actorId,
+        value.occurredAt,
+      ],
+    );
+  }
+
+  moveEcosystemProjectStage(input: {
+    projectId: string;
+    stage: EcosystemProject['stage'];
+    reason: string;
+    occurredAt: string;
+    actorType?: 'founder' | 'system' | 'agent';
+    actorId?: string | null;
+  }): void {
+    const projectId = IdSchema.parse(input.projectId);
+    const current = this.vault.one<{
+      stage: EcosystemProject['stage'];
+      launched_at: string | null;
+    }>('SELECT stage,launched_at FROM ecosystem_projects WHERE id=?', [projectId]);
+    if (!current) throw new Error('Ecosystem project not found');
+    if (current.stage === input.stage) throw new Error('Project is already in that stage');
+    const event = ProjectStageEventSchema.parse({
+      id: `project-stage:${randomUUID()}`,
+      projectId,
+      fromStage: current.stage,
+      toStage: input.stage,
+      reason: input.reason,
+      actorType: input.actorType ?? 'founder',
+      actorId: input.actorId ?? 'founder',
+      occurredAt: input.occurredAt,
+    });
+    const launchedAt =
+      input.stage === 'live_market' && !current.launched_at
+        ? input.occurredAt
+        : current.launched_at;
+    this.vault.transaction(() => {
+      this.vault.run(
+        'UPDATE ecosystem_projects SET stage=?,launched_at=?,updated_at=? WHERE id=?',
+        [input.stage, launchedAt, input.occurredAt, projectId],
+      );
+      this.insertProjectStageEvent(event);
+      this.audit(
+        'ecosystem_project.stage_changed',
+        'ecosystem_project',
+        projectId,
+        { fromStage: current.stage, toStage: input.stage, reason: input.reason },
+        input.occurredAt,
+        input.actorType ?? 'founder',
+        input.actorId ?? 'founder',
+      );
+    });
+  }
+
+  listEcosystemProjects(programId: string): EcosystemProject[] {
+    return this.vault
+      .all<{
+        id: string;
+        program_id: string;
+        name: string;
+        website: string | null;
+        description: string | null;
+        stage: EcosystemProject['stage'];
+        source: EcosystemProject['source'];
+        owner_name: string | null;
+        owner_email: string | null;
+        target_launch_at: string | null;
+        launched_at: string | null;
+        created_at: string;
+        updated_at: string;
+      }>('SELECT * FROM ecosystem_projects WHERE program_id=? ORDER BY updated_at DESC,name', [
+        IdSchema.parse(programId),
+      ])
+      .map((row) =>
+        EcosystemProjectSchema.parse({
+          id: row.id,
+          programId: row.program_id,
+          name: row.name,
+          website: row.website,
+          description: row.description,
+          stage: row.stage,
+          source: row.source,
+          ownerName: row.owner_name,
+          ownerEmail: row.owner_email,
+          targetLaunchAt: row.target_launch_at,
+          launchedAt: row.launched_at,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+  }
+
+  upsertCohort(input: CohortInput): void {
+    const value = CohortSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO cohorts(id,program_id,name,thesis,starts_on,ends_on,capacity,status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+       program_id=excluded.program_id,name=excluded.name,thesis=excluded.thesis,
+       starts_on=excluded.starts_on,ends_on=excluded.ends_on,capacity=excluded.capacity,
+       status=excluded.status,updated_at=excluded.updated_at`,
+      [
+        value.id,
+        value.programId,
+        value.name,
+        value.thesis,
+        value.startsOn,
+        value.endsOn,
+        value.capacity,
+        value.status,
+        value.createdAt,
+        value.updatedAt,
+      ],
+    );
+    this.audit(
+      'cohort.upsert',
+      'cohort',
+      value.id,
+      { programId: value.programId, status: value.status },
+      value.updatedAt,
+    );
+  }
+
+  listCohorts(programId: string): Cohort[] {
+    return this.vault
+      .all<{
+        id: string;
+        program_id: string;
+        name: string;
+        thesis: string | null;
+        starts_on: string | null;
+        ends_on: string | null;
+        capacity: number | null;
+        status: Cohort['status'];
+        created_at: string;
+        updated_at: string;
+      }>('SELECT * FROM cohorts WHERE program_id=? ORDER BY starts_on DESC,name', [
+        IdSchema.parse(programId),
+      ])
+      .map((row) =>
+        CohortSchema.parse({
+          id: row.id,
+          programId: row.program_id,
+          name: row.name,
+          thesis: row.thesis,
+          startsOn: row.starts_on,
+          endsOn: row.ends_on,
+          capacity: row.capacity,
+          status: row.status,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+  }
+
+  upsertCohortMembership(input: CohortMembershipInput): void {
+    const value = CohortMembershipSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO cohort_memberships(
+        cohort_id,project_id,state,admitted_at,completed_at,updated_at
+      ) VALUES (?,?,?,?,?,?) ON CONFLICT(cohort_id,project_id) DO UPDATE SET
+      state=excluded.state,completed_at=excluded.completed_at,updated_at=excluded.updated_at`,
+      [
+        value.cohortId,
+        value.projectId,
+        value.state,
+        value.admittedAt,
+        value.completedAt,
+        value.updatedAt,
+      ],
+    );
+    this.audit(
+      'cohort.membership_upsert',
+      'ecosystem_project',
+      value.projectId,
+      { cohortId: value.cohortId, state: value.state },
+      value.updatedAt,
+    );
+  }
+
+  listCohortMemberships(programId: string): CohortMembershipRecord[] {
+    return this.vault
+      .all<{
+        cohort_id: string;
+        project_id: string;
+        state: CohortMembershipRecord['state'];
+        admitted_at: string;
+        completed_at: string | null;
+        updated_at: string;
+      }>(
+        `SELECT cm.* FROM cohort_memberships cm
+         JOIN cohorts c ON c.id=cm.cohort_id WHERE c.program_id=?
+         ORDER BY cm.updated_at DESC,cm.project_id`,
+        [IdSchema.parse(programId)],
+      )
+      .map((row) => ({
+        cohortId: row.cohort_id,
+        projectId: row.project_id,
+        state: row.state,
+        admittedAt: row.admitted_at,
+        completedAt: row.completed_at,
+        updatedAt: row.updated_at,
+      }));
+  }
+
+  listQualityGateDefinitions(): QualityGateDefinitionRecord[] {
+    return this.vault
+      .all<{
+        gate_key: string;
+        version: number;
+        title: string;
+        description: string;
+        sort_order: number;
+        active: number;
+      }>(
+        `SELECT gate_key,version,title,description,sort_order,active
+         FROM quality_gate_definitions WHERE active=1 ORDER BY sort_order,gate_key`,
+      )
+      .map((row) => ({
+        key: row.gate_key,
+        version: Number(row.version),
+        title: row.title,
+        description: row.description,
+        sortOrder: Number(row.sort_order),
+        active: row.active === 1,
+      }));
+  }
+
+  upsertProjectGateReview(input: ProjectGateReviewInput): void {
+    const value = ProjectGateReviewSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO project_gate_reviews(
+        id,project_id,gate_key,gate_version,status,rationale,evidence,reviewed_by,
+        reviewed_at,created_at,updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(project_id,gate_key,gate_version) DO UPDATE SET
+      status=excluded.status,rationale=excluded.rationale,evidence=excluded.evidence,
+      reviewed_by=excluded.reviewed_by,reviewed_at=excluded.reviewed_at,updated_at=excluded.updated_at`,
+      [
+        value.id,
+        value.projectId,
+        value.gateKey,
+        value.gateVersion,
+        value.status,
+        value.rationale,
+        value.evidence,
+        value.reviewedBy,
+        value.reviewedAt,
+        value.createdAt,
+        value.updatedAt,
+      ],
+    );
+    this.audit(
+      'project_gate.reviewed',
+      'ecosystem_project',
+      value.projectId,
+      { gateKey: value.gateKey, gateVersion: value.gateVersion, status: value.status },
+      value.updatedAt,
+    );
+  }
+
+  listProjectGateReviews(programId: string): ProjectGateReview[] {
+    return this.vault
+      .all<{
+        id: string;
+        project_id: string;
+        gate_key: string;
+        gate_version: number;
+        status: ProjectGateReview['status'];
+        rationale: string | null;
+        evidence: string | null;
+        reviewed_by: string | null;
+        reviewed_at: string | null;
+        created_at: string;
+        updated_at: string;
+      }>(
+        `SELECT r.* FROM project_gate_reviews r
+         JOIN ecosystem_projects p ON p.id=r.project_id
+         WHERE p.program_id=? ORDER BY r.updated_at DESC,r.id`,
+        [IdSchema.parse(programId)],
+      )
+      .map((row) =>
+        ProjectGateReviewSchema.parse({
+          id: row.id,
+          projectId: row.project_id,
+          gateKey: row.gate_key,
+          gateVersion: Number(row.gate_version),
+          status: row.status,
+          rationale: row.rationale,
+          evidence: row.evidence,
+          reviewedBy: row.reviewed_by,
+          reviewedAt: row.reviewed_at,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+  }
+
+  upsertProgramMilestone(input: ProgramMilestoneInput): void {
+    const value = ProgramMilestoneSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO program_milestones(
+        id,project_id,cohort_id,title,category,owner,due_at,evidence_required,evidence,
+        status,created_at,updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+      project_id=excluded.project_id,cohort_id=excluded.cohort_id,title=excluded.title,
+      category=excluded.category,owner=excluded.owner,due_at=excluded.due_at,
+      evidence_required=excluded.evidence_required,evidence=excluded.evidence,
+      status=excluded.status,updated_at=excluded.updated_at`,
+      [
+        value.id,
+        value.projectId,
+        value.cohortId,
+        value.title,
+        value.category,
+        value.owner,
+        value.dueAt,
+        value.evidenceRequired,
+        value.evidence,
+        value.status,
+        value.createdAt,
+        value.updatedAt,
+      ],
+    );
+    this.audit(
+      'program_milestone.upsert',
+      'program_milestone',
+      value.id,
+      { projectId: value.projectId, status: value.status, category: value.category },
+      value.updatedAt,
+    );
+  }
+
+  listProgramMilestones(programId: string): ProgramMilestone[] {
+    return this.vault
+      .all<{
+        id: string;
+        project_id: string;
+        cohort_id: string | null;
+        title: string;
+        category: ProgramMilestone['category'];
+        owner: string | null;
+        due_at: string | null;
+        evidence_required: string | null;
+        evidence: string | null;
+        status: ProgramMilestone['status'];
+        created_at: string;
+        updated_at: string;
+      }>(
+        `SELECT m.* FROM program_milestones m
+         JOIN ecosystem_projects p ON p.id=m.project_id
+         WHERE p.program_id=? ORDER BY COALESCE(m.due_at,'9999'),m.created_at,m.id`,
+        [IdSchema.parse(programId)],
+      )
+      .map((row) =>
+        ProgramMilestoneSchema.parse({
+          id: row.id,
+          projectId: row.project_id,
+          cohortId: row.cohort_id,
+          title: row.title,
+          category: row.category,
+          owner: row.owner,
+          dueAt: row.due_at,
+          evidenceRequired: row.evidence_required,
+          evidence: row.evidence,
+          status: row.status,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }),
+      );
+  }
+
+  insertProgramMetricObservation(input: ProgramMetricObservationInput): void {
+    const value = ProgramMetricObservationSchema.parse(input);
+    this.vault.run(
+      `INSERT INTO program_metric_observations(
+        id,program_id,project_id,metric_key,value,unit,observed_at,source_label,quality,created_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [
+        value.id,
+        value.programId,
+        value.projectId,
+        value.key,
+        value.value,
+        value.unit,
+        value.observedAt,
+        value.sourceLabel,
+        value.quality,
+        value.createdAt,
+      ],
+    );
+    this.audit(
+      'program_metric.recorded',
+      'program_metric',
+      value.id,
+      {
+        programId: value.programId,
+        projectId: value.projectId,
+        key: value.key,
+        quality: value.quality,
+      },
+      value.createdAt,
+    );
+  }
+
+  listProgramMetricObservations(programId: string): ProgramMetricObservation[] {
+    return this.vault
+      .all<{
+        id: string;
+        program_id: string;
+        project_id: string | null;
+        metric_key: string;
+        value: number;
+        unit: string;
+        observed_at: string;
+        source_label: string;
+        quality: ProgramMetricObservation['quality'];
+        created_at: string;
+      }>(
+        `SELECT * FROM program_metric_observations
+         WHERE program_id=? ORDER BY observed_at DESC,id DESC`,
+        [IdSchema.parse(programId)],
+      )
+      .map((row) =>
+        ProgramMetricObservationSchema.parse({
+          id: row.id,
+          programId: row.program_id,
+          projectId: row.project_id,
+          key: row.metric_key,
+          value: Number(row.value),
+          unit: row.unit,
+          observedAt: row.observed_at,
+          sourceLabel: row.source_label,
+          quality: row.quality,
+          createdAt: row.created_at,
+        }),
+      );
   }
 
   getRoundSummary(roundId: string): Record<string, number> {

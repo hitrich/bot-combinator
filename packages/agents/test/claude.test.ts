@@ -44,12 +44,12 @@ const installedWithCliAuth: CommandRunner = vi.fn(async (_command, args) => {
   }
   return { exitCode: 0, stdout: '', stderr: '' };
 });
-const resolvedWorkspaceDirectory = resolve('/tmp/outreachr-agent');
+const resolvedWorkspaceDirectory = resolve('/tmp/bot-combinator-agent');
 
 describe('ClaudeAgentAdapter', () => {
   it('detects but does not route an independently authenticated Claude subscription', async () => {
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: installedWithCliAuth,
       environment: { PATH: '/bin', HOME: '/tmp/home' },
     });
@@ -68,7 +68,7 @@ describe('ClaudeAgentAdapter', () => {
   it('routes an explicitly approved official Claude Code session through local keychain/config', async () => {
     let captured: Options | undefined;
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory: ({ options }) => {
         captured = options;
         return fakeQuery([resultMessage()]);
@@ -110,7 +110,7 @@ describe('ClaudeAgentAdapter', () => {
         ? { exitCode: 0, stdout: 'Claude Code 2', stderr: '' }
         : { exitCode: 0, stdout: '{"loggedIn":false}', stderr: '' };
     const setup = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: runner,
       environment: { PATH: '/bin', CLAUDE_CODE_OAUTH_TOKEN: 'token' },
     });
@@ -120,7 +120,7 @@ describe('ClaudeAgentAdapter', () => {
       subscriptionAuthApproved: false,
     });
     const api = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: runner,
       environment: { CLAUDE_CODE_OAUTH_TOKEN: 'token', ANTHROPIC_API_KEY: 'key' },
     });
@@ -133,7 +133,7 @@ describe('ClaudeAgentAdapter', () => {
 
   it('offers API-key setup and gates official CLI login behind explicit approval', async () => {
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: installedWithCliAuth,
     });
     await expect(adapter.login({ provider: 'claude', mode: 'official-cli' })).rejects.toThrow(
@@ -182,7 +182,7 @@ describe('ClaudeAgentAdapter', () => {
       return Object.assign(generator, { close: vi.fn() }) as unknown as Query;
     };
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory,
       commandRunner: async (_command, args) =>
         args[0] === '--version'
@@ -245,7 +245,7 @@ describe('ClaudeAgentAdapter', () => {
       );
     };
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory,
       commandRunner: async () => ({ exitCode: 0, stdout: 'Claude Code', stderr: '' }),
       environment: { PATH: '/bin', ANTHROPIC_API_KEY: 'secret', UNRELATED_SECRET: 'must-not-pass' },
@@ -273,7 +273,7 @@ describe('ClaudeAgentAdapter', () => {
     expect(captured?.options.disallowedTools).toEqual(CLAUDE_DISALLOWED_TOOLS);
     expect(captured?.options.env?.UNRELATED_SECRET).toBeUndefined();
     expect(captured?.options.env?.ANTHROPIC_API_KEY).toBe('secret');
-    expect(captured?.options.env?.CLAUDE_AGENT_SDK_CLIENT_APP).toBe('outreachr/0.1.2');
+    expect(captured?.options.env?.CLAUDE_AGENT_SDK_CLIENT_APP).toBe('bot-combinator/0.1.2');
     await expect(
       captured?.options.canUseTool?.(
         'Bash',
@@ -301,7 +301,7 @@ describe('ClaudeAgentAdapter', () => {
         } as unknown as SDKMessage,
       ]);
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory: toolQuery,
       commandRunner: async () => ({ exitCode: 0, stdout: 'Claude', stderr: '' }),
       environment: { ANTHROPIC_API_KEY: 'key' },
@@ -311,7 +311,7 @@ describe('ClaudeAgentAdapter', () => {
     );
 
     const denied = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory: () =>
         fakeQuery([
           {
@@ -329,10 +329,10 @@ describe('ClaudeAgentAdapter', () => {
     );
   });
 
-  it('uses strict loopback MCP config and allows only exact Outreachr read/safe-proposal tools', async () => {
+  it('uses strict loopback MCP config and allows only exact Bot Combinator read/safe-proposal tools', async () => {
     let captured: Options | undefined;
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory: (params) => {
         captured = params.options;
         return fakeQuery([
@@ -343,7 +343,7 @@ describe('ClaudeAgentAdapter', () => {
                 {
                   type: 'tool_use',
                   id: 'tool-allowed',
-                  name: 'mcp__outreachr__outreachr_get_round',
+                  name: 'mcp__bot-combinator__bot_combinator_get_round',
                   input: {},
                 },
               ],
@@ -358,10 +358,10 @@ describe('ClaudeAgentAdapter', () => {
     const connection = {
       ...mcpConnection('run-mcp'),
       enabledTools: [
-        'outreachr_get_round',
-        'outreachr_propose_stage',
-        'outreachr_propose_task',
-        'outreachr_propose_draft',
+        'bot_combinator_get_round',
+        'bot_combinator_propose_stage',
+        'bot_combinator_propose_task',
+        'bot_combinator_propose_draft',
       ] as const,
     };
     await expect(
@@ -373,28 +373,32 @@ describe('ClaudeAgentAdapter', () => {
       strictMcpConfig: true,
       settingSources: [],
       mcpServers: {
-        outreachr: {
+        'bot-combinator': {
           type: 'http',
           url: 'http://127.0.0.1:43123/mcp',
           headers: {
             Authorization: expect.stringMatching(/^Bearer .{32,}$/u),
-            'X-Outreachr-Session': 'run-mcp',
+            'X-Bot-Combinator-Session': 'run-mcp',
           },
           alwaysLoad: true,
         },
       },
     });
     expect(captured?.allowedTools).toEqual([
-      'mcp__outreachr__outreachr_get_round',
-      'mcp__outreachr__outreachr_propose_stage',
-      'mcp__outreachr__outreachr_propose_task',
-      'mcp__outreachr__outreachr_propose_draft',
+      'mcp__bot-combinator__bot_combinator_get_round',
+      'mcp__bot-combinator__bot_combinator_propose_stage',
+      'mcp__bot-combinator__bot_combinator_propose_task',
+      'mcp__bot-combinator__bot_combinator_propose_draft',
     ]);
-    expect(captured?.allowedTools).not.toContain('mcp__outreachr__outreachr_search_investors');
-    expect(captured?.allowedTools).not.toContain('mcp__outreachr__outreachr_propose_target');
+    expect(captured?.allowedTools).not.toContain(
+      'mcp__bot-combinator__bot_combinator_search_investors',
+    );
+    expect(captured?.allowedTools).not.toContain(
+      'mcp__bot-combinator__bot_combinator_propose_target',
+    );
     await expect(
       captured?.canUseTool?.(
-        'mcp__outreachr__outreachr_propose_task',
+        'mcp__bot-combinator__bot_combinator_propose_task',
         {},
         {
           signal: new AbortController().signal,
@@ -405,7 +409,7 @@ describe('ClaudeAgentAdapter', () => {
     ).resolves.toEqual({ behavior: 'allow' });
     await expect(
       captured?.canUseTool?.(
-        'mcp__outreachr__outreachr_propose_target',
+        'mcp__bot-combinator__bot_combinator_propose_target',
         {},
         {
           signal: new AbortController().signal,
@@ -431,7 +435,7 @@ describe('ClaudeAgentAdapter', () => {
       return Object.assign(generator, { close: vi.fn() }) as unknown as Query;
     };
     const adapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory,
       commandRunner: async () => ({ exitCode: 0, stdout: 'Claude', stderr: '' }),
       environment: { ANTHROPIC_API_KEY: 'key' },
@@ -446,7 +450,7 @@ describe('ClaudeAgentAdapter', () => {
   it('clears only API-key auth and never modifies an independent subscription login', async () => {
     const clear = vi.fn(async () => undefined);
     const envAdapter = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: installedWithCliAuth,
       environment: { ANTHROPIC_API_KEY: 'key' },
       clearEnvironmentCredential: clear,
@@ -456,7 +460,7 @@ describe('ClaudeAgentAdapter', () => {
 
     const cliRunner = vi.fn(installedWithCliAuth);
     const cli = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: cliRunner,
       environment: { PATH: '/bin' },
     });
@@ -465,7 +469,7 @@ describe('ClaudeAgentAdapter', () => {
 
     const approvedCliRunner = vi.fn(installedWithCliAuth);
     const approvedCli = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: approvedCliRunner,
       environment: { PATH: '/bin' },
       allowSubscriptionAuth: true,
@@ -480,12 +484,12 @@ describe('ClaudeAgentAdapter', () => {
     );
 
     const noClear = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: installedWithCliAuth,
       environment: { ANTHROPIC_API_KEY: 'key' },
     });
     await expect(noClear.logout()).rejects.toThrow(
-      'Remove ANTHROPIC_API_KEY from the founder-controlled launch environment and restart Outreachr',
+      'Remove ANTHROPIC_API_KEY from the founder-controlled launch environment and restart Bot Combinator',
     );
     await expect(noClear.logout()).rejects.toThrow('never persists plaintext credentials');
   });
@@ -520,7 +524,7 @@ describe('ClaudeAgentAdapter', () => {
     expect(subscriptionClean.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
 
     const missing = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: async () => ({ exitCode: 127, stdout: '', stderr: 'not found' }),
       environment: {},
     });
@@ -530,7 +534,7 @@ describe('ClaudeAgentAdapter', () => {
     });
 
     const unknown = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: async (_command, args) =>
         args[0] === '--version'
           ? { exitCode: 0, stdout: 'Claude', stderr: '' }
@@ -549,7 +553,7 @@ describe('ClaudeAgentAdapter', () => {
 
   it('normalizes CLI auth failures without assuming authentication', async () => {
     const notLoggedIn = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: async (_command, args) =>
         args[0] === '--version'
           ? { exitCode: 0, stdout: 'Claude', stderr: '' }
@@ -563,7 +567,7 @@ describe('ClaudeAgentAdapter', () => {
     await expect(notLoggedIn.logout()).rejects.toThrow('no supported Claude API-key session');
 
     const invalidJson = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: async (_command, args) =>
         args[0] === '--version'
           ? { exitCode: 0, stdout: 'Claude', stderr: '' }
@@ -573,7 +577,7 @@ describe('ClaudeAgentAdapter', () => {
     await expect(invalidJson.detect()).resolves.toMatchObject({ authSource: 'unknown' });
 
     const throwing = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       commandRunner: async () => {
         throw new Error('cannot spawn');
       },
@@ -587,7 +591,7 @@ describe('ClaudeAgentAdapter', () => {
 
   it('surfaces SDK result errors, accepts JSON result fallback, and enforces lifecycle state', async () => {
     const failed = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       queryFactory: () =>
         fakeQuery([
           {
@@ -609,7 +613,7 @@ describe('ClaudeAgentAdapter', () => {
 
     let captured: Options | undefined;
     const fallback = new ClaudeAgentAdapter({
-      workspaceDirectory: '/tmp/outreachr-agent',
+      workspaceDirectory: '/tmp/bot-combinator-agent',
       executable: '/absolute/sidecars/claude',
       queryFactory: (params) => {
         captured = params.options;

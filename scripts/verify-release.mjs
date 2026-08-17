@@ -31,7 +31,7 @@ if (!containsSignature && !allowUnverifiedTag) {
 const taggedCommit = (await run('git', ['rev-list', '-n', '1', tag])).stdout.trim();
 const mainCommit = (await run('git', ['rev-parse', 'refs/remotes/origin/main'])).stdout.trim();
 if (taggedCommit !== mainCommit) {
-  throw new Error(`${tag} points to ${taggedCommit}, but protected origin/main is ${mainCommit}`);
+  throw new Error(`${tag} points to ${taggedCommit}, but current origin/main is ${mainCommit}`);
 }
 const requiredFiles = [
   'LICENSE',
@@ -46,7 +46,7 @@ for (const relative of requiredFiles) {
     throw new Error(`Release prerequisite is missing or empty: ${relative}`);
 }
 console.log(
-  `${tag} matches both application versions, points to protected main, and is annotated (${containsSignature ? 'tag signature present' : 'unsigned tag accepted by explicit policy'}).`,
+  `${tag} matches both application versions, points to current main, and is annotated (${containsSignature ? 'tag signature present' : 'unsigned tag accepted by explicit policy'}).`,
 );
 console.log(
   'GitHub cryptographic tag verification is enforced separately through the GitHub API release preflight.',

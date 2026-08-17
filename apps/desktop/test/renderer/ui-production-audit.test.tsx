@@ -101,7 +101,7 @@ describe('renderer production UX boundaries', () => {
 
     expect(await screen.findByRole('heading', { name: 'Investor universe' })).toBeVisible();
     await waitFor(() => expect(document.querySelector('#main-content')).toHaveFocus());
-    expect(document.title).toBe('Investors · Outreachr');
+    expect(document.title).toBe('Investors · Bot Combinator');
   });
 
   it('shows an honest search loading state without stale or false-empty results', async () => {
@@ -125,7 +125,7 @@ describe('renderer production UX boundaries', () => {
       target: { value: 'Calm' },
     });
 
-    const dialog = await screen.findByRole('dialog', { name: 'Search Outreachr' });
+    const dialog = await screen.findByRole('dialog', { name: 'Search Bot Combinator' });
     expect(await within(dialog).findByRole('status')).toHaveTextContent('Searching local records…');
     expect(screen.queryByRole('heading', { name: 'No matching records' })).not.toBeInTheDocument();
 

@@ -15,8 +15,8 @@ import {
   type AgentProposal,
   type DurableAgentAllowlist,
   type ProviderDetection,
-} from '@outreachr/agents';
-import type { PrivateField } from '@outreachr/mcp';
+} from '@bot-combinator/agents';
+import type { PrivateField } from '@bot-combinator/mcp';
 import type { AgentEvent, AgentProvider, AgentStatus } from '../shared/contracts';
 import type { AgentRunRequest, AgentRuntimeController } from './agent-controller';
 import type { DesktopMcpController } from './mcp-controller';
@@ -611,7 +611,7 @@ export class DesktopAgentService implements AgentRuntimeController {
         await request.onEvent({
           runId: event.runId,
           type: 'error',
-          text: `Outreachr could not persist an agent ${event.type} event: ${detail}`,
+          text: `Bot Combinator could not persist an agent ${event.type} event: ${detail}`,
         });
       } catch {
         // The original rejection is handled. A failed error reporter must not

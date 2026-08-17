@@ -1,0 +1,7 @@
+.env*
+.vercel
+dist
+node_modules
+supabase
+src/**/*.test.ts
+*.tsbuildinfo

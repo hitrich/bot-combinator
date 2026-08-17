@@ -38,8 +38,8 @@ let shutdownStarted = false;
 const mainModuleDirectory = dirname(fileURLToPath(import.meta.url));
 
 function startupDiagnostic(stage: string): void {
-  if (process.env.OUTREACHR_STARTUP_DIAGNOSTICS === '1') {
-    process.stderr.write(`[outreachr-startup] ${stage}\n`);
+  if (process.env.BOT_COMBINATOR_STARTUP_DIAGNOSTICS === '1') {
+    process.stderr.write(`[bot-combinator-startup] ${stage}\n`);
   }
 }
 
@@ -86,7 +86,7 @@ async function createWindow(
     minHeight: 720,
     show: false,
     backgroundColor: '#f7f9fb',
-    title: 'Outreachr',
+    title: 'Bot Combinator',
     autoHideMenuBar: process.platform !== 'darwin',
     webPreferences: {
       preload: join(mainModuleDirectory, '../preload/index.cjs'),
@@ -206,7 +206,7 @@ async function start(): Promise<void> {
   startupDiagnostic('waiting for Electron ready');
   await app.whenReady();
   startupDiagnostic('Electron ready');
-  app.setAppUserModelId('app.outreachr.desktop');
+  app.setAppUserModelId('app.bot-combinator.desktop');
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) =>
     callback(false),
   );
@@ -290,11 +290,15 @@ else {
     // directly for the explicitly gated unpackaged E2E seam so a startup
     // regression fails immediately with the captured diagnostic instead of
     // presenting as a one-minute "no first window" timeout.
-    if (!app.isPackaged && process.env.NODE_ENV === 'test' && process.env.OUTREACHR_E2E_DATA_DIR) {
+    if (
+      !app.isPackaged &&
+      process.env.NODE_ENV === 'test' &&
+      process.env.BOT_COMBINATOR_E2E_DATA_DIR
+    ) {
       app.exit(1);
       return;
     }
-    dialog.showErrorBox('Outreachr could not start', message);
+    dialog.showErrorBox('Bot Combinator could not start', message);
     app.exit(1);
   });
 }
@@ -314,7 +318,7 @@ app.on('before-quit', (event) => {
       shutdownStarted = false;
       const message = error instanceof Error ? error.message : 'Unknown local save error';
       dialog.showErrorBox(
-        'Outreachr could not save before quitting',
+        'Bot Combinator could not save before quitting',
         `${message}\n\nThe application remains open so you can try again.`,
       );
       return;

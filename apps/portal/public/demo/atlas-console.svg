@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" rx="28" fill="#10120f"/>
+  <rect x="26" y="26" width="1388" height="848" rx="20" fill="#161914" stroke="#30372a"/>
+  <rect x="26" y="26" width="240" height="848" rx="20" fill="#12140f"/>
+  <circle cx="62" cy="68" r="13" fill="#d8ff62"/>
+  <text x="88" y="76" fill="#f3f4ed" font-size="24" font-family="Arial" font-weight="700">ATLAS</text>
+  <text x="54" y="132" fill="#78806f" font-size="13" font-family="Arial">CONTROL ROOM</text>
+  <g fill="#252a20">
+    <rect x="48" y="158" width="194" height="48" rx="8"/>
+    <rect x="48" y="222" width="194" height="48" rx="8"/>
+    <rect x="48" y="286" width="194" height="48" rx="8"/>
+  </g>
+  <rect x="48" y="158" width="4" height="48" fill="#d8ff62"/>
+  <text x="72" y="188" fill="#f3f4ed" font-size="16" font-family="Arial">Settlements</text>
+  <text x="72" y="252" fill="#8f9787" font-size="16" font-family="Arial">Policies</text>
+  <text x="72" y="316" fill="#8f9787" font-size="16" font-family="Arial">Receipts</text>
+  <text x="310" y="78" fill="#f3f4ed" font-size="28" font-family="Arial" font-weight="700">Settlement overview</text>
+  <text x="310" y="110" fill="#8f9787" font-size="15" font-family="Arial">Sandbox · Live reconciliation</text>
+  <rect x="310" y="152" width="312" height="142" rx="14" fill="#1c2019" stroke="#30372a"/>
+  <text x="338" y="188" fill="#8f9787" font-size="14" font-family="Arial">SETTLED TODAY</text>
+  <text x="338" y="248" fill="#f3f4ed" font-size="48" font-family="Arial" font-weight="700">$482,390</text>
+  <text x="512" y="274" fill="#d8ff62" font-size="14" font-family="Arial">+18.4%</text>
+  <rect x="642" y="152" width="312" height="142" rx="14" fill="#1c2019" stroke="#30372a"/>
+  <text x="670" y="188" fill="#8f9787" font-size="14" font-family="Arial">POLICY PASS RATE</text>
+  <text x="670" y="248" fill="#f3f4ed" font-size="48" font-family="Arial" font-weight="700">99.97%</text>
+  <rect x="974" y="152" width="392" height="142" rx="14" fill="#d8ff62"/>
+  <text x="1002" y="188" fill="#38401e" font-size="14" font-family="Arial">NEXT RECONCILIATION</text>
+  <text x="1002" y="248" fill="#11120f" font-size="36" font-family="Arial" font-weight="700">02m 18s</text>
+  <rect x="310" y="326" width="820" height="500" rx="14" fill="#1a1d17" stroke="#30372a"/>
+  <text x="338" y="370" fill="#f3f4ed" font-size="18" font-family="Arial" font-weight="700">Settlement volume</text>
+  <polyline points="350,712 430,664 510,682 590,590 670,622 750,510 830,540 910,438 990,466 1070,390" fill="none" stroke="#d8ff62" stroke-width="5"/>
+  <polyline points="350,758 430,736 510,742 590,704 670,694 750,652 830,666 910,630 990,610 1070,566" fill="none" stroke="#64705b" stroke-width="3"/>
+  <g fill="#d8ff62"><circle cx="1070" cy="390" r="9"/><circle cx="910" cy="438" r="7"/><circle cx="750" cy="510" r="7"/></g>
+  <rect x="1150" y="326" width="216" height="500" rx="14" fill="#1a1d17" stroke="#30372a"/>
+  <text x="1178" y="370" fill="#f3f4ed" font-size="18" font-family="Arial" font-weight="700">Latest</text>
+  <g font-family="Arial">
+    <circle cx="1184" cy="422" r="6" fill="#d8ff62"/><text x="1202" y="428" fill="#f3f4ed" font-size="14">SET-28A1</text><text x="1202" y="450" fill="#78806f" font-size="12">settled · 12s</text>
+    <circle cx="1184" cy="500" r="6" fill="#d8ff62"/><text x="1202" y="506" fill="#f3f4ed" font-size="14">SET-289F</text><text x="1202" y="528" fill="#78806f" font-size="12">settled · 41s</text>
+    <circle cx="1184" cy="578" r="6" fill="#f2c35d"/><text x="1202" y="584" fill="#f3f4ed" font-size="14">SET-289A</text><text x="1202" y="606" fill="#78806f" font-size="12">reconciling</text>
+  </g>
+</svg>

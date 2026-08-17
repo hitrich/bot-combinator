@@ -271,13 +271,13 @@ describe('renderer command flows', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     await waitFor(() =>
       expect(bridge.selectFile).toHaveBeenCalledWith([
-        { name: 'Outreachr encrypted backup', extensions: ['outreachr-backup'] },
+        { name: 'Bot Combinator encrypted backup', extensions: ['bot-combinator-backup'] },
       ]),
     );
-    fireEvent.click(screen.getByRole('button', { name: /Import Outreachr seed/u }));
+    fireEvent.click(screen.getByRole('button', { name: /Import Bot Combinator seed/u }));
     await waitFor(() =>
       expect(bridge.selectFile).toHaveBeenCalledWith([
-        { name: 'Outreachr SQLite seed', extensions: ['sqlite', 'db'] },
+        { name: 'Bot Combinator SQLite seed', extensions: ['sqlite', 'db'] },
       ]),
     );
     fireEvent.click(screen.getByRole('button', { name: /Export private investor records/u }));
@@ -293,7 +293,7 @@ describe('renderer command flows', () => {
   it('clears backup, restore, and vault-delete secrets when their dialogs are cancelled', async () => {
     const fixture = bootstrapFixture();
     const bridge = installBridge(fixture);
-    vi.mocked(bridge.selectFile).mockResolvedValue('/tmp/founder.outreachr-backup');
+    vi.mocked(bridge.selectFile).mockResolvedValue('/tmp/founder.bot-combinator-backup');
     renderRoute('#/settings/data');
 
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeVisible();

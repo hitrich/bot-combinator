@@ -1,7 +1,7 @@
-appId: app.outreachr.desktop
-productName: Outreachr
-copyright: Copyright © 2026 Outreachr contributors
-artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+appId: app.bot-combinator.desktop
+productName: Bot Combinator
+copyright: Copyright © 2026 Bot Combinator contributors
+artifactName: Bot-Combinator-${version}-${os}-${arch}.${ext}
 asar: true
 compression: maximum
 electronFuses:
@@ -55,7 +55,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
 linux:
-  executableName: outreachr
+  executableName: bot-combinator
   syncDesktopName: true
   icon: build/icons
   category: Office
@@ -65,4 +65,4 @@ linux:
       arch: [x64, arm64]
     - target: deb
       arch: [x64, arm64]
-  maintainer: Outreachr contributors
+  maintainer: Bot Combinator contributors

@@ -29,7 +29,7 @@ describe('Microsoft Graph mail and calendar connector', () => {
       http.post('https://graph.microsoft.com/v1.0/me/messages', async ({ request }) => {
         expect(request.headers.get('authorization')).toBe('Bearer graph-access-token');
         const body = (await request.json()) as { subject: string };
-        expect(body.subject).toBe('Outreachr intro');
+        expect(body.subject).toBe('Bot Combinator intro');
         return HttpResponse.json({ id: 'graph-draft-1', conversationId: 'conversation-1' });
       }),
       http.post(
@@ -69,7 +69,7 @@ describe('Microsoft Graph mail and calendar connector', () => {
         };
         expect(body.saveToSentItems).toBe(true);
         expect(body.message.internetMessageHeaders).toContainEqual({
-          name: 'X-Outreachr-Operation-Key',
+          name: 'X-Bot-Combinator-Operation-Key',
           value: 'graph-send-operation',
         });
         return new HttpResponse(null, {
@@ -244,7 +244,7 @@ describe('Microsoft Graph mail and calendar connector', () => {
                 ],
                 sentDateTime: '2010-01-02T03:04:05.000Z',
                 internetMessageHeaders: [
-                  { name: 'x-outreachr-operation-key', value: 'send:historical-alias' },
+                  { name: 'x-bot-combinator-operation-key', value: 'send:historical-alias' },
                 ],
               },
             ],

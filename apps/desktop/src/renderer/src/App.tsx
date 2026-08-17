@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { ErrorScreen, LoadingScreen } from './components/ui';
 import { useWorkspace } from './state/WorkspaceContext';
 import { AgentPage } from './pages/AgentPage';
+import { BotChainDocsPage } from './pages/BotChainDocsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { IntroductionsPage } from './pages/IntroductionsPage';
 import { InvestorDetailPage } from './pages/InvestorDetailPage';
@@ -13,6 +14,9 @@ import { MeetingsPage } from './pages/MeetingsPage';
 import { OnboardingFlow } from './pages/OnboardingFlow';
 import { OutreachPage } from './pages/OutreachPage';
 import { PipelinePage } from './pages/PipelinePage';
+import { PartnerReportPage } from './pages/PartnerReportPage';
+import { ProgramCohortsPage } from './pages/ProgramCohortsPage';
+import { ProgramProjectsPage } from './pages/ProgramProjectsPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { RoundOverviewPage } from './pages/RoundOverviewPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -46,6 +50,10 @@ export function App(): React.JSX.Element {
         <Route path="/meetings" element={<MeetingsPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/agent" element={<AgentPage />} />
+        <Route path="/bot-chain/docs" element={<BotChainDocsPage />} />
+        <Route path="/bot-chain/projects" element={<ProgramProjectsPage />} />
+        <Route path="/bot-chain/cohorts" element={<ProgramCohortsPage />} />
+        <Route path="/bot-chain/partner" element={<PartnerReportPage />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/lists" element={<ListsPage />} />
         <Route path="/tasks" element={<TasksPage />} />

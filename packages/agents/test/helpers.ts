@@ -1,5 +1,5 @@
 import { createAllowlist, grantCapability } from '../src/policy.js';
-import { OUTREACHR_AGENT_MCP_TOOLS } from '../src/types.js';
+import { BOT_COMBINATOR_AGENT_MCP_TOOLS } from '../src/types.js';
 import type {
   AgentCapability,
   AgentEventListener,
@@ -12,16 +12,16 @@ import type {
   ProviderDetection,
 } from '../src/types.js';
 
-export const TEST_MCP_TOKEN = 'test-outreachr-mcp-token-0123456789abcdef';
+export const TEST_MCP_TOKEN = 'test-bot-combinator-mcp-token-0123456789abcdef';
 
 export function mcpConnection(sessionId: string) {
   return {
-    serverName: 'outreachr' as const,
+    serverName: 'bot-combinator' as const,
     url: 'http://127.0.0.1:43123/mcp',
     bearerToken: TEST_MCP_TOKEN,
     sessionId,
     auditPurpose: 'Propose a follow-up draft.',
-    enabledTools: OUTREACHR_AGENT_MCP_TOOLS,
+    enabledTools: BOT_COMBINATOR_AGENT_MCP_TOOLS,
   };
 }
 

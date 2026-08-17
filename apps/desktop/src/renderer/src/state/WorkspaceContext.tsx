@@ -89,7 +89,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren): React.JSX.El
     else setLoading(true);
 
     try {
-      const bootstrap = await window.outreachr.bootstrap();
+      const bootstrap = await window.botCombinator.bootstrap();
       setData(bootstrap);
       setError(null);
     } catch (cause) {
@@ -109,7 +109,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren): React.JSX.El
   const command = useCallback(
     async <K extends keyof CommandMap>(name: K, payload: CommandMap[K]) => {
       try {
-        const result = await window.outreachr.command(name, payload);
+        const result = await window.botCombinator.command(name, payload);
         if (
           name === 'onboarding.complete' ||
           name === 'investor.target' ||
@@ -132,7 +132,9 @@ export function WorkspaceProvider({ children }: PropsWithChildren): React.JSX.El
           name.startsWith('suppression.') ||
           name.startsWith('person.') ||
           name.startsWith('agent.') ||
-          name.startsWith('knowledge.')
+          name.startsWith('knowledge.') ||
+          name.startsWith('botChain.') ||
+          name.startsWith('program.')
         ) {
           await load(true);
         }

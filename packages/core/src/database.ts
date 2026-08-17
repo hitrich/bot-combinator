@@ -61,7 +61,7 @@ export class CoreVault {
 
   transaction<T>(operation: () => T): T {
     const root = this.#transactionDepth === 0;
-    const savepoint = `outreachr_nested_${++this.#savepointSequence}`;
+    const savepoint = `bot_combinator_nested_${++this.#savepointSequence}`;
     this.db.run(root ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
     this.#transactionDepth += 1;
     try {

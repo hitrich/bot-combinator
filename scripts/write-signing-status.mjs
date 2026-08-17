@@ -21,7 +21,9 @@ export function signingStatus(input) {
   }
 
   const allowedModes =
-    target.platform === 'linux' ? new Set(['checksum-attested']) : new Set(['signed', 'unsigned']);
+    target.platform === 'linux'
+      ? new Set(['checksum-provenance'])
+      : new Set(['signed', 'unsigned']);
   if (!allowedModes.has(input.mode)) {
     throw new Error(`${input.target} cannot use release mode ${input.mode}`);
   }
@@ -45,11 +47,11 @@ export function signingStatus(input) {
 
   const userNotice =
     target.platform === 'macos' && !signed
-      ? 'UNSIGNED AND UNNOTARIZED: macOS Gatekeeper will not recognize an Outreachr Developer ID. Verify the SHA-256 manifest and GitHub attestation before opening.'
+      ? 'UNSIGNED AND UNNOTARIZED: macOS Gatekeeper will not recognize a Bot Combinator Developer ID. Verify the SHA-256 manifest and local provenance before opening.'
       : target.platform === 'windows' && !signed
-        ? 'UNSIGNED: Windows SmartScreen will not recognize an Outreachr publisher. Verify the SHA-256 manifest and GitHub attestation before running.'
+        ? 'UNSIGNED: Windows SmartScreen will not recognize a Bot Combinator publisher. Verify the SHA-256 manifest and local provenance before running.'
         : target.platform === 'linux'
-          ? 'Linux package authenticity is established by the SHA-256 manifest and GitHub OIDC build attestation; a detached GPG signature may also be present.'
+          ? 'Linux package integrity is established by the SHA-256 manifest and local SLSA-format provenance; a detached GPG signature may also be present.'
           : `${input.target} passed its native publisher-signature and platform-trust gates.`;
 
   return {
@@ -64,22 +66,22 @@ export function signingStatus(input) {
       reason: input.tagVerificationReason || null,
     },
     platformTrust,
-    mandatoryIntegrity: ['sha256-manifest', 'github-oidc-build-attestation'],
+    mandatoryIntegrity: ['sha256-manifest', 'local-slsa-provenance'],
     userNotice,
   };
 }
 
 async function main() {
   const args = parseArgs();
-  const target = String(args.target ?? process.env.OUTREACHR_TARGET ?? '');
+  const target = String(args.target ?? process.env.BOT_COMBINATOR_TARGET ?? '');
   const status = signingStatus({
     target,
-    mode: String(args.mode ?? process.env.OUTREACHR_RELEASE_MODE ?? ''),
+    mode: String(args.mode ?? process.env.BOT_COMBINATOR_RELEASE_MODE ?? ''),
     tagVerification: String(
-      args['tag-verification'] ?? process.env.OUTREACHR_TAG_VERIFICATION ?? 'not-applicable',
+      args['tag-verification'] ?? process.env.BOT_COMBINATOR_TAG_VERIFICATION ?? 'not-applicable',
     ),
     tagVerificationReason: String(
-      args['tag-verification-reason'] ?? process.env.OUTREACHR_TAG_VERIFICATION_REASON ?? '',
+      args['tag-verification-reason'] ?? process.env.BOT_COMBINATOR_TAG_VERIFICATION_REASON ?? '',
     ),
   });
   const output = path.resolve(

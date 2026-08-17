@@ -6,7 +6,7 @@ const args = parseArgs();
 const target = String(args.target ?? targetId());
 const artifactDir = path.resolve(args['artifact-dir'] ?? path.join(repoRoot, 'artifacts', target));
 const output = path.resolve(
-  args.output ?? path.join(artifactDir, `outreachr-${target}.provenance.json`),
+  args.output ?? path.join(artifactDir, `bot-combinator-${target}.provenance.json`),
 );
 const outputRelative = path.relative(artifactDir, output).split(path.sep).join('/');
 const subjects = await hashManifest(artifactDir, {
@@ -26,7 +26,7 @@ await writeJson(output, {
     buildDefinition: {
       buildType: process.env.GITHUB_WORKFLOW_REF
         ? `${process.env.GITHUB_SERVER_URL ?? 'https://github.com'}/${process.env.GITHUB_WORKFLOW_REF}`
-        : 'https://outreachr.local/build-types/native-electron-v1',
+        : 'https://bot-combinator.local/build-types/native-electron-v1',
       externalParameters: {
         target,
         ref: process.env.GITHUB_REF ?? null,
@@ -41,7 +41,7 @@ await writeJson(output, {
         ...(process.env.GITHUB_SHA
           ? [
               {
-                uri: `git+https://github.com/${process.env.GITHUB_REPOSITORY ?? 'local/outreachr'}@${process.env.GITHUB_SHA}`,
+                uri: `git+https://github.com/${process.env.GITHUB_REPOSITORY ?? 'local/bot-combinator'}@${process.env.GITHUB_SHA}`,
                 digest: { gitCommit: process.env.GITHUB_SHA },
               },
             ]
@@ -52,13 +52,13 @@ await writeJson(output, {
       builder: {
         id: process.env.GITHUB_ACTIONS
           ? 'https://github.com/actions/runner/github-hosted'
-          : 'https://outreachr.local/manual-build',
+          : 'https://bot-combinator.local/manual-build',
       },
       metadata: {
         invocationId: process.env.GITHUB_RUN_ID
           ? `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/attempts/${process.env.GITHUB_RUN_ATTEMPT ?? '1'}`
           : null,
-        startedOn: process.env.OUTREACHR_BUILD_STARTED_AT ?? null,
+        startedOn: process.env.BOT_COMBINATOR_BUILD_STARTED_AT ?? null,
         finishedOn: new Date().toISOString(),
       },
     },

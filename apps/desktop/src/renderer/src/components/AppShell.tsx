@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState, type PropsWithChildren } from 're
 import {
   Archive,
   Bot,
+  BookOpenCheck,
   CalendarDays,
+  ChartNoAxesCombined,
   CheckSquare,
   ChevronRight,
   CircleDollarSign,
@@ -12,6 +14,7 @@ import {
   Handshake,
   Inbox,
   ListFilter,
+  Layers3,
   Mail,
   Menu,
   PanelLeftClose,
@@ -20,6 +23,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Workflow,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from '../lib/router';
 import { useWorkspace } from '../state/WorkspaceContext';
@@ -43,6 +47,13 @@ const knowledgeNavigation = [
   { to: '/lists', label: 'Lists', icon: ListFilter },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/documents', label: 'Documents', icon: Archive },
+];
+
+const botChainNavigation = [
+  { to: '/bot-chain/docs', label: 'Botchain Docs', icon: BookOpenCheck },
+  { to: '/bot-chain/projects', label: 'Program projects', icon: Workflow },
+  { to: '/bot-chain/cohorts', label: 'Cohorts', icon: Layers3 },
+  { to: '/bot-chain/partner', label: 'Partner view', icon: ChartNoAxesCombined },
 ];
 
 function NavigationItem({
@@ -86,14 +97,19 @@ export function AppShell({ children }: PropsWithChildren): React.JSX.Element {
 
   useEffect(() => {
     const pageName =
-      [...primaryNavigation, ...knowledgeNavigation, { to: '/settings', label: 'Settings' }]
+      [
+        ...primaryNavigation,
+        ...botChainNavigation,
+        ...knowledgeNavigation,
+        { to: '/settings', label: 'Settings' },
+      ]
         .sort((left, right) => right.to.length - left.to.length)
         .find(
           (item) =>
             location.pathname === item.to ||
             (item.to !== '/' && location.pathname.startsWith(`${item.to}/`)),
         )?.label ?? 'Workspace';
-    document.title = `${pageName} · Outreachr`;
+    document.title = `${pageName} · Bot Combinator`;
 
     if (previousPathRef.current === location.pathname) return;
     previousPathRef.current = location.pathname;
@@ -127,7 +143,7 @@ export function AppShell({ children }: PropsWithChildren): React.JSX.Element {
             <span className="brand-mark" aria-hidden="true">
               O
             </span>
-            <span className="brand-word">Outreachr</span>
+            <span className="brand-word">Bot Combinator</span>
           </button>
           <IconButton
             label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
@@ -163,6 +179,12 @@ export function AppShell({ children }: PropsWithChildren): React.JSX.Element {
         <nav className="sidebar__nav" aria-label="Primary navigation">
           <div className="nav-group">
             {primaryNavigation.map((item) => (
+              <NavigationItem key={item.to} {...item} />
+            ))}
+          </div>
+          <div className="nav-group nav-group--secondary">
+            <p className="nav-group__label">BOT Chain</p>
+            {botChainNavigation.map((item) => (
               <NavigationItem key={item.to} {...item} />
             ))}
           </div>

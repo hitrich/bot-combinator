@@ -14,7 +14,7 @@ import {
 const args = parseArgs();
 const target = String(args.target ?? targetId());
 const output = path.resolve(
-  args.output ?? path.join(repoRoot, 'artifacts', target, `outreachr-${target}.cdx.json`),
+  args.output ?? path.join(repoRoot, 'artifacts', target, `bot-combinator-${target}.cdx.json`),
 );
 const rootManifestPath = path.join(repoRoot, 'package.json');
 const rootManifest = await readJson(rootManifestPath);
@@ -36,7 +36,7 @@ await writeJson(output, {
       components: [
         {
           type: 'application',
-          name: 'outreachr-release-scripts',
+          name: 'bot-combinator-release-scripts',
           version: rootManifest.version,
         },
       ],
@@ -48,8 +48,8 @@ await writeJson(output, {
       version: rootManifest.version,
       licenses: [{ license: { id: rootManifest.license } }],
       properties: [
-        { name: 'outreachr:target', value: target },
-        { name: 'outreachr:pnpm-lock-sha256', value: lockHash },
+        { name: 'bot-combinator:target', value: target },
+        { name: 'bot-combinator:pnpm-lock-sha256', value: lockHash },
       ],
     },
   },

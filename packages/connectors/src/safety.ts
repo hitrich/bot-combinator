@@ -22,7 +22,7 @@ const RESERVED_HEADERS = new Set([
   'content-transfer-encoding',
   'message-id',
   'date',
-  'x-outreachr-operation-key',
+  'x-bot-combinator-operation-key',
 ]);
 
 export function normalizeEmail(email: string): string {

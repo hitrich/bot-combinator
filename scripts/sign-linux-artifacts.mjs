@@ -9,10 +9,10 @@ if (process.platform !== 'linux') {
   process.exit(0);
 }
 
-const privateKey = process.env.OUTREACHR_LINUX_GPG_PRIVATE_KEY;
+const privateKey = process.env.BOT_COMBINATOR_LINUX_GPG_PRIVATE_KEY;
 if (!privateKey) {
   console.log(
-    'OUTREACHR_LINUX_GPG_PRIVATE_KEY is not configured; relying on checksums and GitHub attestations.',
+    'BOT_COMBINATOR_LINUX_GPG_PRIVATE_KEY is not configured; relying on checksums and local provenance.',
   );
   process.exit(0);
 }
@@ -20,13 +20,13 @@ if (!privateKey) {
 const args = parseArgs();
 const directory = path.resolve(args.directory ?? path.join(repoRoot, 'artifacts', targetId()));
 const gnupgHome = await fs.mkdtemp(
-  path.join(process.env.RUNNER_TEMP ?? os.tmpdir(), 'outreachr-gpg-'),
+  path.join(process.env.RUNNER_TEMP ?? os.tmpdir(), 'bot-combinator-gpg-'),
 );
 const keyFile = path.join(gnupgHome, 'release-key.asc');
 await fs.chmod(gnupgHome, 0o700);
 await fs.writeFile(keyFile, privateKey, { mode: 0o600 });
 const baseArgs = ['--batch', '--yes', '--homedir', gnupgHome];
-const passphrase = process.env.OUTREACHR_LINUX_GPG_PASSPHRASE;
+const passphrase = process.env.BOT_COMBINATOR_LINUX_GPG_PASSPHRASE;
 if (passphrase) {
   const passphraseFile = path.join(gnupgHome, 'passphrase');
   await fs.writeFile(passphraseFile, passphrase, { mode: 0o600 });

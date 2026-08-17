@@ -1,6 +1,6 @@
 # Security policy
 
-Outreachr is a local-first fundraising application. Please do not disclose a vulnerability in a public issue when it could expose credentials, private fundraising information, or allow outbound communication without approval.
+Bot Combinator is a local-first fundraising application. Please do not disclose a vulnerability in a public issue when it could expose credentials, private fundraising information, or allow outbound communication without approval.
 
 Until a private security address is configured, use GitHub private vulnerability reporting on the canonical repository. Include the affected version, operating system, reproduction steps, and whether any external message or credential may have been affected.
 

@@ -1,7 +1,7 @@
 {
-  "artifact": "Outreachr_Investor_Seed.sqlite",
-  "fileSha256": "b120aeb6a71f201e6a4a3198e0b9a7eef45ff24b2c0b224b8e763fbea2caee23",
-  "logicalDigestSha256": "e91f834c59b9d7fc0a679174513c9b44b228cc6925c3654443f1b534d1643899",
+  "artifact": "Bot_Combinator_Investor_Seed.sqlite",
+  "fileSha256": "fd4cc1e88be90195b5e3790eb27c4680a6a4546eb8fe98437a249dc5c7a1a58e",
+  "logicalDigestSha256": "b5c7fccc6454de3cd3272ce879c800a7747419d43316112c3eb9d945ed9ba3aa",
   "signatureStatus": "UNSIGNED_RESEARCH_ARTIFACT",
   "rights": "mixed/source-specific",
   "productionNotice": "Every entity retains row-level source evidence; portfolio and named-partner fields are not individually cited. Redistribution and contribution export remain restricted by per-source rights metadata."

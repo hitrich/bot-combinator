@@ -12,7 +12,7 @@ interface InvestorCandidate {
 
 async function candidateWithoutEmail(page: Page): Promise<InvestorCandidate> {
   const candidate = await page.evaluate(async () => {
-    const data = await window.outreachr.bootstrap();
+    const data = await window.botCombinator.bootstrap();
     const person = data.people.find((item) => item.firmId && !item.email);
     if (!person?.firmId) return null;
     const investor = data.investors.find((item) => item.id === person.firmId);
@@ -53,7 +53,7 @@ async function expectNoSeriousAxeViolations(page: Page): Promise<void> {
   ).toEqual([]);
 }
 
-test.describe('Outreachr built Electron application', () => {
+test.describe('Bot Combinator built Electron application', () => {
   test('onboards, researches a seeded investor, adds a private contact, approves but never sends, and moves the pipeline', async ({
     page,
     rendererErrors,
@@ -119,7 +119,7 @@ test.describe('Outreachr built Electron application', () => {
       page.getByText('This exact content is approved. Editing will require reapproval.'),
     ).toBeVisible();
     const approved = await page.evaluate(async () => {
-      const data = await window.outreachr.bootstrap();
+      const data = await window.botCombinator.bootstrap();
       return data.drafts[0];
     });
     expect(approved).toMatchObject({
@@ -138,7 +138,7 @@ test.describe('Outreachr built Electron application', () => {
     await stage.selectOption('diligence');
     await expect(stage).toHaveValue('diligence');
     const pipelineState = await page.evaluate(async (id) => {
-      const data = await window.outreachr.bootstrap();
+      const data = await window.botCombinator.bootstrap();
       return data.investors.find((item) => item.id === id)?.pipelineStage;
     }, candidate.investorId);
     expect(pipelineState).toBe('diligence');
@@ -266,7 +266,7 @@ test.describe('Outreachr built Electron application', () => {
       .getByRole('textbox', { name: 'Narrative', exact: true })
       .fill('Series A planning narrative for E2E.');
     await roundDialog.getByRole('button', { name: 'Save round' }).click();
-    const round = await page.evaluate(async () => (await window.outreachr.bootstrap()).round);
+    const round = await page.evaluate(async () => (await window.botCombinator.bootstrap()).round);
     expect(round).toMatchObject({
       stage: 'series_a',
       status: 'planning',
@@ -304,7 +304,7 @@ test.describe('Outreachr built Electron application', () => {
     ).toBeVisible();
 
     const contribution = await page.evaluate(
-      async (directory) => window.outreachr.command('contribution.export', { directory }),
+      async (directory) => window.botCombinator.command('contribution.export', { directory }),
       exportDirectory,
     );
     expect((await stat(contribution.databasePath)).size).toBeGreaterThan(1_000);
@@ -376,7 +376,9 @@ test.describe('Outreachr built Electron application', () => {
     await navigate(page, 'Settings');
     await page.getByRole('combobox', { name: /^Theme/u }).selectOption('dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    expect(await page.evaluate(() => window.localStorage.getItem('outreachr.theme'))).toBe('dark');
+    expect(await page.evaluate(() => window.localStorage.getItem('bot-combinator.theme'))).toBe(
+      'dark',
+    );
 
     for (const [link, heading] of routes) {
       await navigate(page, link);
@@ -409,7 +411,7 @@ test.describe('Outreachr built Electron application', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await desktopApp.evaluate(({ BrowserWindow }) => {
       const window = BrowserWindow.getAllWindows()[0];
-      if (!window) throw new Error('Outreachr window is unavailable');
+      if (!window) throw new Error('Bot Combinator window is unavailable');
       window.webContents.setZoomFactor(2);
     });
     await page.reload();
@@ -433,7 +435,7 @@ test.describe('Outreachr built Electron application', () => {
   test('scrolls a long page from the main content panel', async ({ desktopApp, page }) => {
     await desktopApp.evaluate(({ BrowserWindow }) => {
       const window = BrowserWindow.getAllWindows()[0];
-      if (!window) throw new Error('Outreachr window is unavailable');
+      if (!window) throw new Error('Bot Combinator window is unavailable');
       window.setContentSize(1280, 768);
     });
     await completeOnboarding(page);

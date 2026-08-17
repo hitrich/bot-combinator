@@ -212,7 +212,7 @@ function mapGmailMessage(
     id,
     threadId: typeof message.threadId === 'string' ? message.threadId : undefined,
     internetMessageId: gmailHeader(message, 'Message-ID'),
-    operationKey: gmailHeader(message, 'X-Outreachr-Operation-Key'),
+    operationKey: gmailHeader(message, 'X-Bot-Combinator-Operation-Key'),
     subject: gmailHeader(message, 'Subject') ?? '',
     from,
     to: parseMailboxAddresses(gmailHeader(message, 'To')),
@@ -446,7 +446,7 @@ export class GoogleConnector
             'Subject',
             'Date',
             'Message-ID',
-            'X-Outreachr-Operation-Key',
+            'X-Bot-Combinator-Operation-Key',
           ]) {
             detailUrl.searchParams.append('metadataHeaders', header);
           }
@@ -483,7 +483,7 @@ export class GoogleConnector
           optional: attendee.optional,
         })),
         extendedProperties: input.operationKey
-          ? { private: { outreachrOperationKey: input.operationKey } }
+          ? { private: { botCombinatorOperationKey: input.operationKey } }
           : undefined,
       }),
       false,

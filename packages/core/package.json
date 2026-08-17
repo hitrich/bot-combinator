@@ -1,8 +1,8 @@
 {
-  "name": "@outreachr/core",
+  "name": "@bot-combinator/core",
   "private": true,
   "version": "0.1.2",
-  "description": "Local-first SQLite domain and data layer for Outreachr",
+  "description": "Local-first SQLite domain and data layer for Bot Combinator",
   "type": "module",
   "sideEffects": false,
   "files": [

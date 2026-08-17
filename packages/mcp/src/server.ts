@@ -57,35 +57,35 @@ import {
 } from './redaction.js';
 import type {
   AuditEvent,
-  OutreachrMcpServerOptions,
-  OutreachrMcpService,
+  BotCombinatorMcpServerOptions,
+  BotCombinatorMcpService,
   RiskLevel,
   ServiceInvocationContext,
 } from './types.js';
 
-export const OUTREACHR_MCP_TOOL_NAMES = [
-  'outreachr_search_investors',
-  'outreachr_list_investors',
-  'outreachr_get_investor',
-  'outreachr_search_people',
-  'outreachr_list_people',
-  'outreachr_get_person',
-  'outreachr_get_pipeline',
-  'outreachr_get_round',
-  'outreachr_list_tasks',
-  'outreachr_list_meetings',
-  'outreachr_list_knowledge',
-  'outreachr_list_activity',
-  'outreachr_propose_target',
-  'outreachr_propose_stage',
-  'outreachr_propose_task',
-  'outreachr_propose_meeting',
-  'outreachr_propose_knowledge',
-  'outreachr_propose_draft',
-  'outreachr_propose_source_review',
+export const BOT_COMBINATOR_MCP_TOOL_NAMES = [
+  'bot_combinator_search_investors',
+  'bot_combinator_list_investors',
+  'bot_combinator_get_investor',
+  'bot_combinator_search_people',
+  'bot_combinator_list_people',
+  'bot_combinator_get_person',
+  'bot_combinator_get_pipeline',
+  'bot_combinator_get_round',
+  'bot_combinator_list_tasks',
+  'bot_combinator_list_meetings',
+  'bot_combinator_list_knowledge',
+  'bot_combinator_list_activity',
+  'bot_combinator_propose_target',
+  'bot_combinator_propose_stage',
+  'bot_combinator_propose_task',
+  'bot_combinator_propose_meeting',
+  'bot_combinator_propose_knowledge',
+  'bot_combinator_propose_draft',
+  'bot_combinator_propose_source_review',
 ] as const;
 
-export type OutreachrMcpToolName = (typeof OUTREACHR_MCP_TOOL_NAMES)[number];
+export type BotCombinatorMcpToolName = (typeof BOT_COMBINATOR_MCP_TOOL_NAMES)[number];
 
 class SafeToolError extends Error {
   constructor(
@@ -113,13 +113,13 @@ const proposalAnnotations: ToolAnnotations = {
 
 function toolMetadata(riskLevel: RiskLevel): Record<string, unknown> {
   return {
-    'outreachr/riskLevel': riskLevel,
-    'outreachr/effect': riskLevel === 'read' ? 'none' : 'create_pending_proposal_only',
-    'outreachr/founderApprovalRequired': riskLevel === 'proposal',
-    'outreachr/auditContextRequired': true,
-    'outreachr/privateDataDefault': 'redacted',
-    'outreachr/dataBoundary': 'local_vault',
-    'outreachr/forbiddenCapabilities': [
+    'bot-combinator/riskLevel': riskLevel,
+    'bot-combinator/effect': riskLevel === 'read' ? 'none' : 'create_pending_proposal_only',
+    'bot-combinator/founderApprovalRequired': riskLevel === 'proposal',
+    'bot-combinator/auditContextRequired': true,
+    'bot-combinator/privateDataDefault': 'redacted',
+    'bot-combinator/dataBoundary': 'local_vault',
+    'bot-combinator/forbiddenCapabilities': [
       'message_send',
       'oauth_access',
       'token_access',
@@ -138,7 +138,7 @@ function errorResult(code: SafeToolError['code']): CallToolResult {
     content: [
       {
         type: 'text',
-        text: `Outreachr rejected this tool invocation (${code}). No action was applied.`,
+        text: `Bot Combinator rejected this tool invocation (${code}). No action was applied.`,
       },
     ],
   };
@@ -194,8 +194,8 @@ function toAuditEvent(
 }
 
 interface InvokeOptions<ServiceSchema extends z.ZodTypeAny, FinalSchema extends z.ZodTypeAny> {
-  service: OutreachrMcpService;
-  toolName: OutreachrMcpToolName;
+  service: BotCombinatorMcpService;
+  toolName: BotCombinatorMcpToolName;
   riskLevel: RiskLevel;
   audit: AuditContext;
   access: AccessRequest;
@@ -311,7 +311,7 @@ function identityRedaction<T>(value: T): Redacted<T> {
   return { value, redactedRecordCount: 0 };
 }
 
-function assertService(service: OutreachrMcpService): void {
+function assertService(service: BotCombinatorMcpService): void {
   const required = [
     'authorizeAccess',
     'recordAuditEvent',
@@ -337,26 +337,26 @@ function assertService(service: OutreachrMcpService): void {
   ] as const;
   const candidate = service as unknown as Record<string, unknown>;
   if (required.some((method) => typeof candidate[method] !== 'function')) {
-    throw new TypeError('Outreachr MCP requires a complete, injected service adapter.');
+    throw new TypeError('Bot Combinator MCP requires a complete, injected service adapter.');
   }
 }
 
 /**
- * Creates the local Outreachr MCP server. It deliberately registers only
+ * Creates the local Bot Combinator MCP server. It deliberately registers only
  * bounded read tools and pending-proposal tools.
  */
-export function createOutreachrMcpServer(
-  service: OutreachrMcpService,
-  options: OutreachrMcpServerOptions = {},
+export function createBotCombinatorMcpServer(
+  service: BotCombinatorMcpService,
+  options: BotCombinatorMcpServerOptions = {},
 ): McpServer {
   assertService(service);
   const now = options.now ?? (() => new Date());
   const createInvocationId = options.createInvocationId ?? randomUUID;
   const server = new McpServer(
-    { name: options.name ?? 'outreachr-local', version: options.version ?? '0.1.2' },
+    { name: options.name ?? 'bot-combinator-local', version: options.version ?? '0.1.2' },
     {
       instructions:
-        'Outreachr is local-only. Use read tools for explicitly disclosed context and proposal tools to create founder-reviewable proposals. No tool can send a message, access OAuth credentials, run SQL, read files, or execute a shell. Never describe a proposal as applied.',
+        'Bot Combinator is local-only. Use read tools for explicitly disclosed context and proposal tools to create founder-reviewable proposals. No tool can send a message, access OAuth credentials, run SQL, read files, or execute a shell. Never describe a proposal as applied.',
       capabilities: { tools: { listChanged: false } },
     },
   );
@@ -364,10 +364,10 @@ export function createOutreachrMcpServer(
   if (
     enabledTools &&
     [...enabledTools].some(
-      (name) => !OUTREACHR_MCP_TOOL_NAMES.includes(name as OutreachrMcpToolName),
+      (name) => !BOT_COMBINATOR_MCP_TOOL_NAMES.includes(name as BotCombinatorMcpToolName),
     )
   ) {
-    throw new TypeError('Outreachr MCP enabledTools contains an unknown tool.');
+    throw new TypeError('Bot Combinator MCP enabledTools contains an unknown tool.');
   }
   if (enabledTools) {
     const registerTool = server.registerTool.bind(server) as unknown as (
@@ -389,7 +389,7 @@ export function createOutreachrMcpServer(
   };
 
   server.registerTool(
-    'outreachr_search_investors',
+    'bot_combinator_search_investors',
     {
       title: 'Search investors',
       description:
@@ -404,7 +404,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_search_investors',
+        toolName: 'bot_combinator_search_investors',
         riskLevel: 'read',
         audit,
         access,
@@ -417,7 +417,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_investors',
+    'bot_combinator_list_investors',
     {
       title: 'List investors',
       description: 'List at most 50 investor records with bounded filters and cursor pagination.',
@@ -431,7 +431,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_investors',
+        toolName: 'bot_combinator_list_investors',
         riskLevel: 'read',
         audit,
         access,
@@ -444,7 +444,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_get_investor',
+    'bot_combinator_get_investor',
     {
       title: 'Get investor',
       description:
@@ -459,7 +459,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_get_investor',
+        toolName: 'bot_combinator_get_investor',
         riskLevel: 'read',
         audit,
         access,
@@ -482,7 +482,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_search_people',
+    'bot_combinator_search_people',
     {
       title: 'Search investor people',
       description:
@@ -497,7 +497,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_search_people',
+        toolName: 'bot_combinator_search_people',
         riskLevel: 'read',
         audit,
         access,
@@ -510,7 +510,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_people',
+    'bot_combinator_list_people',
     {
       title: 'List investor people',
       description: 'List at most 50 investor people with bounded filters and cursor pagination.',
@@ -524,7 +524,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_people',
+        toolName: 'bot_combinator_list_people',
         riskLevel: 'read',
         audit,
         access,
@@ -537,7 +537,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_get_person',
+    'bot_combinator_get_person',
     {
       title: 'Get investor person',
       description:
@@ -552,7 +552,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_get_person',
+        toolName: 'bot_combinator_get_person',
         riskLevel: 'read',
         audit,
         access,
@@ -575,7 +575,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_get_pipeline',
+    'bot_combinator_get_pipeline',
     {
       title: 'Get fundraising pipeline',
       description:
@@ -590,7 +590,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_get_pipeline',
+        toolName: 'bot_combinator_get_pipeline',
         riskLevel: 'read',
         audit,
         access,
@@ -603,7 +603,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_get_round',
+    'bot_combinator_get_round',
     {
       title: 'Get fundraising round',
       description:
@@ -618,7 +618,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_get_round',
+        toolName: 'bot_combinator_get_round',
         riskLevel: 'read',
         audit,
         access,
@@ -631,7 +631,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_tasks',
+    'bot_combinator_list_tasks',
     {
       title: 'List fundraising tasks',
       description: 'List authorized local tasks. Task notes remain redacted without a notes grant.',
@@ -645,7 +645,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_tasks',
+        toolName: 'bot_combinator_list_tasks',
         riskLevel: 'read',
         audit,
         access,
@@ -658,7 +658,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_meetings',
+    'bot_combinator_list_meetings',
     {
       title: 'List fundraising meetings',
       description:
@@ -673,7 +673,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_meetings',
+        toolName: 'bot_combinator_list_meetings',
         riskLevel: 'read',
         audit,
         access,
@@ -686,7 +686,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_knowledge',
+    'bot_combinator_list_knowledge',
     {
       title: 'List fundraising knowledge',
       description:
@@ -701,7 +701,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_knowledge',
+        toolName: 'bot_combinator_list_knowledge',
         riskLevel: 'read',
         audit,
         access,
@@ -714,7 +714,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_list_activity',
+    'bot_combinator_list_activity',
     {
       title: 'List fundraising activity',
       description:
@@ -729,7 +729,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...query } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_list_activity',
+        toolName: 'bot_combinator_list_activity',
         riskLevel: 'read',
         audit,
         access,
@@ -744,7 +744,7 @@ export function createOutreachrMcpServer(
   const proposalOutput = envelopeSchema(proposalResultSchema);
 
   server.registerTool(
-    'outreachr_propose_target',
+    'bot_combinator_propose_target',
     {
       title: 'Propose target change',
       description:
@@ -759,7 +759,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_target',
+        toolName: 'bot_combinator_propose_target',
         riskLevel: 'proposal',
         audit,
         access,
@@ -773,7 +773,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_stage',
+    'bot_combinator_propose_stage',
     {
       title: 'Propose pipeline stage change',
       description:
@@ -788,7 +788,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_stage',
+        toolName: 'bot_combinator_propose_stage',
         riskLevel: 'proposal',
         audit,
         access,
@@ -802,7 +802,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_task',
+    'bot_combinator_propose_task',
     {
       title: 'Propose task',
       description:
@@ -817,7 +817,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_task',
+        toolName: 'bot_combinator_propose_task',
         riskLevel: 'proposal',
         audit,
         access,
@@ -831,7 +831,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_meeting',
+    'bot_combinator_propose_meeting',
     {
       title: 'Propose meeting',
       description:
@@ -846,7 +846,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_meeting',
+        toolName: 'bot_combinator_propose_meeting',
         riskLevel: 'proposal',
         audit,
         access,
@@ -860,7 +860,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_knowledge',
+    'bot_combinator_propose_knowledge',
     {
       title: 'Propose knowledge change',
       description:
@@ -875,7 +875,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_knowledge',
+        toolName: 'bot_combinator_propose_knowledge',
         riskLevel: 'proposal',
         audit,
         access,
@@ -889,7 +889,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_draft',
+    'bot_combinator_propose_draft',
     {
       title: 'Propose outreach draft',
       description:
@@ -904,7 +904,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_draft',
+        toolName: 'bot_combinator_propose_draft',
         riskLevel: 'proposal',
         audit,
         access,
@@ -918,7 +918,7 @@ export function createOutreachrMcpServer(
   );
 
   server.registerTool(
-    'outreachr_propose_source_review',
+    'bot_combinator_propose_source_review',
     {
       title: 'Propose source-review decision',
       description:
@@ -933,7 +933,7 @@ export function createOutreachrMcpServer(
       const { audit, access, ...proposal } = input;
       return invokeTool({
         ...common,
-        toolName: 'outreachr_propose_source_review',
+        toolName: 'bot_combinator_propose_source_review',
         riskLevel: 'proposal',
         audit,
         access,

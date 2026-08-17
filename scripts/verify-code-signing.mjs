@@ -15,17 +15,19 @@ const releaseDir = path.resolve(
 );
 const files = await walkFiles(releaseDir);
 const expectation = String(
-  args.expect ?? (process.platform === 'linux' ? 'checksum-attested' : 'signed'),
+  args.expect ?? (process.platform === 'linux' ? 'checksum-provenance' : 'signed'),
 );
 
-if (!['signed', 'unsigned', 'checksum-attested'].includes(expectation)) {
+if (!['signed', 'unsigned', 'checksum-provenance'].includes(expectation)) {
   throw new Error(`Unknown code-signing expectation: ${expectation}`);
 }
 
 if (process.platform === 'darwin') {
-  const appExecutables = files.filter((file) => /\.app\/Contents\/MacOS\/Outreachr$/.test(file));
+  const appExecutables = files.filter((file) =>
+    /\.app\/Contents\/MacOS\/Bot Combinator$/.test(file),
+  );
   if (appExecutables.length !== 1)
-    throw new Error(`Expected one packaged Outreachr.app, found ${appExecutables.length}`);
+    throw new Error(`Expected one packaged Bot Combinator.app, found ${appExecutables.length}`);
   const app = appExecutables[0].slice(0, appExecutables[0].indexOf('.app/') + 4);
   if (expectation === 'unsigned') {
     await verifyUntrustedMacDistribution(app, files);
@@ -39,7 +41,7 @@ if (process.platform === 'darwin') {
   const teamIdentifier = /TeamIdentifier=([^\r\n]+)/
     .exec(`${details.stdout}\n${details.stderr}`)?.[1]
     ?.trim();
-  const expectedTeamIdentifier = process.env.OUTREACHR_MAC_EXPECTED_TEAM_ID;
+  const expectedTeamIdentifier = process.env.BOT_COMBINATOR_MAC_EXPECTED_TEAM_ID;
   if (!expectedTeamIdentifier || teamIdentifier !== expectedTeamIdentifier) {
     throw new Error(
       `macOS signer team mismatch: expected ${expectedTeamIdentifier ?? '(not configured)'}, received ${teamIdentifier ?? '(missing)'}`,
@@ -70,32 +72,33 @@ if (process.platform === 'darwin') {
   if (expectation !== 'signed') {
     throw new Error(`Windows does not support code-signing expectation ${expectation}`);
   }
-  const expectedPublisher = process.env.OUTREACHR_WINDOWS_EXPECTED_PUBLISHER;
-  if (!expectedPublisher) throw new Error('OUTREACHR_WINDOWS_EXPECTED_PUBLISHER is not configured');
+  const expectedPublisher = process.env.BOT_COMBINATOR_WINDOWS_EXPECTED_PUBLISHER;
+  if (!expectedPublisher)
+    throw new Error('BOT_COMBINATOR_WINDOWS_EXPECTED_PUBLISHER is not configured');
   for (const executable of executables) {
     if (!(await peAuthenticodeCertificate(executable))) {
       throw new Error(`Missing Authenticode certificate table: ${executable}`);
     }
     const script =
       'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
-      '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
+      '$signature = Get-AuthenticodeSignature -LiteralPath $env:BOT_COMBINATOR_VERIFY_EXECUTABLE; ' +
       'if ($signature.Status -ne \'Valid\') { throw "Invalid Authenticode signature: $($signature.Status)" }; ' +
-      'if ($null -eq $signature.SignerCertificate -or $signature.SignerCertificate.Subject.IndexOf($env:OUTREACHR_VERIFY_PUBLISHER, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Unexpected Authenticode publisher: $($signature.SignerCertificate.Subject)" }; ' +
+      'if ($null -eq $signature.SignerCertificate -or $signature.SignerCertificate.Subject.IndexOf($env:BOT_COMBINATOR_VERIFY_PUBLISHER, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Unexpected Authenticode publisher: $($signature.SignerCertificate.Subject)" }; ' +
       'if ($null -eq $signature.TimeStamperCertificate) { throw "Authenticode signature is not timestamped" }';
     await runWindowsPowerShell(script, {
-      OUTREACHR_VERIFY_EXECUTABLE: executable,
-      OUTREACHR_VERIFY_PUBLISHER: expectedPublisher,
+      BOT_COMBINATOR_VERIFY_EXECUTABLE: executable,
+      BOT_COMBINATOR_VERIFY_PUBLISHER: expectedPublisher,
     });
   }
   console.log(`Verified ${executables.length} Authenticode signatures.`);
 } else {
-  if (expectation !== 'checksum-attested') {
+  if (expectation !== 'checksum-provenance') {
     throw new Error(
-      `Linux release verification expects checksum-attested mode, not ${expectation}`,
+      `Linux release verification expects checksum-provenance mode, not ${expectation}`,
     );
   }
   console.log(
-    'Linux authenticity is covered by SHA-256 manifests, optional GPG signatures, and GitHub OIDC attestations.',
+    'Linux integrity is covered by SHA-256 manifests, local SLSA-format provenance, and optional GPG signatures.',
   );
 }
 
@@ -147,7 +150,7 @@ async function verifyUntrustedMacDistribution(app, releaseFiles) {
 async function verifyUnsignedWindowsDistribution(executables) {
   const script =
     'Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; ' +
-    '$signature = Get-AuthenticodeSignature -LiteralPath $env:OUTREACHR_VERIFY_EXECUTABLE; ' +
+    '$signature = Get-AuthenticodeSignature -LiteralPath $env:BOT_COMBINATOR_VERIFY_EXECUTABLE; ' +
     'if ($signature.Status -eq \'Valid\') { throw "Unsigned mode unexpectedly contains a valid embedded or catalog Authenticode signature: $($signature.SignerCertificate.Subject)" }';
   for (const executable of executables) {
     if (await peAuthenticodeCertificate(executable)) {
@@ -156,7 +159,7 @@ async function verifyUnsignedWindowsDistribution(executables) {
       );
     }
     await runWindowsPowerShell(script, {
-      OUTREACHR_VERIFY_EXECUTABLE: executable,
+      BOT_COMBINATOR_VERIFY_EXECUTABLE: executable,
     });
   }
   console.log(

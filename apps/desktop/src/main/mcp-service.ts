@@ -4,15 +4,15 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
-  OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS,
-  OUTREACHR_AGENT_MCP_READ_TOOLS,
+  BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS,
+  BOT_COMBINATOR_AGENT_MCP_READ_TOOLS,
   type AgentMcpConnection,
   type AgentProposal,
-  type OutreachrAgentMcpToolName,
-} from '@outreachr/agents';
-import { appendAuditEntry, type CoreVault } from '@outreachr/core';
+  type BotCombinatorAgentMcpToolName,
+} from '@bot-combinator/agents';
+import { appendAuditEntry, type CoreVault } from '@bot-combinator/core';
 import {
-  createOutreachrMcpServer,
+  createBotCombinatorMcpServer,
   privateFieldSchema,
   recordIdSchema,
   type AccessGrant,
@@ -30,7 +30,7 @@ import {
   type KnowledgePage,
   type MeetingListQuery,
   type MeetingPage,
-  type OutreachrMcpService,
+  type BotCombinatorMcpService,
   type Page,
   type PersonGetQuery,
   type PersonListQuery,
@@ -52,7 +52,7 @@ import {
   type ServiceInvocationContext,
   type TaskListQuery,
   type TaskPage,
-} from '@outreachr/mcp';
+} from '@bot-combinator/mcp';
 
 import type {
   AppBootstrap,
@@ -68,7 +68,7 @@ import type {
 
 const LOOPBACK_HOST = '127.0.0.1';
 const MCP_PATH = '/mcp';
-const SESSION_HEADER = 'x-outreachr-session';
+const SESSION_HEADER = 'x-bot-combinator-session';
 const MAX_REQUEST_BYTES = 512 * 1024;
 const ALLOWED_JSON_RPC_METHODS = new Set([
   'initialize',
@@ -92,8 +92,8 @@ interface ActiveSession {
   readonly provider: 'codex' | 'claude';
   readonly purpose: string;
   readonly readScopes: ReadonlySet<DesktopMcpReadScope>;
-  readonly enabledTools: readonly OutreachrAgentMcpToolName[];
-  readonly enabledToolSet: ReadonlySet<OutreachrAgentMcpToolName>;
+  readonly enabledTools: readonly BotCombinatorAgentMcpToolName[];
+  readonly enabledToolSet: ReadonlySet<BotCombinatorAgentMcpToolName>;
   readonly disclosedRecordIds: ReadonlySet<string>;
   readonly allowedPrivateFields: ReadonlySet<PrivateField>;
   readonly onProposal: DesktopMcpSessionRegistration['onProposal'];
@@ -112,7 +112,7 @@ export interface DesktopMcpBridgeOptions {
  * ephemeral, requests are additionally bound to an active run header, and
  * AsyncLocalStorage carries that authenticated run into every service method.
  */
-export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpService {
+export class DesktopMcpBridge implements DesktopMcpController, BotCombinatorMcpService {
   readonly #vault: McpVault;
   readonly #appVersion: string;
   readonly #now: () => Date;
@@ -151,7 +151,7 @@ export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpServi
         bridge.#http.off('error', onError);
         const address = bridge.#http.address();
         if (!address || typeof address === 'string') {
-          reject(new Error('Outreachr MCP did not bind a loopback TCP address.'));
+          reject(new Error('Bot Combinator MCP did not bind a loopback TCP address.'));
           return;
         }
         bridge.#endpoint = `http://${LOOPBACK_HOST}:${address.port}${MCP_PATH}`;
@@ -170,7 +170,7 @@ export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpServi
   }
 
   registerSession(registration: DesktopMcpSessionRegistration): AgentMcpConnection {
-    if (this.#disposed) throw new Error('Outreachr MCP bridge is disposed.');
+    if (this.#disposed) throw new Error('Bot Combinator MCP bridge is disposed.');
     const runId = registration.runId.trim();
     const purpose = registration.purpose.trim();
     if (!runId || runId.length > 160 || runId !== registration.runId) {
@@ -204,7 +204,7 @@ export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpServi
       requests: new Map(),
     });
     return Object.freeze({
-      serverName: 'outreachr',
+      serverName: 'bot-combinator',
       url: this.#endpoint,
       bearerToken: this.#bearerToken,
       sessionId: runId,
@@ -222,10 +222,10 @@ export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpServi
    * (such as stdio) that do not pass through the authenticated HTTP handler.
    * The returned adapter retains the exact same authorization and audit checks.
    */
-  serviceForSession(runId: string): OutreachrMcpService {
+  serviceForSession(runId: string): BotCombinatorMcpService {
     if (!this.#sessions.has(runId)) throw new Error('MCP session is not active.');
     const bound = <T>(operation: () => T): T => this.#requestSession.run(runId, operation);
-    const service: OutreachrMcpService = {
+    const service: BotCombinatorMcpService = {
       authorizeAccess: (request, context) => bound(() => this.authorizeAccess(request, context)),
       recordAuditEvent: (event) => bound(() => this.recordAuditEvent(event)),
       searchInvestors: (query, context) => bound(() => this.searchInvestors(query, context)),
@@ -703,8 +703,8 @@ export class DesktopMcpBridge implements DesktopMcpController, OutreachrMcpServi
 
     await this.#requestSession.run(session.runId, async () => {
       const transport = new StreamableHTTPServerTransport();
-      const server = createOutreachrMcpServer(this, {
-        name: 'outreachr-desktop',
+      const server = createBotCombinatorMcpServer(this, {
+        name: 'bot-combinator-desktop',
         version: this.#appVersion,
         enabledTools: session.enabledTools,
       });
@@ -931,23 +931,25 @@ function normalize(value: string): string {
 function readScopeForTool(toolName: string): DesktopMcpReadScope | undefined {
   if (
     [
-      'outreachr_search_investors',
-      'outreachr_list_investors',
-      'outreachr_get_investor',
-      'outreachr_search_people',
-      'outreachr_list_people',
-      'outreachr_get_person',
-      'outreachr_get_pipeline',
+      'bot_combinator_search_investors',
+      'bot_combinator_list_investors',
+      'bot_combinator_get_investor',
+      'bot_combinator_search_people',
+      'bot_combinator_list_people',
+      'bot_combinator_get_person',
+      'bot_combinator_get_pipeline',
     ].includes(toolName)
   ) {
     return 'investors';
   }
-  if (toolName === 'outreachr_get_round') return 'round';
-  if (toolName === 'outreachr_list_knowledge') return 'company';
+  if (toolName === 'bot_combinator_get_round') return 'round';
+  if (toolName === 'bot_combinator_list_knowledge') return 'company';
   if (
-    ['outreachr_list_tasks', 'outreachr_list_meetings', 'outreachr_list_activity'].includes(
-      toolName,
-    )
+    [
+      'bot_combinator_list_tasks',
+      'bot_combinator_list_meetings',
+      'bot_combinator_list_activity',
+    ].includes(toolName)
   ) {
     return 'activity';
   }
@@ -956,13 +958,13 @@ function readScopeForTool(toolName: string): DesktopMcpReadScope | undefined {
 
 function enabledToolsForReadScopes(
   readScopes: ReadonlySet<DesktopMcpReadScope>,
-): OutreachrAgentMcpToolName[] {
+): BotCombinatorAgentMcpToolName[] {
   return [
-    ...OUTREACHR_AGENT_MCP_READ_TOOLS.filter((toolName) => {
+    ...BOT_COMBINATOR_AGENT_MCP_READ_TOOLS.filter((toolName) => {
       const requiredScope = readScopeForTool(toolName);
       return requiredScope !== undefined && readScopes.has(requiredScope);
     }),
-    ...OUTREACHR_AGENT_MCP_PROPOSAL_TOOLS,
+    ...BOT_COMBINATOR_AGENT_MCP_PROPOSAL_TOOLS,
   ];
 }
 
@@ -1041,7 +1043,7 @@ function validateRpcEnvelope(body: unknown): boolean {
 
 function containsForbiddenToolCall(
   body: unknown,
-  enabledTools: ReadonlySet<OutreachrAgentMcpToolName>,
+  enabledTools: ReadonlySet<BotCombinatorAgentMcpToolName>,
 ): boolean {
   const messages = Array.isArray(body) ? body : [body];
   return messages.some((message) => {
@@ -1050,7 +1052,7 @@ function containsForbiddenToolCall(
     }
     return (
       typeof message.params.name !== 'string' ||
-      !enabledTools.has(message.params.name as OutreachrAgentMcpToolName)
+      !enabledTools.has(message.params.name as BotCombinatorAgentMcpToolName)
     );
   });
 }

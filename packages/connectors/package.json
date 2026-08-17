@@ -1,8 +1,8 @@
 {
-  "name": "@outreachr/connectors",
+  "name": "@bot-combinator/connectors",
   "private": true,
   "version": "0.1.2",
-  "description": "Provider-neutral email, calendar, and desktop OAuth connectors for Outreachr",
+  "description": "Provider-neutral email, calendar, and desktop OAuth connectors for Bot Combinator",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,

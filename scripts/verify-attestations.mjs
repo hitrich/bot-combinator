@@ -25,8 +25,8 @@ const targets = [
 ];
 
 for (const target of targets) {
-  const directory = path.join(root, `outreachr-${target}`);
-  const bundle = path.join(directory, `outreachr-${target}.attestation.intoto.jsonl`);
+  const directory = path.join(root, `bot-combinator-${target}`);
+  const bundle = path.join(directory, `bot-combinator-${target}.attestation.intoto.jsonl`);
   const lines = (await fs.readFile(path.join(directory, `SHA256SUMS-${target}`), 'utf8'))
     .split(/\r?\n/)
     .filter(Boolean);

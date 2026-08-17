@@ -9,7 +9,7 @@ interface Candidate {
 
 async function twoPeopleWithoutEmail(page: Page): Promise<[Candidate, Candidate]> {
   const people = await page.evaluate(async () => {
-    const data = await window.outreachr.bootstrap();
+    const data = await window.botCombinator.bootstrap();
     return data.people
       .filter((person) => person.firmId && !person.email)
       .slice(0, 2)
@@ -45,7 +45,7 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
     const tokenRequest = new URLSearchParams(googleProviderMock.tokenRequestBodies[0]);
     expect(tokenRequest.get('client_id')).toBe('e2e-founder-owned-desktop-client');
     expect(tokenRequest.get('grant_type')).toBe('authorization_code');
-    expect(tokenRequest.get('code')).toBe('outreachr-e2e-google-code');
+    expect(tokenRequest.get('code')).toBe('bot-combinator-e2e-google-code');
     expect(tokenRequest.get('code_verifier')).toMatch(/^[A-Za-z0-9_-]{43,128}$/u);
     expect(tokenRequest.has('client_secret')).toBe(false);
 
@@ -64,14 +64,14 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
     // become canonical when the founder later adds that exact address. The
     // unrelated inbound record is never surfaced or attributed.
     const reconciledHistory = await page.evaluate(async (personId) => {
-      await window.outreachr.command('person.contact.add', {
+      await window.botCombinator.command('person.contact.add', {
         personId,
         kind: 'work_email',
         value: 'history.one@example.test',
         visibility: 'private',
         contributionEligible: false,
       });
-      const data = await window.outreachr.bootstrap();
+      const data = await window.botCombinator.bootstrap();
       return {
         events: data.mailEvents.map((event) => ({
           subject: event.subject,
@@ -99,7 +99,7 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
     await expect(page.getByText('Google calendar synced', { exact: true })).toBeVisible();
     expect(googleProviderMock.calendarPageTokens).toEqual([null, 'calendar-page-two']);
     const meetingTitles = await page.evaluate(async () =>
-      (await window.outreachr.bootstrap()).meetings.map((meeting) => meeting.title),
+      (await window.botCombinator.bootstrap()).meetings.map((meeting) => meeting.title),
     );
     expect(meetingTitles).toEqual(
       expect.arrayContaining(['Mock investor introduction', 'Mock investor follow-up']),
@@ -145,7 +145,7 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
       attendees: [{ email: 'history.one@example.test', displayName: historicalPerson.name }],
     });
     const createdMeeting = await page.evaluate(async () =>
-      (await window.outreachr.bootstrap()).meetings.find(
+      (await window.botCombinator.bootstrap()).meetings.find(
         (meeting) => meeting.title === 'E2E Google invite',
       ),
     );
@@ -157,25 +157,25 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
 
     const sent = await page.evaluate(
       async ({ personId, recipientName }) => {
-        await window.outreachr.command('person.contact.add', {
+        await window.botCombinator.command('person.contact.add', {
           personId,
           kind: 'work_email',
           value: 'fresh.target@example.test',
           visibility: 'private',
           contributionEligible: false,
         });
-        const draft = await window.outreachr.command('draft.create', {
+        const draft = await window.botCombinator.command('draft.create', {
           personId,
           provider: 'google',
           kind: 'initial',
           subject: 'A founder-reviewed connector E2E message',
           bodyText: `Hi ${recipientName.split(' ')[0]},\n\nI believe our local-first AI infrastructure may fit your seed thesis.\n\nAda\n\n—\nAda Founder\nLocal Labs\n123 Founder Way\nSan Francisco, CA 94107\nUnited States\nIf you prefer no further email from me, reply "opt out" and I will not contact you again.`,
         });
-        const approved = await window.outreachr.command('draft.approve', {
+        const approved = await window.botCombinator.command('draft.approve', {
           id: draft.id,
           expectedContentHash: draft.contentHash,
         });
-        return window.outreachr.command('draft.send', {
+        return window.botCombinator.command('draft.send', {
           id: approved.id,
           expectedContentHash: approved.contentHash,
         });
@@ -198,11 +198,11 @@ test.describe('Google connectors through the built Electron IPC boundary', () =>
     );
     expect(rawMessage).toMatch(/^To: .*<fresh\.target@example\.test>$/mu);
     expect(rawMessage).toContain('Subject: A founder-reviewed connector E2E message');
-    expect(rawMessage).toMatch(/X-Outreachr-Operation-Key: send:[^\r\n]+/u);
+    expect(rawMessage).toMatch(/X-Bot-Combinator-Operation-Key: send:[^\r\n]+/u);
 
     const replayError = await page.evaluate(async ({ id, contentHash }) => {
       try {
-        await window.outreachr.command('draft.send', { id, expectedContentHash: contentHash });
+        await window.botCombinator.command('draft.send', { id, expectedContentHash: contentHash });
         return null;
       } catch (error) {
         return error instanceof Error ? error.message : String(error);

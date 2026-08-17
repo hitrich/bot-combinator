@@ -4,10 +4,10 @@ import {
   type AgentEvent,
   type CommandMap,
   type CommandResultMap,
-  type OutreachrBridge,
+  type BotCombinatorBridge,
 } from '../shared/contracts';
 
-const bridge: OutreachrBridge = {
+const bridge: BotCombinatorBridge = {
   bootstrap: () => ipcRenderer.invoke(IPC_CHANNELS.bootstrap),
   command: <K extends keyof CommandMap>(command: K, payload: CommandMap[K]) =>
     ipcRenderer.invoke(IPC_CHANNELS.command, command, payload) as Promise<CommandResultMap[K]>,
@@ -25,4 +25,4 @@ const bridge: OutreachrBridge = {
   },
 };
 
-contextBridge.exposeInMainWorld('outreachr', Object.freeze(bridge));
+contextBridge.exposeInMainWorld('botCombinator', Object.freeze(bridge));

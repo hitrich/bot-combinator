@@ -624,7 +624,7 @@ export async function hashManifest(root, options = {}) {
 export async function appendGitHubEnv(name, value) {
   const githubEnv = process.env.GITHUB_ENV;
   if (!githubEnv) throw new Error('GITHUB_ENV is not set');
-  const delimiter = `OUTREACHR_${createHash('sha256').update(`${name}:${value.length}`).digest('hex').slice(0, 16)}`;
+  const delimiter = `BOT_COMBINATOR_${createHash('sha256').update(`${name}:${value.length}`).digest('hex').slice(0, 16)}`;
   await fs.appendFile(githubEnv, `${name}<<${delimiter}\n${value}\n${delimiter}\n`, 'utf8');
 }
 

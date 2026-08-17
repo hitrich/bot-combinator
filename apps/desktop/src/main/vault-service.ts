@@ -10,13 +10,13 @@ import {
   exportContribution,
   importInvestorSeed,
   MessageDraftSchema,
-  OutreachrRepository,
+  BotCombinatorRepository,
   restoreEncryptedBackup,
   verifyAuditChain,
   type CoreVault,
-} from '@outreachr/core';
-import { openNodeVault } from '@outreachr/core/node';
-import type { CalendarEvent, MailboxMessage } from '@outreachr/connectors';
+} from '@bot-combinator/core';
+import { openNodeVault } from '@bot-combinator/core/node';
+import type { CalendarEvent, MailboxMessage } from '@bot-combinator/connectors';
 import { z } from 'zod';
 import type {
   ActivityItem,
@@ -25,6 +25,7 @@ import type {
   AgentProposalReviewResult,
   AgentStatus,
   AppBootstrap,
+  CommandMap,
   CommandResultMap,
   Confidence,
   ConnectorStatus,
@@ -41,18 +42,37 @@ import type {
   PersonSummary,
   PipelineColumn,
   PipelineStage,
+  PortalSubmissionBundle,
+  ProgramWorkspace,
   SourceRef,
   SourceReviewItem,
   SuppressionItem,
   TaskItem,
   WorkItem,
 } from '../shared/contracts';
+import { BotChainDocsService } from './bot-chain-docs';
 
-const SEED_FILE_SHA256 = 'b120aeb6a71f201e6a4a3198e0b9a7eef45ff24b2c0b224b8e763fbea2caee23';
-const SEED_LOGICAL_DIGEST = 'e91f834c59b9d7fc0a679174513c9b44b228cc6925c3654443f1b534d1643899';
+const SEED_FILE_SHA256 = 'fd4cc1e88be90195b5e3790eb27c4680a6a4546eb8fe98437a249dc5c7a1a58e';
+const SEED_LOGICAL_DIGEST = 'b5c7fccc6454de3cd3272ce879c800a7747419d43316112c3eb9d945ed9ba3aa';
 const MAX_VAULT_OR_BACKUP_BYTES = 512 * 1024 * 1024;
 const MAX_SEED_IMPORT_BYTES = 256 * 1024 * 1024;
 const MAX_EXPORT_NAME_ATTEMPTS = 1_000;
+const BOT_CHAIN_PROGRAM_ID = 'program:bot-chain';
+const BOT_CHAIN_PROGRAM_NAME = 'Klineo × BOT Chain Ecosystem Program';
+
+const PROGRAM_STAGE_ORDER = [
+  'sourced',
+  'invited',
+  'applied',
+  'screening',
+  'qualified',
+  'cohort',
+  'integration_ready',
+  'liquidity_ready',
+  'launch_scheduled',
+  'live_market',
+  'graduated',
+] as const;
 
 async function readBoundedFile(
   path: string,
@@ -551,12 +571,50 @@ function sqlText(value: unknown, fallback = ''): string {
   return fallback;
 }
 
+function markdownCell(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—';
+  if (
+    typeof value !== 'string' &&
+    typeof value !== 'number' &&
+    typeof value !== 'boolean' &&
+    typeof value !== 'bigint'
+  ) {
+    return '—';
+  }
+  return (
+    String(value)
+      .replaceAll('|', '\\|')
+      .replace(/[\r\n]+/gu, ' ')
+      .trim() || '—'
+  );
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error('Portal submission contains a non-finite number');
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(',')}]`;
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+      .join(',')}}`;
+  }
+  throw new Error('Portal submission contains a non-JSON value');
+}
+
 export class VaultService {
   readonly vaultPath: string;
   readonly #options: VaultServiceOptions;
   readonly #now: () => Date;
   #vault!: CoreVault;
-  #repository!: OutreachrRepository;
+  #repository!: BotCombinatorRepository;
+  readonly #botChainDocs: BotChainDocsService;
   #persistQueue: Promise<void> = Promise.resolve();
   #connectorStatuses: ConnectorStatus[] = DEFAULT_CONNECTORS;
   #agentStatuses: AgentStatus[] = DEFAULT_AGENTS;
@@ -564,14 +622,15 @@ export class VaultService {
   constructor(options: VaultServiceOptions) {
     this.#options = options;
     this.#now = options.now ?? (() => new Date());
-    this.vaultPath = join(options.dataDirectory, 'outreachr.sqlite');
+    this.vaultPath = join(options.dataDirectory, 'bot-combinator.sqlite');
+    this.#botChainDocs = new BotChainDocsService(options.resourceDirectory);
   }
 
   get vault(): CoreVault {
     return this.#vault;
   }
 
-  get repository(): OutreachrRepository {
+  get repository(): BotCombinatorRepository {
     return this.#repository;
   }
 
@@ -607,11 +666,13 @@ export class VaultService {
       ...(bytes ? { bytes } : {}),
       ...(wasmPath ? { wasmPath } : {}),
     });
-    this.#repository = new OutreachrRepository(this.#vault);
+    this.#repository = new BotCombinatorRepository(this.#vault);
+    await this.#botChainDocs.initialize();
     backfillAuditChain(this.#vault);
+    this.#ensureEcosystemProgram();
     if (!bytes) {
       const seedBytes = await readBoundedFile(
-        join(this.#options.resourceDirectory, 'Outreachr_Investor_Seed.sqlite'),
+        join(this.#options.resourceDirectory, 'Bot_Combinator_Investor_Seed.sqlite'),
         MAX_SEED_IMPORT_BYTES,
         'Seed',
       );
@@ -656,6 +717,134 @@ export class VaultService {
     return pending;
   }
 
+  #ensureEcosystemProgram(): void {
+    if (this.#repository.ecosystemProgram(BOT_CHAIN_PROGRAM_ID)) return;
+    const now = this.#now().toISOString();
+    this.#repository.upsertEcosystemProgram(
+      {
+        id: BOT_CHAIN_PROGRAM_ID,
+        name: BOT_CHAIN_PROGRAM_NAME,
+        partnerName: 'BOT Chain',
+        status: 'active',
+        grantPeriodStart: null,
+        grantPeriodEnd: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      'system',
+    );
+  }
+
+  #ecosystemProgram(): ProgramWorkspace {
+    const program = this.#repository.ecosystemProgram(BOT_CHAIN_PROGRAM_ID);
+    if (!program) throw new Error('BOT Chain ecosystem program is not initialized');
+
+    const projectRows = this.#repository.listEcosystemProjects(program.id);
+    const cohortRows = this.#repository.listCohorts(program.id);
+    const memberships = this.#repository.listCohortMemberships(program.id);
+    const definitions = this.#repository.listQualityGateDefinitions();
+    const reviews = this.#repository.listProjectGateReviews(program.id);
+    const milestones = this.#repository.listProgramMilestones(program.id);
+    const observations = this.#repository.listProgramMetricObservations(program.id);
+    const currentTime = this.#now().getTime();
+
+    const cohorts = cohortRows.map((cohort) => ({
+      ...cohort,
+      memberProjectIds: unique(
+        memberships
+          .filter(
+            (membership) => membership.cohortId === cohort.id && membership.state !== 'withdrawn',
+          )
+          .map((membership) => membership.projectId),
+      ),
+    }));
+
+    const projects = projectRows.map((project) => {
+      const membership = memberships.find(
+        (candidate) => candidate.projectId === project.id && candidate.state !== 'withdrawn',
+      );
+      const cohort = membership
+        ? cohortRows.find((candidate) => candidate.id === membership.cohortId)
+        : undefined;
+      return {
+        ...project,
+        cohortId: cohort?.id ?? null,
+        cohortName: cohort?.name ?? null,
+        gates: reviews
+          .filter((review) => review.projectId === project.id)
+          .map((review) => ({
+            id: review.id,
+            projectId: review.projectId,
+            gateKey: review.gateKey,
+            gateVersion: review.gateVersion,
+            status: review.status,
+            rationale: review.rationale,
+            evidence: review.evidence,
+            reviewedBy: review.reviewedBy,
+            reviewedAt: review.reviewedAt,
+            updatedAt: review.updatedAt,
+          })),
+        milestones: milestones.filter((milestone) => milestone.projectId === project.id),
+      };
+    });
+
+    const stageAtLeast = (stage: string, threshold: (typeof PROGRAM_STAGE_ORDER)[number]) => {
+      const stageIndex = PROGRAM_STAGE_ORDER.indexOf(stage as (typeof PROGRAM_STAGE_ORDER)[number]);
+      return stageIndex >= PROGRAM_STAGE_ORDER.indexOf(threshold);
+    };
+
+    return {
+      id: program.id,
+      name: program.name,
+      partnerName: program.partnerName,
+      status: program.status,
+      grantPeriodStart: program.grantPeriodStart,
+      grantPeriodEnd: program.grantPeriodEnd,
+      projects,
+      cohorts,
+      gateDefinitions: definitions.map((definition) => ({
+        key: definition.key,
+        version: definition.version,
+        title: definition.title,
+        description: definition.description,
+        sortOrder: definition.sortOrder,
+      })),
+      metrics: observations.map((observation) => ({
+        id: observation.id,
+        projectId: observation.projectId,
+        key: observation.key,
+        value: observation.value,
+        unit: observation.unit,
+        observedAt: observation.observedAt,
+        sourceLabel: observation.sourceLabel,
+        quality: observation.quality,
+        createdAt: observation.createdAt,
+      })),
+      summary: {
+        totalProjects: projects.length,
+        activeCohortProjects: new Set(
+          memberships
+            .filter((membership) => ['accepted', 'active'].includes(membership.state))
+            .map((membership) => membership.projectId),
+        ).size,
+        integrationReady: projects.filter((project) =>
+          stageAtLeast(project.stage, 'integration_ready'),
+        ).length,
+        liquidityReady: projects.filter((project) => stageAtLeast(project.stage, 'liquidity_ready'))
+          .length,
+        liveMarkets: projects.filter((project) => project.stage === 'live_market').length,
+        graduated: projects.filter((project) => project.stage === 'graduated').length,
+        blockedGates: reviews.filter((review) => review.status === 'blocked').length,
+        overdueMilestones: milestones.filter(
+          (milestone) =>
+            milestone.dueAt !== null &&
+            Date.parse(milestone.dueAt) < currentTime &&
+            !['completed', 'cancelled'].includes(milestone.status),
+        ).length,
+      },
+    };
+  }
+
   recordConnectorDisconnect(provider: 'google' | 'microsoft', occurredAt: string): void {
     appendAuditEntry(this.#vault, {
       occurredAt,
@@ -672,7 +861,7 @@ export class VaultService {
     const marker = join(this.#options.dataDirectory, 'reset-on-next-launch');
     await writeFile(
       marker,
-      'Delete the exact Outreachr SQLite vault on the next application launch.\n',
+      'Delete the exact Bot Combinator SQLite vault on the next application launch.\n',
       { mode: 0o600 },
     );
     appendAuditEntry(this.#vault, {
@@ -1341,7 +1530,7 @@ export class VaultService {
     const sendBlockReasons = [...approvalBlockReasons];
     if (message.message_kind !== 'initial') {
       sendBlockReasons.push(
-        'Stock Outreachr 0.1 sends initial outreach only; keep this message local for review.',
+        'Stock Bot Combinator 0.1 sends initial outreach only; keep this message local for review.',
       );
     }
     if (policy.sendingPaused)
@@ -1621,6 +1810,8 @@ export class VaultService {
       mailEvents,
       drafts,
       knowledge: this.#knowledge(),
+      botChainDocs: this.#botChainDocs.bundle(),
+      ecosystemProgram: this.#ecosystemProgram(),
       lists: this.#lists(),
       sourceReview,
       connectors: this.#connectorStatuses,
@@ -2393,7 +2584,7 @@ export class VaultService {
   ): Promise<AppBootstrap> {
     const now = this.#now().toISOString();
     const round = this.#roundRow();
-    this.#vault.run('SAVEPOINT outreachr_calendar_import');
+    this.#vault.run('SAVEPOINT bot_combinator_calendar_import');
     try {
       for (const event of events) {
         if (!event.id) continue;
@@ -2477,10 +2668,10 @@ export class VaultService {
           updatedAt: now,
         });
       }
-      this.#vault.run('RELEASE SAVEPOINT outreachr_calendar_import');
+      this.#vault.run('RELEASE SAVEPOINT bot_combinator_calendar_import');
     } catch (error) {
-      this.#vault.run('ROLLBACK TO SAVEPOINT outreachr_calendar_import');
-      this.#vault.run('RELEASE SAVEPOINT outreachr_calendar_import');
+      this.#vault.run('ROLLBACK TO SAVEPOINT bot_combinator_calendar_import');
+      this.#vault.run('RELEASE SAVEPOINT bot_combinator_calendar_import');
       throw error;
     }
     await this.persist();
@@ -2510,7 +2701,7 @@ export class VaultService {
       throw new Error('The connected mailbox account does not contain a valid email address');
     }
 
-    this.#vault.run('SAVEPOINT outreachr_mail_import');
+    this.#vault.run('SAVEPOINT bot_combinator_mail_import');
     try {
       for (const message of messages) {
         if (
@@ -2575,7 +2766,7 @@ export class VaultService {
           });
         }
         // Preserve unmatched outbound header observations for lifetime send
-        // safety. Unrelated inbound mail remains outside the Outreachr vault.
+        // safety. Unrelated inbound mail remains outside the Bot Combinator vault.
         if (!personId && direction !== 'outbound') continue;
 
         const classifierText = `${sender} ${message.subject}`.toLowerCase();
@@ -2655,10 +2846,10 @@ export class VaultService {
           );
         }
       }
-      this.#vault.run('RELEASE SAVEPOINT outreachr_mail_import');
+      this.#vault.run('RELEASE SAVEPOINT bot_combinator_mail_import');
     } catch (error) {
-      this.#vault.run('ROLLBACK TO SAVEPOINT outreachr_mail_import');
-      this.#vault.run('RELEASE SAVEPOINT outreachr_mail_import');
+      this.#vault.run('ROLLBACK TO SAVEPOINT bot_combinator_mail_import');
+      this.#vault.run('RELEASE SAVEPOINT bot_combinator_mail_import');
       throw error;
     }
     await this.persist();
@@ -2804,6 +2995,471 @@ export class VaultService {
     });
     await this.persist();
     return this.#knowledge().find((item) => item.id === id)!;
+  }
+
+  async exportBotChainDocs(input: {
+    directory: string;
+    mode: 'guide' | 'selected' | 'full';
+    documentIds: string[];
+  }): Promise<{
+    path: string;
+    bundleVersion: string;
+    manifestSha256: string;
+    documentCount: number;
+  }> {
+    const result = await this.#botChainDocs.export(input);
+    appendAuditEntry(this.#vault, {
+      occurredAt: this.#now().toISOString(),
+      actorType: 'founder',
+      actorId: 'founder',
+      action: 'bot_chain_docs.exported',
+      entityType: 'bot_chain_bundle',
+      entityId: result.bundleVersion,
+      detail: {
+        mode: input.mode,
+        documentIds: input.mode === 'full' ? ['all'] : input.documentIds,
+        documentCount: result.documentCount,
+        manifestSha256: result.manifestSha256,
+      },
+    });
+    await this.persist();
+    return result;
+  }
+
+  async createProgramProject(
+    input: CommandMap['program.project.create'],
+  ): Promise<ProgramWorkspace> {
+    const now = this.#now().toISOString();
+    const stage = input.source === 'application' ? 'applied' : 'sourced';
+    this.#repository.createEcosystemProject(
+      {
+        id: `ecosystem-project:${randomUUID()}`,
+        programId: BOT_CHAIN_PROGRAM_ID,
+        name: input.name,
+        website: input.website,
+        description: input.description,
+        stage,
+        source: input.source,
+        ownerName: input.ownerName,
+        ownerEmail: input.ownerEmail,
+        targetLaunchAt: input.targetLaunchAt,
+        launchedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      `Created from ${input.source.replaceAll('_', ' ')} intake.`,
+    );
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async moveProgramProjectStage(
+    input: CommandMap['program.project.stage'],
+  ): Promise<ProgramWorkspace> {
+    const project = this.#repository
+      .listEcosystemProjects(BOT_CHAIN_PROGRAM_ID)
+      .find((candidate) => candidate.id === input.projectId);
+    if (!project) throw new Error('BOT Chain program project not found');
+    this.#repository.moveEcosystemProjectStage({
+      projectId: project.id,
+      stage: input.stage,
+      reason: input.reason,
+      occurredAt: this.#now().toISOString(),
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async reviewProgramGate(input: CommandMap['program.gate.review']): Promise<ProgramWorkspace> {
+    const project = this.#repository
+      .listEcosystemProjects(BOT_CHAIN_PROGRAM_ID)
+      .find((candidate) => candidate.id === input.projectId);
+    if (!project) throw new Error('BOT Chain program project not found');
+    const definition = this.#repository
+      .listQualityGateDefinitions()
+      .find((candidate) => candidate.key === input.gateKey);
+    if (!definition) throw new Error('BOT Chain quality gate not found');
+    const existing = this.#repository
+      .listProjectGateReviews(BOT_CHAIN_PROGRAM_ID)
+      .find(
+        (candidate) =>
+          candidate.projectId === project.id &&
+          candidate.gateKey === definition.key &&
+          candidate.gateVersion === definition.version,
+      );
+    const now = this.#now().toISOString();
+    this.#repository.upsertProjectGateReview({
+      id: existing?.id ?? `project-gate:${randomUUID()}`,
+      projectId: project.id,
+      gateKey: definition.key,
+      gateVersion: definition.version,
+      status: input.status,
+      rationale: input.rationale,
+      evidence: input.evidence,
+      reviewedBy: input.reviewedBy,
+      reviewedAt: now,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async createProgramCohort(input: CommandMap['program.cohort.create']): Promise<ProgramWorkspace> {
+    const now = this.#now().toISOString();
+    this.#repository.upsertCohort({
+      id: `cohort:${randomUUID()}`,
+      programId: BOT_CHAIN_PROGRAM_ID,
+      name: input.name,
+      thesis: input.thesis,
+      startsOn: input.startsOn,
+      endsOn: input.endsOn,
+      capacity: input.capacity,
+      status: 'planning',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async assignProgramCohort(input: CommandMap['program.cohort.assign']): Promise<ProgramWorkspace> {
+    const projects = this.#repository.listEcosystemProjects(BOT_CHAIN_PROGRAM_ID);
+    if (!projects.some((project) => project.id === input.projectId)) {
+      throw new Error('BOT Chain program project not found');
+    }
+    const cohorts = this.#repository.listCohorts(BOT_CHAIN_PROGRAM_ID);
+    if (!cohorts.some((cohort) => cohort.id === input.cohortId)) {
+      throw new Error('BOT Chain program cohort not found');
+    }
+    const memberships = this.#repository.listCohortMemberships(BOT_CHAIN_PROGRAM_ID);
+    const existing = memberships.find(
+      (membership) =>
+        membership.projectId === input.projectId && membership.cohortId === input.cohortId,
+    );
+    const now = this.#now().toISOString();
+    this.#vault.transaction(() => {
+      if (['accepted', 'active'].includes(input.state)) {
+        for (const membership of memberships.filter(
+          (candidate) =>
+            candidate.projectId === input.projectId &&
+            candidate.cohortId !== input.cohortId &&
+            ['accepted', 'active'].includes(candidate.state),
+        )) {
+          this.#repository.upsertCohortMembership({
+            ...membership,
+            state: 'withdrawn',
+            completedAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+      this.#repository.upsertCohortMembership({
+        cohortId: input.cohortId,
+        projectId: input.projectId,
+        state: input.state,
+        admittedAt: existing?.admittedAt ?? now,
+        completedAt: ['completed', 'withdrawn'].includes(input.state) ? now : null,
+        updatedAt: now,
+      });
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async createProgramMilestone(
+    input: CommandMap['program.milestone.create'],
+  ): Promise<ProgramWorkspace> {
+    const project = this.#repository
+      .listEcosystemProjects(BOT_CHAIN_PROGRAM_ID)
+      .find((candidate) => candidate.id === input.projectId);
+    if (!project) throw new Error('BOT Chain program project not found');
+    if (
+      input.cohortId &&
+      !this.#repository
+        .listCohorts(BOT_CHAIN_PROGRAM_ID)
+        .some((cohort) => cohort.id === input.cohortId)
+    ) {
+      throw new Error('BOT Chain program cohort not found');
+    }
+    const now = this.#now().toISOString();
+    this.#repository.upsertProgramMilestone({
+      id: `program-milestone:${randomUUID()}`,
+      projectId: project.id,
+      cohortId: input.cohortId,
+      title: input.title,
+      category: input.category,
+      owner: input.owner,
+      dueAt: input.dueAt,
+      evidenceRequired: input.evidenceRequired,
+      evidence: null,
+      status: 'not_started',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async updateProgramMilestone(
+    input: CommandMap['program.milestone.update'],
+  ): Promise<ProgramWorkspace> {
+    const milestone = this.#repository
+      .listProgramMilestones(BOT_CHAIN_PROGRAM_ID)
+      .find((candidate) => candidate.id === input.id);
+    if (!milestone) throw new Error('BOT Chain program milestone not found');
+    this.#repository.upsertProgramMilestone({
+      ...milestone,
+      status: input.status,
+      evidence: input.evidence,
+      updatedAt: this.#now().toISOString(),
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async recordProgramMetric(input: CommandMap['program.metric.record']): Promise<ProgramWorkspace> {
+    if (
+      input.projectId &&
+      !this.#repository
+        .listEcosystemProjects(BOT_CHAIN_PROGRAM_ID)
+        .some((project) => project.id === input.projectId)
+    ) {
+      throw new Error('BOT Chain program project not found');
+    }
+    const now = this.#now().toISOString();
+    this.#repository.insertProgramMetricObservation({
+      id: `program-metric:${randomUUID()}`,
+      programId: BOT_CHAIN_PROGRAM_ID,
+      projectId: input.projectId,
+      key: input.key,
+      value: input.value,
+      unit: input.unit,
+      observedAt: input.observedAt,
+      sourceLabel: input.sourceLabel,
+      quality: input.quality,
+      createdAt: now,
+    });
+    await this.persist();
+    return this.#ecosystemProgram();
+  }
+
+  async exportProgramPartnerReport(directory: string): Promise<{ path: string }> {
+    const workspace = this.#ecosystemProgram();
+    const now = this.#now().toISOString();
+    const projectNames = new Map(workspace.projects.map((project) => [project.id, project.name]));
+    const latestMetricKeys = new Set<string>();
+    const latestMetrics = workspace.metrics.filter((metric) => {
+      const key = `${metric.projectId ?? 'program'}:${metric.key}`;
+      if (latestMetricKeys.has(key)) return false;
+      latestMetricKeys.add(key);
+      return true;
+    });
+    const lines = [
+      `# ${workspace.name} — controlled partner report`,
+      '',
+      `Generated: ${now}`,
+      '',
+      'Visibility: BOT Chain partner view. Private contacts, internal notes, raw evidence, and agent context are excluded.',
+      '',
+      '## Program snapshot',
+      '',
+      '| Measure | Value |',
+      '| --- | ---: |',
+      `| Projects tracked | ${workspace.summary.totalProjects} |`,
+      `| Active cohort projects | ${workspace.summary.activeCohortProjects} |`,
+      `| Integration ready or later | ${workspace.summary.integrationReady} |`,
+      `| Liquidity ready or later | ${workspace.summary.liquidityReady} |`,
+      `| Live markets | ${workspace.summary.liveMarkets} |`,
+      `| Graduated | ${workspace.summary.graduated} |`,
+      `| Blocked gates | ${workspace.summary.blockedGates} |`,
+      `| Overdue milestones | ${workspace.summary.overdueMilestones} |`,
+      '',
+      '## Project readiness',
+      '',
+      '| Project | Stage | Cohort | Gates passed | Milestones complete | Target launch |',
+      '| --- | --- | --- | ---: | ---: | --- |',
+      ...workspace.projects.map((project) => {
+        const passedGates = project.gates.filter((gate) =>
+          ['passed', 'waived'].includes(gate.status),
+        ).length;
+        const completeMilestones = project.milestones.filter(
+          (milestone) => milestone.status === 'completed',
+        ).length;
+        return `| ${markdownCell(project.name)} | ${markdownCell(project.stage.replaceAll('_', ' '))} | ${markdownCell(project.cohortName)} | ${passedGates}/${workspace.gateDefinitions.length} | ${completeMilestones}/${project.milestones.length} | ${markdownCell(project.targetLaunchAt)} |`;
+      }),
+      '',
+      '## Cohorts',
+      '',
+      '| Cohort | Status | Dates | Capacity | Projects |',
+      '| --- | --- | --- | ---: | ---: |',
+      ...workspace.cohorts.map(
+        (cohort) =>
+          `| ${markdownCell(cohort.name)} | ${markdownCell(cohort.status.replaceAll('_', ' '))} | ${markdownCell([cohort.startsOn, cohort.endsOn].filter(Boolean).join(' → '))} | ${markdownCell(cohort.capacity)} | ${cohort.memberProjectIds.length} |`,
+      ),
+      '',
+      '## Latest reported metrics',
+      '',
+      '| Scope | Metric | Value | Observed | Quality |',
+      '| --- | --- | ---: | --- | --- |',
+      ...latestMetrics.map(
+        (metric) =>
+          `| ${markdownCell(metric.projectId ? projectNames.get(metric.projectId) : 'Program')} | ${markdownCell(metric.key)} | ${markdownCell(`${metric.value} ${metric.unit}`)} | ${markdownCell(metric.observedAt)} | ${markdownCell(metric.quality)} |`,
+      ),
+      '',
+      '## Disclosure note',
+      '',
+      'Counts reflect the local Klineo program vault at export time. A gate is reported as passed only after an explicit recorded review. Metrics retain their recorded evidence-quality label and should not be interpreted as independently audited unless marked verified.',
+      '',
+    ];
+    const report = lines.join('\n');
+    const reportSha256 = createHash('sha256').update(report, 'utf8').digest('hex');
+    const path = await writeTimestampedPrivateExport(
+      directory,
+      'BOT-Chain-partner-report',
+      now,
+      '.md',
+      report,
+    );
+    const reportId = `partner-report:${randomUUID()}`;
+    this.#vault.transaction(() => {
+      this.#vault.run(
+        `INSERT INTO partner_report_exports(
+          id,program_id,report_sha256,visibility_profile,project_count,created_by,created_at
+        ) VALUES (?,?,?,?,?,?,?)`,
+        [
+          reportId,
+          BOT_CHAIN_PROGRAM_ID,
+          reportSha256,
+          'bot_chain_partner_controlled_v1',
+          workspace.projects.length,
+          'founder',
+          now,
+        ],
+      );
+      appendAuditEntry(this.#vault, {
+        occurredAt: now,
+        actorType: 'founder',
+        actorId: 'founder',
+        action: 'partner_report.exported',
+        entityType: 'partner_report',
+        entityId: reportId,
+        detail: {
+          programId: BOT_CHAIN_PROGRAM_ID,
+          visibilityProfile: 'bot_chain_partner_controlled_v1',
+          reportSha256,
+          projectCount: workspace.projects.length,
+        },
+      });
+    });
+    await this.persist();
+    return { path };
+  }
+
+  async exportPortalSubmission(
+    input: CommandMap['program.portalSubmission.export'],
+  ): Promise<{ path: string; contentDigest: string }> {
+    const workspace = this.#ecosystemProgram();
+    const project = workspace.projects.find((candidate) => candidate.id === input.projectId);
+    if (!project) throw new Error('Program project was not found');
+
+    const exportedAt = this.#now().toISOString();
+    const base: Omit<PortalSubmissionBundle, 'canonicalPayload' | 'contentDigest'> = {
+      schemaVersion: 1,
+      exportedAt,
+      source: {
+        application: 'Bot Combinator Desktop',
+        mode: 'explicit_program_submission',
+      },
+      privacy: {
+        visibility: input.visibility,
+        omittedDataClasses: [
+          'project owner names and email addresses',
+          'investor and fundraising records',
+          'mail, calendar, and connector data',
+          'private notes and knowledge items',
+          'credentials and secure-store material',
+          'agent prompts, context, history, and proposals',
+        ],
+      },
+      project: {
+        localProjectId: project.id,
+        name: project.name,
+        website: project.website,
+        description: project.description,
+        stage: project.stage,
+        targetLaunchAt: project.targetLaunchAt,
+        cohortName: project.cohortName,
+      },
+      submission: {
+        gates: input.includeGateReviews
+          ? workspace.gateDefinitions.map((definition) => {
+              const review = project.gates.find(
+                (candidate) =>
+                  candidate.gateKey === definition.key &&
+                  candidate.gateVersion === definition.version,
+              );
+              return {
+                key: definition.key,
+                version: definition.version,
+                title: definition.title,
+                status: review?.status ?? 'not_started',
+                rationale: review?.rationale ?? null,
+                evidence: review?.evidence ?? null,
+                reviewedAt: review?.reviewedAt ?? null,
+              };
+            })
+          : [],
+        milestones: input.includeMilestones
+          ? project.milestones.map((milestone) => ({
+              localMilestoneId: milestone.id,
+              title: milestone.title,
+              category: milestone.category,
+              dueAt: milestone.dueAt,
+              status: milestone.status,
+              evidenceRequired: milestone.evidenceRequired,
+              evidence: milestone.evidence,
+              updatedAt: milestone.updatedAt,
+            }))
+          : [],
+      },
+    };
+    const canonicalPayload = canonicalJson(base);
+    const contentDigest = `sha256:${createHash('sha256').update(canonicalPayload, 'utf8').digest('hex')}`;
+    const bundle: PortalSubmissionBundle = { ...base, canonicalPayload, contentDigest };
+    const safeProjectName =
+      project.name
+        .normalize('NFKD')
+        .replace(/[^a-zA-Z0-9]+/gu, '-')
+        .replace(/^-+|-+$/gu, '')
+        .slice(0, 64) || 'project';
+    const path = await writeTimestampedPrivateExport(
+      input.directory,
+      `Bot-Combinator-portal-submission-${safeProjectName}`,
+      exportedAt,
+      '.json',
+      `${JSON.stringify(bundle, null, 2)}\n`,
+    );
+
+    this.#vault.transaction(() => {
+      appendAuditEntry(this.#vault, {
+        occurredAt: exportedAt,
+        actorType: 'founder',
+        actorId: 'founder',
+        action: 'portal_submission.exported',
+        entityType: 'ecosystem_project',
+        entityId: project.id,
+        detail: {
+          visibility: input.visibility,
+          contentDigest,
+          includedGateReviews: bundle.submission.gates.length,
+          includedMilestones: bundle.submission.milestones.length,
+          omittedDataClasses: bundle.privacy.omittedDataClasses,
+        },
+      });
+    });
+    await this.persist();
+    return { path, contentDigest };
   }
 
   async createList(input: {
@@ -3001,9 +3657,9 @@ export class VaultService {
     const now = this.#now().toISOString();
     const output = await writeTimestampedPrivateExport(
       directory,
-      'Outreachr',
+      'Bot-Combinator',
       now,
-      '.outreachr-backup',
+      '.bot-combinator-backup',
       await createEncryptedBackup(this.#vault.export(), password),
     );
     appendAuditEntry(this.#vault, {
@@ -3013,7 +3669,7 @@ export class VaultService {
       action: 'backup.exported',
       entityType: 'vault',
       entityId: 'local',
-      detail: { encrypted: true, format: 'outreachr-encrypted-backup' },
+      detail: { encrypted: true, format: 'bot-combinator-encrypted-backup' },
     });
     await this.persist();
     return output;
@@ -3049,7 +3705,8 @@ export class VaultService {
     }
     this.#vault.close();
     this.#vault = replacement;
-    this.#repository = new OutreachrRepository(this.#vault);
+    this.#repository = new BotCombinatorRepository(this.#vault);
+    this.#ensureEcosystemProgram();
     appendAuditEntry(this.#vault, {
       occurredAt: this.#now().toISOString(),
       actorType: 'founder',
@@ -3065,7 +3722,7 @@ export class VaultService {
 
   async exportContribution(directory: string): Promise<{ databasePath: string; diffPath: string }> {
     const result = exportContribution(this.#vault.sqlite, this.#vault, {
-      packageId: `outreachr-contribution:${randomUUID()}`,
+      packageId: `bot-combinator-contribution:${randomUUID()}`,
       packageVersion: this.#options.appVersion,
       createdAt: this.#now().toISOString(),
       contributor: null,
@@ -3075,11 +3732,11 @@ export class VaultService {
     });
     const databasePath = join(
       directory,
-      `Outreachr-Contribution-${result.logicalDigestSha256.slice(0, 12)}.sqlite`,
+      `Bot-Combinator-Contribution-${result.logicalDigestSha256.slice(0, 12)}.sqlite`,
     );
     const diffPath = join(
       directory,
-      `Outreachr-Contribution-${result.logicalDigestSha256.slice(0, 12)}.json`,
+      `Bot-Combinator-Contribution-${result.logicalDigestSha256.slice(0, 12)}.json`,
     );
     let databaseCreated = false;
     try {
@@ -3222,7 +3879,7 @@ export class VaultService {
     }
     const output = await writeTimestampedPrivateExport(
       directory,
-      `Outreachr-${kind}`,
+      `Bot-Combinator-${kind}`,
       this.#now().toISOString(),
       '.csv',
       `${[headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')}\n`,
@@ -3339,18 +3996,35 @@ export class VaultService {
     };
   }
 
-  async agentContext(disclosedContextIds: readonly string[]): Promise<Record<string, unknown>> {
+  async agentContext(
+    disclosedContextIds: readonly string[],
+    botChainDocumentIds: readonly string[] = [],
+  ): Promise<Record<string, unknown>> {
     const allowed = new Set(disclosedContextIds);
     const bootstrap = await this.bootstrap();
+    const companyKnowledge = allowed.has('company')
+      ? bootstrap.knowledge.filter(
+          (item) =>
+            ['company', 'narrative', 'metrics', 'disclosure'].includes(item.category) &&
+            item.sharePolicy === 'safe_for_outreach',
+        )
+      : [];
+    const botChainDocs = allowed.has('bot_chain_docs')
+      ? this.#botChainDocs.selectedDocuments(botChainDocumentIds).map((document) => ({
+          kind: 'bot_chain_document',
+          id: document.id,
+          title: document.title,
+          version: document.version,
+          status: document.status,
+          sha256: document.sha256,
+          lastCheckedAt: document.lastCheckedAt,
+          content: document.content,
+        }))
+      : [];
     return {
       round: allowed.has('round') ? bootstrap.round : undefined,
-      company: allowed.has('company')
-        ? bootstrap.knowledge.filter(
-            (item) =>
-              ['company', 'narrative', 'metrics', 'disclosure'].includes(item.category) &&
-              item.sharePolicy === 'safe_for_outreach',
-          )
-        : undefined,
+      company: allowed.has('company') ? companyKnowledge : undefined,
+      botChainDocs: allowed.has('bot_chain_docs') ? botChainDocs : undefined,
       investors: allowed.has('investors') ? bootstrap.investors : undefined,
       people: allowed.has('investors')
         ? bootstrap.people.map((person) => ({
@@ -3370,6 +4044,7 @@ export class VaultService {
           }
         : undefined,
       disclosure: [...allowed],
+      botChainDocumentIds: botChainDocs.map((document) => document.id),
     };
   }
 
