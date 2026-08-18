@@ -38,13 +38,14 @@ describe('desktop download configuration', () => {
     const linux = release.platforms.find((platform) => platform.id === 'linux');
 
     expect(macos?.direct).toBe(true);
-    expect(release.platforms.find((platform) => platform.id === 'windows')?.direct).toBe(false);
+    expect(windows?.direct).toBe(true);
     expect(
       windows?.installers.find((installer) => installer.architecture === 'arm64')?.direct,
     ).toBe(true);
-    expect(linux?.direct).toBe(false);
+    expect(linux?.direct).toBe(true);
     expect(linux?.installers.find((installer) => installer.architecture === 'arm64')?.direct).toBe(
       true,
     );
+    expect(release.hasDirectDownloads).toBe(true);
   });
 });

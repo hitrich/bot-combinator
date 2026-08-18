@@ -133,7 +133,7 @@ export function buildDesktopReleaseConfig(
       name: platform.name,
       packageLabel: platform.packageLabel,
       installers,
-      direct: installers.every((installer) => installer.direct),
+      direct: installers.some((installer) => installer.direct),
     };
   });
 
