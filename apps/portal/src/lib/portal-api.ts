@@ -9,6 +9,8 @@ import type {
   DeliveryStatusInput,
   InviteInput,
   MilestoneInput,
+  PortalAccessMember,
+  PortalInvitation,
   PortalWorkspace,
   ProgressUpdateInput,
   ProjectApplication,
@@ -20,6 +22,7 @@ import type {
   ReviewRequestInput,
   ShowcaseAsset,
   ShowcaseInput,
+  UpdateAccessInput,
   Visibility,
 } from './types';
 
@@ -28,6 +31,10 @@ type CamelWorkspace = PortalWorkspace & {
   applications?: ProjectApplication[];
 };
 type CamelPublicShowcase = PublicShowcaseData & { showcaseAssets?: ShowcaseAsset[] };
+type CamelAccessRoster = {
+  members?: PortalAccessMember[];
+  invitations?: PortalInvitation[];
+};
 
 function camelKey(key: string): string {
   return key.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
@@ -51,6 +58,8 @@ function mapWorkspace(value: unknown): PortalWorkspace {
   const assets = normalized.showcaseAssets ?? [];
   return {
     ...normalized,
+    accessMembers: normalized.accessMembers ?? [],
+    pendingInvitations: normalized.pendingInvitations ?? [],
     applications: normalized.applications ?? [],
     showcaseItems: normalized.showcaseItems.map((item) => ({
       ...item,
@@ -66,7 +75,7 @@ function jsonInput(value: object): Json {
 async function rpc(
   name: Exclude<
     keyof Database['public']['Functions'],
-    'portal_workspace' | 'public_showcase' | 'list_project_applications'
+    'portal_workspace' | 'public_showcase' | 'list_project_applications' | 'list_portal_access'
   >,
   input: object,
 ): Promise<string> {
@@ -108,6 +117,13 @@ export async function loadPortalWorkspace(): Promise<PortalWorkspace> {
   if (applicationResult.error) throw applicationResult.error;
   const workspace = mapWorkspace(workspaceResult.data);
   workspace.applications = (camelize(applicationResult.data) as ProjectApplication[]) ?? [];
+  if (workspace.user.role === 'klineo_admin' || workspace.user.role === 'klineo_operator') {
+    const accessResult = await client.rpc('list_portal_access');
+    if (accessResult.error) throw accessResult.error;
+    const access = camelize(accessResult.data) as CamelAccessRoster;
+    workspace.accessMembers = access.members ?? [];
+    workspace.pendingInvitations = access.invitations ?? [];
+  }
   return hydrateSignedUrls(workspace);
 }
 
@@ -124,6 +140,8 @@ export async function loadPublicShowcase(): Promise<PublicShowcaseData> {
       role: 'bot_chain_viewer',
       organizationName: 'Public showcase',
     },
+    accessMembers: [],
+    pendingInvitations: [],
     projects: normalized.projects ?? [],
     progressUpdates: [],
     milestones: [],
@@ -297,5 +315,39 @@ export async function importDesktopSubmission(
 
 export async function inviteMember(input: InviteInput): Promise<void> {
   const result = await requireSupabase().functions.invoke('invite-member', { body: input });
-  if (result.error) throw result.error;
+  if (!result.error) return;
+
+  const invocationError = result.error as unknown;
+  const context =
+    typeof invocationError === 'object' && invocationError && 'context' in invocationError
+      ? (invocationError as { context?: unknown }).context
+      : null;
+  if (context instanceof Response) {
+    let payload: { error?: unknown } | null = null;
+    try {
+      payload = (await context.clone().json()) as { error?: unknown };
+    } catch {
+      // Fall back to the Supabase client error when the response is not JSON.
+    }
+    if (typeof payload?.error === 'string' && payload.error.trim()) {
+      throw new Error(payload.error);
+    }
+  }
+  if (invocationError instanceof Error) throw invocationError;
+  throw new Error('The invitation service returned an unexpected error.');
+}
+
+export async function updatePortalAccess(input: UpdateAccessInput): Promise<void> {
+  await rpc('update_portal_access', input);
+}
+
+export async function removePortalAccess(input: {
+  accessId: string;
+  accessType: PortalAccessMember['accessType'];
+}): Promise<void> {
+  await rpc('remove_portal_access', input);
+}
+
+export async function cancelPortalInvitation(invitationId: string): Promise<void> {
+  await rpc('cancel_portal_invitation', { invitationId });
 }

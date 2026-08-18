@@ -7,9 +7,12 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "deploy:emails": "node scripts/deploy-auth-email-templates.mjs",
     "preview": "vite preview --host 0.0.0.0",
+    "preview:emails": "node scripts/render-email-previews.mjs",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:emails": "node scripts/verify-auth-email-templates.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",

@@ -22,6 +22,13 @@ export interface Database {
         Args: Record<never, never>;
         Returns: Json;
       };
+      list_portal_access: {
+        Args: Record<never, never>;
+        Returns: Json;
+      };
+      update_portal_access: JsonRpc;
+      remove_portal_access: JsonRpc;
+      cancel_portal_invitation: JsonRpc;
       submit_project_application: JsonRpc;
       review_project_application: JsonRpc;
       create_portal_project: JsonRpc;

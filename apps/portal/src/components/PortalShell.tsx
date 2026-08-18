@@ -11,14 +11,22 @@ import {
   LogOut,
   MessageSquareText,
   RefreshCw,
+  UserCog,
   UsersRound,
 } from 'lucide-react';
 import type { PortalRole, PortalUser } from '../lib/types';
-import { isBotChainRole, isKlineoRole } from '../lib/visibility';
+import { isBotChainRole, isKlineoOperatorRole, isKlineoRole } from '../lib/visibility';
 import { Avatar, Badge, BrandMark, Button, cx, titleCase } from './Primitives';
 
 export type PortalRoute =
-  'dashboard' | 'projects' | 'reviews' | 'cohorts' | 'activity' | 'showcase' | 'downloads';
+  | 'dashboard'
+  | 'projects'
+  | 'reviews'
+  | 'cohorts'
+  | 'access'
+  | 'activity'
+  | 'showcase'
+  | 'downloads';
 
 interface NavItem {
   route: PortalRoute;
@@ -28,7 +36,7 @@ interface NavItem {
 
 function navForRole(role: PortalRole): NavItem[] {
   if (isKlineoRole(role)) {
-    return [
+    const navigation: NavItem[] = [
       { route: 'dashboard', label: 'Command center', icon: <LayoutDashboard aria-hidden="true" /> },
       { route: 'projects', label: 'Projects', icon: <FolderKanban aria-hidden="true" /> },
       {
@@ -41,6 +49,14 @@ function navForRole(role: PortalRole): NavItem[] {
       { route: 'showcase', label: 'Showcase', icon: <GalleryHorizontalEnd aria-hidden="true" /> },
       { route: 'activity', label: 'Audit history', icon: <Activity aria-hidden="true" /> },
     ];
+    if (isKlineoOperatorRole(role)) {
+      navigation.splice(5, 0, {
+        route: 'access',
+        label: 'People & access',
+        icon: <UserCog aria-hidden="true" />,
+      });
+    }
+    return navigation;
   }
   if (isBotChainRole(role)) {
     return [

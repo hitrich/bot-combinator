@@ -12,6 +12,7 @@ import { createDemoWorkspace } from '../lib/demo-data';
 import { sanitizeShowcaseImage } from '../lib/images';
 import {
   addComment as addCommentRemote,
+  cancelPortalInvitation as cancelPortalInvitationRemote,
   createBlocker as createBlockerRemote,
   createCohort as createCohortRemote,
   createMilestone as createMilestoneRemote,
@@ -26,12 +27,14 @@ import {
   requestMagicLink,
   requestReview as requestReviewRemote,
   requestVisibility as requestVisibilityRemote,
+  removePortalAccess as removePortalAccessRemote,
   reviewProjectApplication as reviewProjectApplicationRemote,
   revokeVisibility as revokeVisibilityRemote,
   signOut as signOutRemote,
   submitProgressUpdate as submitProgressUpdateRemote,
   submitProjectApplication as submitProjectApplicationRemote,
   updateDeliveryStatus as updateDeliveryStatusRemote,
+  updatePortalAccess as updatePortalAccessRemote,
   updateProjectProfile as updateProjectProfileRemote,
   updateProjectStage as updateProjectStageRemote,
   uploadShowcaseScreenshot,
@@ -44,6 +47,7 @@ import type {
   DeliveryStatusInput,
   InviteInput,
   MilestoneInput,
+  PortalAccessMember,
   PortalComment,
   PortalRole,
   PortalWorkspace,
@@ -54,6 +58,7 @@ import type {
   ReviewRequestInput,
   ReviewApplicationInput,
   ShowcaseInput,
+  UpdateAccessInput,
   Visibility,
 } from '../lib/types';
 
@@ -117,6 +122,12 @@ interface PortalContextValue {
   requestReview: (input: ReviewRequestInput) => Promise<void>;
   importDesktopSubmission: (projectId: string, file: File) => Promise<void>;
   inviteMember: (input: InviteInput) => Promise<void>;
+  updatePortalAccess: (input: UpdateAccessInput) => Promise<void>;
+  removePortalAccess: (
+    accessId: string,
+    accessType: PortalAccessMember['accessType'],
+  ) => Promise<void>;
+  cancelPortalInvitation: (invitationId: string) => Promise<void>;
   reviewApplication: (input: ReviewApplicationInput) => Promise<void>;
 }
 
@@ -794,11 +805,117 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
         await runRemote(() => inviteMemberRemote(input), 'Invitation sent');
         return;
       }
+      setWorkspace((current) => {
+        if (!current) return current;
+        const project = current.projects.find((item) => item.id === input.projectId);
+        const organizationName = input.role.startsWith('bot_chain_')
+          ? 'BOT Chain'
+          : input.role.startsWith('klineo_')
+            ? 'Klineo'
+            : (project?.name ?? 'Project');
+        return {
+          ...current,
+          pendingInvitations: [
+            {
+              id: crypto.randomUUID(),
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              organizationName,
+              projectId: project?.id ?? null,
+              projectName: project?.name ?? null,
+              invitedByName: current.user.fullName,
+              createdAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+            },
+            ...current.pendingInvitations.filter(
+              (item) =>
+                item.email.toLowerCase() !== input.email.toLowerCase() ||
+                item.projectId !== (project?.id ?? null),
+            ),
+          ],
+        };
+      });
       notify({
         tone: 'success',
-        title: 'Invitation prepared',
-        detail: `${input.email} · ${input.role}`,
+        title: 'Invitation sent',
+        detail: `${input.email} · expires in 7 days`,
       });
+    },
+    [notify, runRemote],
+  );
+
+  const updatePortalAccess = useCallback(
+    async (input: UpdateAccessInput) => {
+      if (!demoMode) {
+        await runRemote(() => updatePortalAccessRemote(input), 'Access updated');
+        return;
+      }
+      setWorkspace((current) => {
+        if (!current) return current;
+        const project = current.projects.find((item) => item.id === input.projectId);
+        const projectRole = input.role === 'project_lead' || input.role === 'project_member';
+        return {
+          ...current,
+          accessMembers: current.accessMembers.map((member) =>
+            member.id === input.accessId
+              ? {
+                  ...member,
+                  accessType: projectRole ? 'project' : 'membership',
+                  role: input.role,
+                  organizationName: projectRole
+                    ? (project?.name ?? member.organizationName)
+                    : input.role.startsWith('bot_chain_')
+                      ? 'BOT Chain'
+                      : 'Klineo',
+                  projectId: projectRole ? (project?.id ?? null) : null,
+                  projectName: projectRole ? (project?.name ?? null) : null,
+                }
+              : member,
+          ),
+        };
+      });
+      notify({ tone: 'success', title: 'Access updated' });
+    },
+    [notify, runRemote],
+  );
+
+  const removePortalAccess = useCallback(
+    async (accessId: string, accessType: PortalAccessMember['accessType']) => {
+      if (!demoMode) {
+        await runRemote(() => removePortalAccessRemote({ accessId, accessType }), 'Access removed');
+        return;
+      }
+      setWorkspace((current) =>
+        current
+          ? {
+              ...current,
+              accessMembers: current.accessMembers.filter((member) => member.id !== accessId),
+            }
+          : current,
+      );
+      notify({ tone: 'success', title: 'Access removed' });
+    },
+    [notify, runRemote],
+  );
+
+  const cancelPortalInvitation = useCallback(
+    async (invitationId: string) => {
+      if (!demoMode) {
+        await runRemote(() => cancelPortalInvitationRemote(invitationId), 'Invitation cancelled');
+        return;
+      }
+      setWorkspace((current) =>
+        current
+          ? {
+              ...current,
+              pendingInvitations: current.pendingInvitations.filter(
+                (invitation) => invitation.id !== invitationId,
+              ),
+            }
+          : current,
+      );
+      notify({ tone: 'success', title: 'Invitation cancelled' });
     },
     [notify, runRemote],
   );
@@ -872,6 +989,9 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
       requestReview,
       importDesktopSubmission,
       inviteMember,
+      updatePortalAccess,
+      removePortalAccess,
+      cancelPortalInvitation,
       reviewApplication,
     }),
     [
@@ -887,6 +1007,9 @@ export function PortalProvider({ children }: PropsWithChildren): React.JSX.Eleme
       error,
       importDesktopSubmission,
       inviteMember,
+      updatePortalAccess,
+      removePortalAccess,
+      cancelPortalInvitation,
       loading,
       notify,
       refresh,

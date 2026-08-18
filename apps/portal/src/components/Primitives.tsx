@@ -1,4 +1,6 @@
+import { useEffect, useId, useRef } from 'react';
 import type { ButtonHTMLAttributes, PropsWithChildren, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import type { Visibility } from '../lib/types';
 import { visibilityLabels } from '../lib/visibility';
@@ -13,16 +15,24 @@ export function Button({
   tone = 'secondary',
   size = 'medium',
   icon,
+  static: isStatic = false,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: 'primary' | 'secondary' | 'quiet' | 'danger';
   size?: 'small' | 'medium';
   icon?: ReactNode;
+  static?: boolean;
 }): React.JSX.Element {
   return (
     <button
       type="button"
-      className={cx('button', `button--${tone}`, `button--${size}`, className)}
+      className={cx(
+        'button',
+        `button--${tone}`,
+        `button--${size}`,
+        isStatic && 'button--static',
+        className,
+      )}
       {...props}
     >
       {icon}
@@ -123,20 +133,91 @@ export function Dialog({
   footer?: ReactNode;
   wide?: boolean;
 }>): React.JSX.Element | null {
+  const titleId = useId();
+  const descriptionId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const preferred = dialog.querySelector<HTMLElement>('[autofocus]');
+      const firstField = dialog.querySelector<HTMLElement>(
+        '.dialog__body input:not(:disabled), .dialog__body select:not(:disabled), .dialog__body textarea:not(:disabled)',
+      );
+      (preferred ?? firstField ?? dialog).focus();
+    });
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.getAttribute('aria-hidden') !== 'true');
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [onClose, open]);
+
   if (!open) return null;
-  return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
+
+  const dialog = (
+    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
       <section
+        ref={dialogRef}
         className={cx('dialog', wide && 'dialog--wide')}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="dialog-title"
-        onMouseDown={(event) => event.stopPropagation()}
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        tabIndex={-1}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="dialog__header">
           <div>
-            <h2 id="dialog-title">{title}</h2>
-            {description ? <p>{description}</p> : null}
+            <h2 id={titleId}>{title}</h2>
+            {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label="Close dialog">
             <X aria-hidden="true" />
@@ -147,6 +228,8 @@ export function Dialog({
       </section>
     </div>
   );
+
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body);
 }
 
 export function EmptyState({

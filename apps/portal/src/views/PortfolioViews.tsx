@@ -23,8 +23,8 @@ import type {
   CreateCohortInput,
   CreateProjectInput,
   InviteInput,
+  ManagedPortalRole,
   PortalProject,
-  PortalRole,
   PortalWorkspace,
 } from '../lib/types';
 import {
@@ -105,6 +105,7 @@ export function ProjectsView({
         <label>
           <Search aria-hidden="true" />
           <input
+            aria-label="Search projects"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search projects…"
@@ -112,7 +113,11 @@ export function ProjectsView({
         </label>
         <label>
           <Filter aria-hidden="true" />
-          <select value={stage} onChange={(event) => setStage(event.target.value)}>
+          <select
+            aria-label="Filter projects by stage"
+            value={stage}
+            onChange={(event) => setStage(event.target.value)}
+          >
             <option value="all">All stages</option>
             {Array.from(new Set(workspace.projects.map((project) => project.stage))).map((item) => (
               <option key={item} value={item}>
@@ -834,7 +839,7 @@ function InviteDialog({
   const { inviteMember } = usePortal();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<PortalRole>('project_member');
+  const [role, setRole] = useState<ManagedPortalRole>('project_member');
   const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
   const isProjectRole = role === 'project_lead' || role === 'project_member';
@@ -898,7 +903,7 @@ function InviteDialog({
           <select
             className="select"
             value={role}
-            onChange={(event) => setRole(event.target.value as PortalRole)}
+            onChange={(event) => setRole(event.target.value as ManagedPortalRole)}
           >
             <optgroup label="Project">
               <option value="project_lead">Project lead</option>

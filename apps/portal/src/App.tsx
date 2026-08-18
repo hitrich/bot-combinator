@@ -8,6 +8,7 @@ import { DashboardView } from './views/DashboardView';
 import { DesktopDownloadsView } from './views/DesktopDownloadsView';
 import { ProjectView } from './views/ProjectView';
 import { PublicShowcasePage } from './views/PublicShowcasePage';
+import { PeopleAccessView } from './views/PeopleAccessView';
 import {
   ActivityView,
   CohortsView,
@@ -109,6 +110,7 @@ export default function App(): React.JSX.Element {
       ) : null}
       {route === 'reviews' ? <ReviewsView workspace={workspace} /> : null}
       {route === 'cohorts' ? <CohortsView workspace={workspace} /> : null}
+      {route === 'access' ? <PeopleAccessView workspace={workspace} /> : null}
       {route === 'showcase' ? (
         <ShowcaseView workspace={workspace} onOpenProject={openProject} />
       ) : null}

@@ -45,6 +45,34 @@ export interface PortalUser {
   organizationName: string;
 }
 
+export type ManagedPortalRole = Exclude<PortalRole, 'klineo_admin'>;
+
+export interface PortalAccessMember {
+  id: string;
+  accessType: 'membership' | 'project';
+  userId: string;
+  email: string;
+  fullName: string;
+  role: PortalRole;
+  organizationName: string;
+  projectId: string | null;
+  projectName: string | null;
+  createdAt: string;
+}
+
+export interface PortalInvitation {
+  id: string;
+  email: string;
+  fullName: string;
+  role: ManagedPortalRole;
+  organizationName: string;
+  projectId: string | null;
+  projectName: string | null;
+  invitedByName: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 export interface PortalProject {
   id: string;
   slug: string;
@@ -222,6 +250,8 @@ export interface ProjectApplication {
 
 export interface PortalWorkspace {
   user: PortalUser;
+  accessMembers: PortalAccessMember[];
+  pendingInvitations: PortalInvitation[];
   projects: PortalProject[];
   progressUpdates: ProgressUpdate[];
   milestones: Milestone[];
@@ -267,7 +297,14 @@ export interface InviteInput {
   email: string;
   fullName: string;
   projectId: string | null;
-  role: PortalRole;
+  role: ManagedPortalRole;
+}
+
+export interface UpdateAccessInput {
+  accessId: string;
+  accessType: PortalAccessMember['accessType'];
+  role: ManagedPortalRole;
+  projectId: string | null;
 }
 
 export interface CreateProjectInput {
