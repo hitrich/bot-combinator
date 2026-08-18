@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { FounderSetupInput, RoundState } from '../../../shared/contracts';
-import { Badge, Button, TextField } from '../components/ui';
+import { Badge, BrandMark, Button, TextField } from '../components/ui';
 import { useWorkspace } from '../state/WorkspaceContext';
 
 const steps = ['Founder', 'Company', 'Round', 'Privacy', 'Ready'] as const;
@@ -68,7 +68,7 @@ export function OnboardingFlow(): React.JSX.Element {
     <div className="onboarding-shell">
       <aside className="onboarding-aside">
         <div className="onboarding-brand">
-          <span className="brand-mark">O</span>
+          <BrandMark />
           <strong>Bot Combinator</strong>
         </div>
         <div className="onboarding-aside__copy">

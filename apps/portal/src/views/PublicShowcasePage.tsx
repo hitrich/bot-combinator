@@ -4,7 +4,7 @@ import { createDemoWorkspace } from '../lib/demo-data';
 import { loadPublicShowcase } from '../lib/portal-api';
 import { demoMode, portalConfigured } from '../lib/supabase';
 import type { PublicShowcaseData } from '../lib/types';
-import { Badge, Button, EmptyState } from '../components/Primitives';
+import { Badge, BrandMark, Button, EmptyState } from '../components/Primitives';
 
 function demoPublicShowcase(): PublicShowcaseData {
   const workspace = createDemoWorkspace('bot_chain_viewer');
@@ -37,7 +37,7 @@ export function PublicShowcasePage(): React.JSX.Element {
     <main className="public-showcase-page">
       <nav>
         <a href="/" className="brand-lockup brand-lockup--public">
-          <span>BC</span>
+          <BrandMark />
           <strong>Bot Combinator</strong>
         </a>
         <a href="/">
@@ -120,7 +120,7 @@ export function PublicShowcasePage(): React.JSX.Element {
       ) : null}
       <footer className="public-showcase-footer">
         <div className="brand-lockup">
-          <span>BC</span>
+          <BrandMark />
           <strong>Bot Combinator</strong>
         </div>
         <p>Klineo × BOT Chain ecosystem program</p>

@@ -28,7 +28,7 @@ import {
 import { NavLink, useLocation, useNavigate } from '../lib/router';
 import { useWorkspace } from '../state/WorkspaceContext';
 import { CommandPalette } from './CommandPalette';
-import { IconButton, StateDot, ToastRegion } from './ui';
+import { BrandMark, IconButton, StateDot, ToastRegion } from './ui';
 
 const primaryNavigation = [
   { to: '/', label: 'Up next', icon: Inbox },
@@ -140,9 +140,7 @@ export function AppShell({ children }: PropsWithChildren): React.JSX.Element {
       <aside className="sidebar" aria-label="Workspace sidebar">
         <div className="sidebar__brand">
           <button className="brand-button" onClick={() => navigate('/')} aria-label="Open Up next">
-            <span className="brand-mark" aria-hidden="true">
-              O
-            </span>
+            <BrandMark />
             <span className="brand-word">Bot Combinator</span>
           </button>
           <IconButton

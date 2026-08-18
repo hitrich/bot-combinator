@@ -2,7 +2,7 @@
 
 **Run your fundraising round from a private desktop workspace.**
 
-[![CI](https://github.com/Klineo-Ecosystem/bot-combinator/actions/workflows/verify.yml/badge.svg)](https://github.com/Klineo-Ecosystem/bot-combinator/actions/workflows/verify.yml)
+[![CI](https://github.com/hitrich/bot-combinator/actions/workflows/verify.yml/badge.svg)](https://github.com/hitrich/bot-combinator/actions/workflows/verify.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-0b7285.svg)](LICENSE)
 
 Bot Combinator is a local-first fundraising operating system for founders raising pre-seed, seed, or Series A. It brings investor research, target ranking, introductions, one-to-one outreach, meetings, diligence, and committed capital into one founder-owned SQLite workspace. The desktop app remains usable without an account or subscription; an optional hosted portal shares only intentional program submissions with Klineo and BOT Chain.
@@ -11,7 +11,7 @@ Bot Combinator is a local-first fundraising operating system for founders raisin
 
 <sub>Investor names and public research come from the bundled seed. Pipeline stages, expected checks, tasks, meetings, commitments, communication outcomes, and non-routable <code>.example</code> addresses are illustrative demo state; they do not represent contact with or commitments from the people or firms shown.</sub>
 
-[Download a packaged release](https://github.com/Klineo-Ecosystem/bot-combinator/releases) · [Build the current v0.1.2 source](#install-or-build) · [Read the user guide](docs/user-guide.md) · [See the architecture](docs/architecture.md)
+[Download a packaged release](https://github.com/hitrich/bot-combinator/releases) · [Build the current v0.1.2 source](#install-or-build) · [Read the user guide](docs/user-guide.md) · [See the architecture](docs/architecture.md)
 
 <sub>This README documents the current source tree. Packaged releases can trail it; use each release's notes as the feature record for that binary.</sub>
 
@@ -88,7 +88,7 @@ Every integration is optional. The investor workspace, pipeline, lists, tasks, k
 
 ## Install or build
 
-Desktop artifacts are published for authorized repository members on the [Releases page](https://github.com/Klineo-Ecosystem/bot-combinator/releases). Each release includes SHA-256 manifests, local SLSA-format provenance, SBOMs, and a machine-readable native publisher-signing disclosure. The release matrix builds and tests macOS, Windows, and Linux on x64 and arm64 targets.
+Desktop artifacts are published on the [Releases page](https://github.com/hitrich/bot-combinator/releases). Each release includes SHA-256 manifests, local SLSA-format provenance, SBOMs, and a machine-readable native publisher-signing disclosure. The release matrix builds and tests macOS, Windows, and Linux on x64 and arm64 targets.
 
 To run from source:
 

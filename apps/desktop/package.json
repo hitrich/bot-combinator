@@ -8,7 +8,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Klineo-Ecosystem/bot-combinator.git"
+    "url": "git+https://github.com/hitrich/bot-combinator.git"
   },
   "type": "module",
   "main": "./out/main/index.js",

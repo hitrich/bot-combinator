@@ -7,11 +7,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Klineo-Ecosystem/bot-combinator.git"
+    "url": "git+https://github.com/hitrich/bot-combinator.git"
   },
-  "homepage": "https://github.com/Klineo-Ecosystem/bot-combinator#readme",
+  "homepage": "https://github.com/hitrich/bot-combinator#readme",
   "bugs": {
-    "url": "https://github.com/Klineo-Ecosystem/bot-combinator/issues"
+    "url": "https://github.com/hitrich/bot-combinator/issues"
   },
   "packageManager": "pnpm@11.18.0",
   "engines": {

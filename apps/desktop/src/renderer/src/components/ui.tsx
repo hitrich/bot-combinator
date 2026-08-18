@@ -10,8 +10,17 @@ import {
   useRef,
 } from 'react';
 import { AlertCircle, Check, LoaderCircle, Search, X } from 'lucide-react';
+import botCombinatorLogo from '../assets/logo-bc.svg';
 
 type ButtonTone = 'primary' | 'secondary' | 'quiet' | 'danger';
+
+export function BrandMark({ large = false }: { large?: boolean }): React.JSX.Element {
+  return (
+    <span className={large ? 'brand-mark brand-mark--large' : 'brand-mark'} aria-hidden="true">
+      <img src={botCombinatorLogo} alt="" />
+    </span>
+  );
+}
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   tone?: ButtonTone;
@@ -238,9 +247,7 @@ export function Skeleton({ className = '' }: { className?: string }): React.JSX.
 export function LoadingScreen(): React.JSX.Element {
   return (
     <main className="loading-screen" aria-label="Loading Bot Combinator" aria-busy="true">
-      <div className="brand-mark brand-mark--large" aria-hidden="true">
-        O
-      </div>
+      <BrandMark large />
       <div>
         <h1>Opening your local vault</h1>
         <p role="status">Verifying the seed and rebuilding today’s work queue.</p>
