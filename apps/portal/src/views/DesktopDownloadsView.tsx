@@ -69,7 +69,7 @@ export function DesktopDownloadsView(): React.JSX.Element {
           <div>
             <small>Release channel</small>
             <strong>{desktopReleaseConfig.version}</strong>
-            <em>Verified packages</em>
+            <em>Checksum verified · unsigned</em>
           </div>
         </aside>
       </header>
@@ -145,7 +145,7 @@ export function DesktopDownloadsView(): React.JSX.Element {
           </h2>
           <p>
             {desktopReleaseConfig.hasDirectDownloads
-              ? 'Each button downloads its matching package directly from Vercel Blob. You remain in the portal and are never redirected to GitHub.'
+              ? 'Each button downloads its matching package directly from Vercel Blob. These verification builds are currently unsigned, so macOS or Windows may ask you to confirm opening them.'
               : 'Each architecture will download its own verified package here after the six native bundles are uploaded to Bot Combinator’s Vercel storage.'}
           </p>
         </div>
