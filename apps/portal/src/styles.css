@@ -492,7 +492,14 @@ svg {
   font-weight: 600;
   height: 38px;
   justify-content: center;
+  overflow: hidden;
   width: 38px;
+}
+.brand-lockup > span img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 .brand-lockup strong {
   font-size: 15px;
@@ -1191,6 +1198,258 @@ svg {
   color: var(--muted);
   font-size: 12px;
   margin: 7px 0 0;
+}
+
+/* Desktop distribution */
+.desktop-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 42px;
+}
+.desktop-downloads__header {
+  align-items: stretch;
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  padding-bottom: 38px;
+}
+.desktop-downloads__header > div {
+  align-self: end;
+  max-width: 800px;
+}
+.desktop-downloads__header h1 {
+  font-size: clamp(42px, 5vw, 68px);
+  font-weight: 550;
+  letter-spacing: -0.065em;
+  line-height: 0.95;
+  margin: 12px 0 18px;
+}
+.desktop-downloads__header > div > p:last-child {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 680px;
+}
+.desktop-downloads__header aside {
+  align-items: flex-start;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  gap: 18px;
+  min-height: 172px;
+  padding: 25px;
+}
+.desktop-downloads__header aside > span {
+  align-items: center;
+  background: var(--lime);
+  color: var(--ink);
+  display: flex;
+  flex: 0 0 auto;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+.desktop-downloads__header aside > span svg {
+  height: 20px;
+  width: 20px;
+}
+.desktop-downloads__header aside > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.desktop-downloads__header aside small {
+  color: #8d9487;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.desktop-downloads__header aside strong {
+  font-size: 18px;
+  letter-spacing: -0.025em;
+  margin-top: 11px;
+}
+.desktop-downloads__header aside em {
+  color: var(--lime);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-style: normal;
+  margin-top: 7px;
+  text-transform: uppercase;
+}
+.desktop-platforms {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+}
+.desktop-platform {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 26px;
+  grid-template-columns: minmax(230px, 1.2fr) minmax(180px, 0.8fr) minmax(170px, auto) minmax(
+      280px,
+      0.9fr
+    );
+  min-height: 112px;
+  padding: 19px 18px;
+  transition: background-color 160ms ease;
+}
+.desktop-platform:last-child {
+  border-bottom: 0;
+}
+.desktop-platform:hover {
+  background: rgba(249, 248, 243, 0.66);
+}
+.desktop-platform.is-recommended {
+  background: color-mix(in srgb, var(--lime) 13%, transparent);
+}
+.desktop-platform__identity {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+.desktop-platform__identity > span {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  flex: 0 0 auto;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+.desktop-platform.is-recommended .desktop-platform__identity > span {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--lime);
+}
+.desktop-platform__identity small,
+.desktop-platform__architecture small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.desktop-platform__identity h2 {
+  font-size: 21px;
+  letter-spacing: -0.035em;
+  margin: 4px 0 0;
+}
+.desktop-platform__architecture {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.desktop-platform__architecture strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+.desktop-platform__status {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.desktop-platform__downloads {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.desktop-platform__downloads .button {
+  min-width: 0;
+  text-decoration: none;
+  width: 100%;
+}
+.desktop-platform__downloads .button:focus-visible {
+  outline: 2px solid var(--lime-dark);
+  outline-offset: 3px;
+}
+.desktop-release-access {
+  align-items: center;
+  background: var(--ink);
+  color: #fff;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  padding: 28px 30px;
+}
+.desktop-release-access > span {
+  align-items: center;
+  border: 1px solid #42473d;
+  color: var(--lime);
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+.desktop-release-access .section-kicker {
+  color: #7f867a;
+  margin: 0 0 7px;
+}
+.desktop-release-access h2 {
+  font-size: 20px;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.desktop-release-access p:last-child {
+  color: #9aa195;
+  font-size: 11px;
+  line-height: 1.55;
+  margin: 7px 0 0;
+  max-width: 760px;
+}
+.desktop-installation {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.desktop-installation__steps {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.desktop-installation__steps article {
+  border-right: 1px solid var(--line);
+  min-height: 218px;
+  padding: 24px 26px 28px;
+}
+.desktop-installation__steps article:last-child {
+  border-right: 0;
+}
+.desktop-installation__steps article header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.desktop-installation__steps article header > span {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+.desktop-installation__steps article header small {
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.desktop-installation__steps h3 {
+  font-size: 17px;
+  letter-spacing: -0.025em;
+  margin: 30px 0 9px;
+}
+.desktop-installation__steps p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 310px;
 }
 
 /* Dashboards */
@@ -3796,6 +4055,12 @@ svg {
 }
 
 @media (max-width: 1240px) {
+  .desktop-platform {
+    grid-template-columns: minmax(220px, 1fr) minmax(170px, 0.8fr) minmax(280px, 0.9fr);
+  }
+  .desktop-platform__status {
+    display: none;
+  }
   .dashboard-grid,
   .project-home-grid {
     grid-template-columns: 1fr;
@@ -3858,6 +4123,20 @@ svg {
     display: flex;
     justify-content: center;
     padding: 0;
+  }
+  .desktop-downloads__header {
+    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+  .desktop-platform {
+    grid-template-columns: minmax(200px, 1fr) minmax(280px, 0.9fr);
+  }
+  .desktop-platform__architecture {
+    display: none;
+  }
+  .desktop-release-access {
+    align-items: start;
+    grid-template-columns: 48px minmax(0, 1fr);
   }
   .metric-rail {
     grid-template-columns: repeat(3, 1fr);
@@ -3968,14 +4247,16 @@ svg {
     display: flex;
     flex: 1;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sidebar nav::-webkit-scrollbar {
+    display: none;
   }
   .sidebar nav button {
-    flex: 1;
+    flex: 0 0 54px;
     min-height: 46px;
-  }
-  .sidebar nav button:nth-child(n + 5) {
-    display: none;
   }
   .topbar {
     height: 54px;
@@ -3987,6 +4268,41 @@ svg {
   }
   .workspace-canvas {
     padding: 28px 18px 100px;
+  }
+  .desktop-downloads {
+    gap: 30px;
+  }
+  .desktop-downloads__header {
+    grid-template-columns: 1fr;
+    padding-bottom: 28px;
+  }
+  .desktop-downloads__header aside {
+    min-height: 130px;
+  }
+  .desktop-platform {
+    align-items: stretch;
+    gap: 18px;
+    grid-template-columns: 1fr;
+    padding: 20px 4px;
+  }
+  .desktop-release-access {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 24px 20px;
+  }
+  .desktop-release-access > span {
+    height: 40px;
+    width: 40px;
+  }
+  .desktop-installation__steps {
+    grid-template-columns: 1fr;
+  }
+  .desktop-installation__steps article {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+    min-height: 190px;
+  }
+  .desktop-installation__steps article:last-child {
+    border-bottom: 0;
   }
   .view-header {
     align-items: flex-start;

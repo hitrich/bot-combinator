@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check, Database, Image, KeyRound, Send, ShieldCheck } from 'lucide-react';
 import type { ProjectApplicationInput } from '../lib/types';
-import { Button, Dialog, Field } from './Primitives';
+import { BrandMark, Button, Dialog, Field } from './Primitives';
 
 const EMPTY_APPLICATION: ProjectApplicationInput = {
   projectName: '',
@@ -84,7 +84,7 @@ export function SignInScreen({
     <main className="auth-page">
       <section className="auth-poster">
         <div className="brand-lockup brand-lockup--light">
-          <span>BC</span>
+          <BrandMark />
           <strong>Bot Combinator</strong>
         </div>
         <div className="auth-poster__statement">
@@ -395,7 +395,7 @@ export function ConfigurationScreen(): React.JSX.Element {
     <main className="setup-page">
       <header className="setup-page__header">
         <div className="brand-lockup">
-          <span>BC</span>
+          <BrandMark />
           <strong>Bot Combinator</strong>
         </div>
         <span className="eyebrow">Production setup required</span>
@@ -462,7 +462,7 @@ export function LoadingScreen(): React.JSX.Element {
   return (
     <main className="loading-page">
       <div className="brand-lockup">
-        <span>BC</span>
+        <BrandMark />
         <strong>Bot Combinator</strong>
       </div>
       <div className="loading-rule">

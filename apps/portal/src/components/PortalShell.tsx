@@ -6,6 +6,7 @@ import {
   Eye,
   FolderKanban,
   GalleryHorizontalEnd,
+  HardDriveDownload,
   LayoutDashboard,
   LogOut,
   MessageSquareText,
@@ -14,10 +15,10 @@ import {
 } from 'lucide-react';
 import type { PortalRole, PortalUser } from '../lib/types';
 import { isBotChainRole, isKlineoRole } from '../lib/visibility';
-import { Avatar, Badge, Button, cx, titleCase } from './Primitives';
+import { Avatar, Badge, BrandMark, Button, cx, titleCase } from './Primitives';
 
 export type PortalRoute =
-  'dashboard' | 'projects' | 'reviews' | 'cohorts' | 'activity' | 'showcase';
+  'dashboard' | 'projects' | 'reviews' | 'cohorts' | 'activity' | 'showcase' | 'downloads';
 
 interface NavItem {
   route: PortalRoute;
@@ -30,6 +31,11 @@ function navForRole(role: PortalRole): NavItem[] {
     return [
       { route: 'dashboard', label: 'Command center', icon: <LayoutDashboard aria-hidden="true" /> },
       { route: 'projects', label: 'Projects', icon: <FolderKanban aria-hidden="true" /> },
+      {
+        route: 'downloads',
+        label: 'Desktop app',
+        icon: <HardDriveDownload aria-hidden="true" />,
+      },
       { route: 'reviews', label: 'Review queue', icon: <MessageSquareText aria-hidden="true" /> },
       { route: 'cohorts', label: 'Cohorts', icon: <UsersRound aria-hidden="true" /> },
       { route: 'showcase', label: 'Showcase', icon: <GalleryHorizontalEnd aria-hidden="true" /> },
@@ -50,6 +56,11 @@ function navForRole(role: PortalRole): NavItem[] {
   return [
     { route: 'dashboard', label: 'Project home', icon: <LayoutDashboard aria-hidden="true" /> },
     { route: 'projects', label: 'Product workspace', icon: <Blocks aria-hidden="true" /> },
+    {
+      route: 'downloads',
+      label: 'Desktop app',
+      icon: <HardDriveDownload aria-hidden="true" />,
+    },
     {
       route: 'reviews',
       label: 'Reviews & sharing',
@@ -91,7 +102,7 @@ export function PortalShell({
     <div className="portal-shell">
       <aside className="sidebar">
         <div className="brand-lockup brand-lockup--sidebar">
-          <span>BC</span>
+          <BrandMark />
           <div>
             <strong>Bot Combinator</strong>
             <small>Collaboration portal</small>
@@ -116,6 +127,8 @@ export function PortalShell({
               key={item.route}
               className={cx(route === item.route && 'is-active')}
               onClick={() => onRoute(item.route)}
+              aria-current={route === item.route ? 'page' : undefined}
+              title={item.label}
             >
               {item.icon}
               <span>{item.label}</span>

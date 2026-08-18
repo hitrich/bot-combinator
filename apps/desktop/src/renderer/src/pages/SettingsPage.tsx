@@ -22,6 +22,7 @@ import { useLocation, useNavigate } from '../lib/router';
 import type { AgentProvider, ConnectorProvider, SuppressionItem } from '../../../shared/contracts';
 import {
   Badge,
+  BrandMark,
   Button,
   Dialog,
   PageHeader,
@@ -1525,7 +1526,7 @@ export function SettingsPage(): React.JSX.Element {
             <>
               <Section title="Bot Combinator">
                 <div className="about-block">
-                  <div className="brand-mark brand-mark--large">O</div>
+                  <BrandMark large />
                   <div>
                     <h2>Free, local, open source.</h2>
                     <p>

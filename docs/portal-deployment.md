@@ -60,7 +60,19 @@ VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 VITE_PORTAL_URL=https://portal.example.com
 VITE_PORTAL_DEMO_MODE=false
+VITE_DESKTOP_VERSION=v0.1.2
+VITE_DESKTOP_MACOS_ARM64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-macos-arm64.dmg
+VITE_DESKTOP_MACOS_X64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-macos-x64.dmg
+VITE_DESKTOP_WINDOWS_X64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-windows-x64.exe
+VITE_DESKTOP_WINDOWS_ARM64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-windows-arm64.exe
+VITE_DESKTOP_LINUX_X64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-linux-x64.AppImage
+VITE_DESKTOP_LINUX_ARM64_URL=https://YOUR_DISTRIBUTION_HOST/Bot-Combinator-linux-arm64.AppImage
 ```
+
+The six installer variables must point to the final verified files on the
+approved distribution host. Missing files remain disabled on the signed-in
+**Desktop app** page; project members are never redirected to the source-code
+repository.
 
 Build command:
 

@@ -5,6 +5,7 @@ import { Button } from './components/Primitives';
 import { PortalShell, type PortalRoute } from './components/PortalShell';
 import { usePortal } from './state/PortalContext';
 import { DashboardView } from './views/DashboardView';
+import { DesktopDownloadsView } from './views/DesktopDownloadsView';
 import { ProjectView } from './views/ProjectView';
 import { PublicShowcasePage } from './views/PublicShowcasePage';
 import {
@@ -112,6 +113,7 @@ export default function App(): React.JSX.Element {
         <ShowcaseView workspace={workspace} onOpenProject={openProject} />
       ) : null}
       {route === 'activity' ? <ActivityView workspace={workspace} /> : null}
+      {route === 'downloads' ? <DesktopDownloadsView /> : null}
 
       <div className="toast-region" aria-live="polite">
         {portal.toasts.map((toast) => (

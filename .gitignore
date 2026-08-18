@@ -1,4 +1,5 @@
 node_modules/
+.build-cache/
 .pnpm-store/
 dist/
 out/

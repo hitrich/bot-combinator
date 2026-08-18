@@ -342,19 +342,22 @@ p {
   height: 32px;
   flex: 0 0 32px;
   place-items: center;
-  color: var(--on-primary);
-  background: var(--primary-action);
+  background: #0e061c;
   border-radius: var(--radius-brand-sm);
-  font-size: var(--text-md);
-  font-weight: 760;
-  letter-spacing: -0.04em;
+  overflow: hidden;
+}
+
+.brand-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .brand-mark--large {
   width: 52px;
   height: 52px;
   border-radius: var(--radius-brand-lg);
-  font-size: var(--text-xl);
 }
 
 .brand-word {

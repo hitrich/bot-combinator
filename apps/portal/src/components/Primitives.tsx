@@ -201,6 +201,14 @@ export function Avatar({
   return <span className={cx('avatar', small && 'avatar--small')}>{initials || 'BC'}</span>;
 }
 
+export function BrandMark(): React.JSX.Element {
+  return (
+    <span className="brand-lockup__mark" aria-hidden="true">
+      <img src="/logo-bc.svg" alt="" />
+    </span>
+  );
+}
+
 export function titleCase(value: string): string {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
